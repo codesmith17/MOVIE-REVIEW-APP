@@ -29,7 +29,7 @@ const HomePage = () => {
         }
         const data = await response.json();
         setUpcomingMovies(data.results);
-        setLoading(false); // Set loading to false after data is fetched
+        if (user) setLoading(false); // Set loading to false after data is fetched
       } catch (error) {
         console.error("Fetch error:", error);
         setLoading(false); // Set loading to false in case of error
@@ -56,7 +56,7 @@ const HomePage = () => {
                     title={movie.titleText.text}
                     year={movie.releaseDate.year}
                     type={movie.titleType.text}
-                    image={movie.primaryImage.url || defaultImage}
+                    image={movie.primaryImage?.url || defaultImage}
                   />
                 </div>
               ))

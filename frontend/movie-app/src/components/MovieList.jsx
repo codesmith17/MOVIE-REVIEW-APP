@@ -14,7 +14,7 @@ const MovieList = () => {
     const searchText = searchParams.get("searchText");
     const currentPage = parseInt(searchParams.get("page") || "1");
 
-    const totalPages = Math.ceil(totalResults / 10);
+    const totalPages = Math.ceil(totalResults / 12);
     if (currentPage >= totalPages) {
       return;
     }

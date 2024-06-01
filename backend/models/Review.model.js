@@ -1,5 +1,15 @@
 const mongoose = require("mongoose");
+const likedSchema = new mongoose.Schema({
 
+    username: {
+        type: String,
+        required: true,
+    },
+    profilePicture: {
+        type: String,
+        required: true,
+    },
+});
 const reviewSchema = new mongoose.Schema({
     email: {
         type: String,
@@ -27,7 +37,12 @@ const reviewSchema = new mongoose.Schema({
         required: true,
         default: 0
     },
-
+    username: {
+        type: String,
+        required: true,
+        unique: true
+    },
+    likedBy: [likedSchema]
 
 });
 

@@ -38,7 +38,11 @@ const userSchema = new mongoose.Schema({
     }],
     followingList: [{
         type: String,
-    }]
+    }],
+    resetToken: {
+        type: String,
+        default: null
+    }
 
 });
 

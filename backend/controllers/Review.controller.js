@@ -1,7 +1,7 @@
 const Review = require("../models/Review.model");
 
 const postReview = (req, res, next) => {
-    const { imdbID, rating, review, dateLogged } = req.body;
+    const { imdbID, rating, review, dateLogged, username } = req.body;
     const userEmail = req.user.email;
 
     // Validate request body
@@ -15,6 +15,7 @@ const postReview = (req, res, next) => {
         rating,
         dateLogged,
         review,
+        username
     });
 
     // Save the new review
@@ -92,44 +93,73 @@ const getOtherReviews = (req, res, next) => {
 
 
 const postReviewLikes = (req, res, next) => {
-    const likedBy = req.user.email;
+    const userEmail = req.user.email;
     const currentReviewID = req.body.currentReviewID;
 
+    // Find the review by ID
     Review.findOne({ _id: currentReviewID })
         .then(response => {
-            if (likedBy === response.email) {
+            if (!response) {
+                // Review not found
+                res.status(404).json({ message: "Review not found" });
+                return;
+            }
+
+            if (userEmail === response.email) {
+                // Prevent liking one's own review
                 res.status(401).json({ message: "YOU ARE NOT ALLOWED TO LIKE YOUR OWN REVIEW" });
                 return;
             }
 
-            const likedArray = response.likedBy;
+            const likedArray = response.likedBy || [];
             let newLikeArray;
             let likes;
 
-            if (likedArray.includes(likedBy)) {
+            // Check if the user has already liked the review
+            const isLikedByUser = likedArray.some(item => item.username === req.user.email);
+
+            if (isLikedByUser) {
                 // Unlike the review
                 likes = response.likes - 1;
-                newLikeArray = likedArray.filter(value => value !== likedBy);
+                newLikeArray = likedArray.filter(value => value.username !== req.user.email);
             } else {
                 // Like the review
                 likes = response.likes + 1;
-                newLikeArray = [...likedArray, likedBy];
+                newLikeArray = [...likedArray, { username: req.user.email, profilePicture: req.user.profilePicture }];
             }
 
+            // Update the review with the new like/unlike status
             Review.updateOne({ _id: currentReviewID }, { $set: { likes, likedBy: newLikeArray } })
                 .then(() => {
                     res.status(200).json({ message: "Review liked/unliked successfully", likes });
                 })
                 .catch(err => {
                     console.error(err);
-                    res.status(500).json("Internal server error");
+                    res.status(500).json({ message: "Internal server error" });
                 });
         })
         .catch(err => {
             console.error(err);
-            res.status(500).json("Internal server error");
+            res.status(500).json({ message: "Internal server error" });
         });
 };
 
+module.exports = postReviewLikes;
 
-module.exports = { postReview, getPersonalReview, getReviewById, getOtherReviews, postReviewLikes };
+const deleteReview = (req, res, next) => {
+    const reviewID = req.params.reviewID
+
+    Review.findByIdAndDelete({ _id: reviewID })
+        .then(response => {
+            if (!response) {
+                res.status(404).json({ error: "Review not found" });
+            }
+            res.status(200).json({ message: "Review deleted successfully", response });
+        })
+        .catch(err => {
+            console.error("Error deleting review:", err);
+            res.status(500).json({ error: "Failed to delete review" });
+        })
+}
+
+module.exports = { postReview, getPersonalReview, getReviewById, getOtherReviews, postReviewLikes, deleteReview };

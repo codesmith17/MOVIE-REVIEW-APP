@@ -5,6 +5,7 @@ const defaultImage =
   "https://www.reelviews.net/resources/img/default_poster.jpg"; // Update this with the path to your default image
 
 const MovieCard = ({ id, title, year, type, image }) => {
+  console.log(image);
   return (
     <Link to={`/movie-page/${id}`}>
       <div className="bg-gray-800 cursor-pointer border border-gray-700 rounded-lg shadow-lg overflow-hidden w-full sm:w-56 md:w-64 text-center transform transition-transform duration-300 hover:scale-105">

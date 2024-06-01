@@ -1,4 +1,18 @@
 const mongoose = require("mongoose");
+const replySchema = new mongoose.Schema({
+    reply: {
+        type: String,
+        required: true,
+    },
+    username: {
+        type: String,
+        required: true,
+    },
+    profilePicture: {
+        type: String,
+        required: true,
+    },
+});
 const commentSchema = new mongoose.Schema({
     reviewID: {
         type: String,
@@ -32,10 +46,7 @@ const commentSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-    replies: [{
-        type: String,
-
-    }],
+    replies: [replySchema],
     likedBy: [{
         type: String,
     }],

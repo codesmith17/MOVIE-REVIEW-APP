@@ -9,6 +9,9 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { FaStar } from "react-icons/fa";
 import ReadOnlyStarRating from "./ReadOnlyStarRating.jsx";
+import { useContext } from "react";
+import { UserContext } from "./UserContext";
+import Loading from "./Loading.jsx";
 
 const Modal = ({ isOpen, toggleModal, children }) => {
   if (!isOpen) return null;
@@ -41,7 +44,7 @@ const MoviePage = () => {
   const [userHasLiked, setUserHasLiked] = useState(false);
   const [otherReviews, setOtherReviews] = useState([]);
   const [currentReviewID, setCurrentReviewID] = useState("");
-
+  const { user } = useContext(UserContext);
   useEffect(() => {
     const fetchMovieData = () => {
       fetch(`http://www.omdbapi.com/?i=${imdbID}&plot=full&apikey=1f0a0eb9`)
@@ -58,6 +61,7 @@ const MoviePage = () => {
     };
 
     const fetchOtherReviews = (reviewID) => {
+      console.log(reviewID);
       fetch(
         `http://localhost:3000/api/review/getOtherReviews/${imdbID}/${reviewID}`,
         {
@@ -73,10 +77,9 @@ const MoviePage = () => {
           return res.json();
         })
         .then((data) => {
-          // console.log(data);
+          console.log(data.reviews);
           if (data) setOtherReviews(data.reviews);
           else return;
-          // console.log(otherReviews);
         })
         .catch((err) => {
           console.error("Error fetching other reviews:", err);
@@ -92,11 +95,18 @@ const MoviePage = () => {
         credentials: "include",
       })
         .then((res) => {
+          console.log(res);
           if (!res.ok) {
+            if (res.status === 401) {
+              console.log("hih");
+              fetchOtherReviews("");
+              return;
+            } else {
+              fetchOtherReviews("");
+              return;
+            }
+          } else {
             if (res.status === 204) {
-              return { message: "NO REVIEW FOUND" };
-            } else if (res.status === 401) {
-              // console.log("hih");
               fetchOtherReviews("");
               return;
             }
@@ -146,10 +156,12 @@ const MoviePage = () => {
     };
 
     fetchMovieData();
+    // console.log(user);
+
     fetchPersonalReview();
 
     fetchLikes();
-  }, [imdbID]);
+  }, []);
 
   const toggleModal = () => {
     fetch("http://localhost:3000/api/auth/verify/", {
@@ -166,7 +178,7 @@ const MoviePage = () => {
             toast.error(
               "UNAUTHORIZED, LOGIN WITH YOUR CREDENTIALS TO LOG, REVIEW OR RATE."
             );
-            navigate("/");
+            navigate("/login");
             throw new Error("Failed to open Write Review modal");
           } else {
             setShowModal(!showModal);
@@ -201,6 +213,7 @@ const MoviePage = () => {
       body: JSON.stringify({
         review,
         imdbID,
+        username: user.data.username,
         rating: starRatingTemp,
         likes: 0,
         dateLogged: formattedDate,
@@ -254,7 +267,7 @@ const MoviePage = () => {
           toast.error(
             "UNAUTHORIZED, LOGIN WITH YOUR CREDENTIALS TO LOG, REVIEW OR RATE."
           );
-          navigate("/");
+          navigate("/login");
 
           return;
         }
@@ -278,6 +291,10 @@ const MoviePage = () => {
   const handleDateChange = (date) => {
     setDateLogged(date);
   };
+
+  // if (!user) {
+  //   return <Loading loading={true}></Loading>;
+  // }
 
   return (
     <div className="container bg-gray-900 text-gray-100 mx-auto p-4 md:px-12 lg:px-24">
@@ -342,7 +359,7 @@ const MoviePage = () => {
               to={`/movie-page/${imdbID}/${personalReview._id}`}
               className="block mx-auto max-w-lg"
             >
-              <div className="mt-8 p-4 rounded-lg shadow-md bg-white hover:bg-gray-100 transition duration-300">
+              <div className="mt-8 p-4 rounded-lg shadow-md text-black bg-white hover:text-gray-100 hover:bg-gray-800 transition duration-300">
                 <h2 className="text-2xl font-bold mb-4 text-center">
                   Your Latest Review
                 </h2>
@@ -371,7 +388,7 @@ const MoviePage = () => {
                       readOnly={true}
                       theme="snow"
                       modules={{ toolbar: false }}
-                      className="bg-gray-100 p-2 rounded-lg max-w-64"
+                      className="bg-gray-700 text-gray-200 p-2 rounded-lg max-w-64"
                     />
                   </div>
                 </div>
@@ -380,7 +397,7 @@ const MoviePage = () => {
           )}
           <div className="mt-8">
             <h2 className="text-2xl font-bold mb-4">Other Reviews</h2>
-            {otherReviews.length > 0 ? (
+            {otherReviews && otherReviews.length > 0 ? (
               <OtherReviews reviews={otherReviews} />
             ) : (
               <p>No other reviews available.</p>

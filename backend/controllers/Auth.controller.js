@@ -1,7 +1,7 @@
 const User = require("../models/User.model.js");
 const jwt = require("jsonwebtoken");
-
-
+const nodemailer = require("nodemailer")
+const crypto = require("crypto-js");
 const verifyUser = (req, res, next) => {
     // console.log("!", req.headers)
 
@@ -97,10 +97,15 @@ const signup = (req, res) => {
         return res.status(400).json({ message: "All fields are required." });
     }
 
-    User.findOne({ email })
+    User.findOne({
+            $or: [
+                { email },
+                { username }
+            ]
+        })
         .then(user => {
             if (user) {
-                return res.status(401).json({ message: "This user already exists. Try with another email ID." });
+                return res.status(401).json({ message: "This user already exists. Try with another email ID or username." });
             }
 
             if (password !== confirmPassword) {
@@ -135,9 +140,9 @@ const getUserData = (req, res, next) => {
         });
 };
 const getOthersData = (req, res, next) => {
-    const userID = req.params.userID;
-    console.log(userID);
-    User.findOne({ _id: userID })
+    const username = req.params.username;
+    console.log(username);
+    User.findOne({ username })
         .then(user => {
             if (user) {
                 const { password, __v, ...rest } = user.toObject();
@@ -152,4 +157,113 @@ const getOthersData = (req, res, next) => {
         });
 
 }
-module.exports = { signin, verifyUser, signup, getUserData, getOthersData };
+
+
+
+
+
+const forgotPassword = (req, res, next) => {
+    const email = req.body.email;
+
+    User.findOne({ email })
+        .then(response => {
+            if (!response) {
+                return res.status(404).json({ message: "User not found" });
+            }
+
+            const username = response.username;
+            const secretKey = "krishna170902"; // Replace with your actual secret key
+            const encryptedUsername = crypto.AES.encrypt(username, secretKey).toString();
+            const link = `http://localhost:5173/reset-password/${encodeURIComponent(encryptedUsername)}`;
+
+            response.resetToken = encryptedUsername;
+            response.save()
+                .then(() => {
+                    nodemailer.createTestAccount((err, account) => {
+                        if (err) {
+                            console.error('Failed to create a testing account. ' + err.message);
+                            return res.status(500).send("Internal Server Error");
+                        }
+
+                        const transporter = nodemailer.createTransport({
+                            service: 'gmail',
+                            host: 'smtp.gmail.com',
+                            port: 587,
+                            secure: false,
+                            auth: {
+                                user: 'kanchanlatakrishna@gmail.com',
+                                pass: 'obzt ogpu yqss hfzb'
+                            }
+                        });
+
+                        const message = {
+                            from: 'KRISHNA <test.zboncak58@ethereal.email>',
+                            to: email,
+                            subject: 'RESET PASSWORD!',
+                            text: `FORGOT PASSWORD FOR MOVIE REVIEW WEBSITE`,
+                            html: `
+                                    <p style="font-family: Arial, sans-serif; font-size: 16px;">
+                                        Dear ${username},<br><br>
+                                        <b>HERE IS THE LINK TO YOUR RESET PASSWORD!</b>
+                                        <a href="${link}">RESET PASSWORD LINK</a>
+                                        <br><br>
+                                        Best regards,<br>
+                                        😘💓💓💓💓💓💓<br>
+                                        Krishna Tripathi
+                                    </p>
+                                `,
+                        };
+
+                        transporter.sendMail(message, (err, info) => {
+                            if (err) {
+                                console.error('Error occurred while sending email. ' + err.message);
+                                return res.status(500).send("Internal Server Error");
+                            }
+                            console.log('Message sent: %s', info.messageId);
+                            console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info));
+                            res.status(200).json({ message: "Reset email sent!" });
+                        });
+                    });
+                })
+                .catch(err => {
+                    console.error('Error saving user. ' + err.message);
+                    res.status(500).send("Internal Server Error");
+                });
+
+        })
+        .catch(err => {
+            console.error('Error finding user. ' + err.message);
+            res.status(500).send("Internal Server Error");
+        });
+};
+const resetPassword = (req, res, next) => {
+    const { password, username, resetToken } = req.body;
+    User.findOne({ username })
+        .then(response => {
+            if (!response) {
+                res.status(401).json({ message: "YOU ARE UNAUTHORIZED" });
+                return;
+            }
+            if (response.resetToken !== resetToken) {
+                res.status(401).json({ message: "YOU ARE UNAUTHORIZED" });
+                return;
+            }
+            if (response.password === password) {
+                res.status(400).json({ message: "TRY TO USE SOME NEW PASSWORD" });
+                return;
+            }
+            response.password = password;
+            response.resetToken = null;
+            response.save()
+                .then(() => {
+                    res.status(200).json({ message: "Password reset successfully!" });
+                })
+                .catch(err => {
+                    console.error('Error saving user. ' + err.message);
+                    res.status(500).json({ message: "Internal Server Error" });
+                });
+
+        })
+}
+
+module.exports = { signin, verifyUser, signup, getUserData, getOthersData, forgotPassword, resetPassword };

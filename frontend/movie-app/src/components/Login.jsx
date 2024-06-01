@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+// Assuming UserContext is in the same directory
 
 const Home = () => {
   const [remember, setRemember] = useState(false);
@@ -28,9 +29,7 @@ const Home = () => {
         method: "GET",
         credentials: "include",
       })
-        .then((res) => {
-          return res.json();
-        })
+        .then((res) => res.json())
         .then((res) => {
           console.log(res.message);
 
@@ -150,12 +149,12 @@ const Home = () => {
                       </label>
                     </div>
                   </div>
-                  <a
-                    href="#"
+                  <Link
+                    to={"/forgot-password"}
                     className="text-sm font-medium text-primary-500 hover:underline"
                   >
                     Forgot password?
-                  </a>
+                  </Link>
                 </div>
                 <button
                   type="submit"
@@ -164,7 +163,7 @@ const Home = () => {
                   Sign in
                 </button>
                 <p className="text-sm font-light text-gray-400 text-center">
-                  Don’t have an account yet?{" "}
+                  Don't have an account yet?{" "}
                   <Link
                     to="/signup"
                     className="font-medium text-primary-400 hover:underline"

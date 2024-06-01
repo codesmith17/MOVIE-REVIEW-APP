@@ -9,11 +9,11 @@ const OtherReviews = ({ reviews }) => {
         reviews.map((review) => (
           <div
             key={review._id}
-            className="border p-4 rounded-lg shadow-md bg-gray-100 mb-4"
+            className="border p-4 rounded-lg shadow-md bg-gray-100 mb-4 text-gray-800"
           >
             <p>
               <strong>Review By:</strong>
-              {" " + review.email}
+              {" " + review.username}
             </p>
             <p>
               <strong>Rating:</strong> {review.rating}
