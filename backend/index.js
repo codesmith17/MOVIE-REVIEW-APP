@@ -3,12 +3,13 @@ const bodyParser = require("body-parser");
 const cors = require('cors');
 const mongoose = require("mongoose");
 const app = express();
+const process = require("process")
 app.use(express.json());
 app.use(cors({
     origin: 'http://localhost:5173', // Replace with your React app's URL
     credentials: true
 }));
-const port = 3000;
+const port = process.env.PORT || 3000;
 const authRoutes = require("./routes/Auth.route");
 const reviewRoutes = require("./routes/Review.route");
 const movieRoutes = require("./routes/Movie.route");
