@@ -174,7 +174,7 @@ const forgotPassword = (req, res, next) => {
             const username = response.username;
             const secretKey = "krishna170902"; // Replace with your actual secret key
             const encryptedUsername = crypto.AES.encrypt(username, secretKey).toString();
-            const link = `http://localhost:5173/reset-password/${encodeURIComponent(encryptedUsername)}`;
+            const link = `https://movie-review-app-inky.vercel.app/reset-password/${encodeURIComponent(encryptedUsername)}`;
 
             response.resetToken = encryptedUsername;
             response.save()
