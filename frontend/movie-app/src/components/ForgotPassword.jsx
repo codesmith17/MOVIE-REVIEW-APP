@@ -21,7 +21,7 @@ const ForgotPassword = () => {
 
     // Replace with your actual API call to send reset password email
     const response = await fetch(
-      "http://localhost:3000/api/auth/forgotPassword",
+      "https://movie-review-app-do6z.onrender.com/api/auth/forgotPassword",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

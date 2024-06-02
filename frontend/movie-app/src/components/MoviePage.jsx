@@ -48,7 +48,7 @@ const MoviePage = () => {
     const fetchOtherReviews = (reviewID) => {
       console.log(reviewID);
       fetch(
-        `http://localhost:3000/api/review/getOtherReviews/${imdbID}/${reviewID}`,
+        `https://movie-review-app-do6z.onrender.com/api/review/getOtherReviews/${imdbID}/${reviewID}`,
         {
           method: "GET",
           headers: {
@@ -72,13 +72,16 @@ const MoviePage = () => {
     };
 
     const fetchPersonalReview = () => {
-      fetch(`http://localhost:3000/api/review/getPersonalReview/${imdbID}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-      })
+      fetch(
+        `https://movie-review-app-do6z.onrender.com/api/review/getPersonalReview/${imdbID}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+        }
+      )
         .then((res) => {
           console.log(res);
           if (!res.ok) {
@@ -118,13 +121,16 @@ const MoviePage = () => {
     };
 
     const fetchLikes = () => {
-      fetch(`http://localhost:3000/api/movie/getLikes/${imdbID}/likes`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-      })
+      fetch(
+        `https://movie-review-app-do6z.onrender.com/api/movie/getLikes/${imdbID}/likes`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+        }
+      )
         .then((res) => {
           // console.log("!2", res);
           return res.json();
@@ -149,7 +155,7 @@ const MoviePage = () => {
   }, []);
 
   const toggleModal = () => {
-    fetch("http://localhost:3000/api/auth/verify/", {
+    fetch("https://movie-review-app-do6z.onrender.com/api/auth/verify/", {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -189,7 +195,7 @@ const MoviePage = () => {
     const year = date.getFullYear();
 
     const formattedDate = `${day}/${month}/${year}`;
-    fetch("http://localhost:3000/api/review/postReview", {
+    fetch("https://movie-review-app-do6z.onrender.com/api/review/postReview", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -231,7 +237,7 @@ const MoviePage = () => {
   };
 
   const handleLike = () => {
-    fetch(`http://localhost:3000/api/movie/postLikes`, {
+    fetch(`https://movie-review-app-do6z.onrender.com/api/movie/postLikes`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

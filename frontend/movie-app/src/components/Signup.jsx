@@ -22,7 +22,7 @@ const Signup = () => {
       termsCheckboxRef.current.focus();
       return;
     }
-    fetch("http://localhost:3000/api/auth/signup", {
+    fetch("https://movie-review-app-do6z.onrender.com/api/auth/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ form: formData, checked: termsChecked }),

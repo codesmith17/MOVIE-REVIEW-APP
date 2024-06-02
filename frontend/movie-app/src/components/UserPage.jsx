@@ -15,7 +15,7 @@ const UserPage = () => {
       setIsLoading(true);
       try {
         const response = await fetch(
-          `http://localhost:3000/api/auth/getOthersData/${username}`,
+          `https://movie-review-app-do6z.onrender.com/api/auth/getOthersData/${username}`,
           {
             method: "GET",
             headers: {
