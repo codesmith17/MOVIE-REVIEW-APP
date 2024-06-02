@@ -161,5 +161,23 @@ const deleteReview = (req, res, next) => {
             res.status(500).json({ error: "Failed to delete review" });
         })
 }
+const editReview = (req, res, next) => {
+    const { reviewID } = req.params;
+    const { review, rating, dateLogged } = req.body;
 
-module.exports = { postReview, getPersonalReview, getReviewById, getOtherReviews, postReviewLikes, deleteReview };
+    Review.findOneAndUpdate({ _id: reviewID }, { review, rating, dateLogged }, { new: true })
+        .then((updatedReview) => {
+            if (!updatedReview) {
+                return res.status(404).json({ error: "Review not found" });
+            }
+            res.status(200).json({ updatedReview });
+        })
+        .catch((error) => {
+            console.error("Error updating review:", error);
+            res.status(500).json({ error: "Failed to update review" });
+        });
+};
+
+
+
+module.exports = { postReview, getPersonalReview, getReviewById, getOtherReviews, postReviewLikes, deleteReview, editReview };

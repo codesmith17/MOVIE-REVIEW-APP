@@ -11,23 +11,8 @@ import { FaStar } from "react-icons/fa";
 import ReadOnlyStarRating from "./ReadOnlyStarRating.jsx";
 import { useContext } from "react";
 import { UserContext } from "./UserContext";
-import Loading from "./Loading.jsx";
-
-const Modal = ({ isOpen, toggleModal, children }) => {
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div
-        className="absolute inset-0 bg-black opacity-75"
-        onClick={toggleModal}
-      ></div>
-      <div className="bg-white p-8 rounded-lg shadow-lg z-50 max-w-md w-full">
-        {children}
-      </div>
-    </div>
-  );
-};
+// import Loading from "./Loading.jsx";
+import Modal from "./Modal.jsx";
 
 const MoviePage = () => {
   const navigate = useNavigate();
@@ -406,7 +391,9 @@ const MoviePage = () => {
 
           {/* Modal for writing a review */}
           <Modal isOpen={showModal} toggleModal={toggleModal}>
-            <h2 className="text-2xl font-bold mb-4">Write a Review</h2>
+            <h2 className="text-2xl font-bold mb-4 text-gray-800">
+              Write a Review
+            </h2>
             <div className="space-y-4">
               <div>
                 <label className="block text-gray-700 font-bold mb-2">
@@ -416,7 +403,7 @@ const MoviePage = () => {
                   selected={dateLogged}
                   onChange={handleDateChange}
                   dateFormat="dd-MM-yyyy"
-                  className="p-2 border border-gray-300 rounded-lg w-full"
+                  className="text-gray-900 p-2 border border-gray-300 rounded-lg w-full"
                   maxDate={new Date()}
                   todayButton="Today"
                 />
@@ -430,12 +417,12 @@ const MoviePage = () => {
                   value={review}
                   onChange={setReview}
                   theme="snow"
-                  className="bg-gray-100 p-2 rounded-lg"
+                  className="bg-gray-100 text-gray-900 p-2 rounded-lg"
                 />
               </div>
 
               <div className="flex items-center space-x-2">
-                <p className="font-bold">Your Rating:</p>
+                <p className="font-bold text-gray-900">Your Rating:</p>
                 <div className="flex items-center space-x-1">
                   {[...Array(5)].map((star, index) => {
                     const ratingValue = index + 1;

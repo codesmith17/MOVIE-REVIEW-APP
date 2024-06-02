@@ -1,6 +1,11 @@
 import React, { useEffect, useState, useContext } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { AiFillDislike } from "react-icons/ai";
+import DatePicker from "react-datepicker";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
+import ReadOnlyStarRating from "./ReadOnlyStarRating.jsx";
+import "react-datepicker/dist/react-datepicker.css";
 import { AiFillLike } from "react-icons/ai";
 import { FaStar, FaStarHalfAlt } from "react-icons/fa";
 import { toast } from "react-toastify";
@@ -9,10 +14,14 @@ import { UserContext } from "./UserContext";
 import Loading from "./Loading";
 import { MdDelete } from "react-icons/md";
 import { FaEdit } from "react-icons/fa";
+import Modal from "./Modal";
 const SingleReview = () => {
   const { imdbID, reviewID } = useParams();
+  const [rating, setRating] = useState(0);
+  const [selectedDate, setSelectedDate] = useState(null);
   const { user, setUser } = useContext(UserContext);
   const [currentReviewLiked, setCurrentReviewLiked] = useState([]);
+  const [currentReview, setCurrentReview] = useState(null);
   const [currentLiked, setCurrentLiked] = useState([]);
   const [currentDisliked, setCurrentDisliked] = useState([]);
   const [personalReview, setPersonalReview] = useState(null);
@@ -24,10 +33,13 @@ const SingleReview = () => {
   const [replyComment, setReplyComment] = useState({});
   const [fetchedUserData, setFetchedUserData] = useState(null);
   const [commentsToFetch, setCommentsToFetch] = useState(10);
+  const [showModal, setShowModal] = useState(false);
+  const [starRatingTemp, setStarRatingTemp] = useState(0);
   const navigate = useNavigate();
   const handleEditReview = () => {
-    console.log(1);
+    setShowModal(!showModal);
   };
+  console.log(starRatingTemp);
   const fetchUserData = async (username) => {
     // setIsLoading(true);
     // console.log(username);
@@ -93,8 +105,19 @@ const SingleReview = () => {
           return;
         }
         const data = await response.json();
-        console.log(user);
+        // console.log(data);
         setPersonalReview(data.review);
+        // console.log(personalReview);
+        const dateLoggedString = data.review.dateLogged;
+        const dateLogged = new Date(
+          dateLoggedString.split("/").reverse().join("-")
+        );
+        if (!isNaN(dateLogged.getTime())) {
+          setSelectedDate(dateLogged);
+        } else {
+          console.error("Invalid date format:", dateLoggedString);
+        }
+        setCurrentReview(personalReview?.review);
         if (!user) {
           fetchUserData(data.review.username);
         }
@@ -130,12 +153,14 @@ const SingleReview = () => {
         setComments(data.data);
 
         const likedComments = data.data
-          .filter((comment) => comment.likedBy.includes(user.data.username))
-          .map((comment) => comment._id);
+          .filter((comment) => comment?.likedBy.includes(user?.data.username))
+          .map((comment) => comment?._id);
         setCurrentLiked(likedComments);
-        const dislikedComments = data.data
-          .filter((comment) => comment.dislikedBy.includes(user.data.username))
-          .map((comment) => comment._id);
+        const dislikedComments = data?.data
+          .filter((comment) =>
+            comment?.dislikedBy.includes(user?.data.username)
+          )
+          .map((comment) => comment?._id);
         setCurrentDisliked(dislikedComments);
       } else {
         console.error("Failed to fetch comments");
@@ -159,7 +184,7 @@ const SingleReview = () => {
       }),
     })
       .then((response) => {
-        console.log(response);
+        // console.log(response);
         if (!response.ok) {
           // Check if response is unauthorized due to liking own review
           if (response.status === 401) {
@@ -198,7 +223,37 @@ const SingleReview = () => {
         console.error("Error fetching movie poster from OMDB API:", error);
       });
   };
+  const handleReviewEditSubmit = async () => {
+    try {
+      const response = await fetch(
+        `http://localhost:3000/api/review/updateReview/${personalReview?._id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            review: currentReview,
+            rating: starRatingTemp,
+            dateLogged: selectedDate, // Convert date to "YYYY-MM-DD" format
+          }),
+        }
+      );
 
+      if (response.ok) {
+        const data = await response.json();
+        setPersonalReview(data.updatedReview);
+        setShowModal(false);
+        toast.success("Review updated successfully!");
+      } else {
+        toast.error("Failed to update review");
+      }
+    } catch (error) {
+      console.error("Error updating review:", error);
+      toast.error("Failed to update review");
+    }
+  };
   const handleCommentSubmit = async () => {
     const date = new Date();
     const utcDate = date.toISOString();
@@ -434,7 +489,7 @@ const SingleReview = () => {
   const getTimeAgo = (dateString) => {
     let utcDateString;
     if (dateString) utcDateString = dateString.split(",")[0].trim();
-    console.log(utcDateString);
+    // console.log(utcDateString);
     const time = new Date(utcDateString);
     const now = new Date();
 
@@ -712,6 +767,67 @@ const SingleReview = () => {
           </div>
         </div>
       </div>
+      <Modal isOpen={showModal} toggleModal={handleEditReview}>
+        <h2 className="text-2xl font-bold mb-4 text-gray-800">
+          Write a Review
+        </h2>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-gray-700 font-bold mb-2">
+              Date Logged
+            </label>
+            <DatePicker
+              selected={selectedDate}
+              // onChange={handleDateChange}
+              dateFormat="dd-MM-yyyy"
+              className="text-gray-900 p-2 border border-gray-300 rounded-lg w-full"
+              maxDate={new Date()}
+              todayButton="Today"
+            />
+          </div>
+
+          <div>
+            <label className="block text-gray-700 font-bold mb-2">
+              Your Review
+            </label>
+            <ReactQuill
+              value={currentReview}
+              onChange={setCurrentReview}
+              theme="snow"
+              className="bg-gray-100 text-gray-900 p-2 rounded-lg"
+            />
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <p className="font-bold text-gray-900">Add New Rating:</p>
+            <div className="flex items-center space-x-1">
+              {[...Array(5)].map((star, index) => {
+                const ratingValue = index + 1;
+                return (
+                  <FaStar
+                    key={index}
+                    className="cursor-pointer"
+                    color={
+                      ratingValue <= starRatingTemp ? "#ffc107" : "#e4e5e9"
+                    }
+                    size={25}
+                    onClick={() => setStarRatingTemp(ratingValue)}
+                  />
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="flex justify-end">
+            <button
+              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+              onClick={handleReviewEditSubmit}
+            >
+              Submit Review
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };
