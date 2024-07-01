@@ -9,7 +9,7 @@ export const UserProvider = ({ children }) => {
     const fetchUserData = async () => {
       try {
         const response = await fetch(
-          "https://movie-review-app-do6z.onrender.com/api/auth/getUserData",
+          "http://localhost:3000/api/auth/getUserData",
           {
             method: "GET",
             headers: {

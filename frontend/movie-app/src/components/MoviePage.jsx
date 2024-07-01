@@ -12,8 +12,11 @@ import ReadOnlyStarRating from "./ReadOnlyStarRating.jsx";
 import { useContext } from "react";
 import { UserContext } from "./UserContext";
 // import Loading from "./Loading.jsx";
+import Recommendations from "./Recommendations.jsx";
 import Modal from "./Modal.jsx";
-
+import { fetchRecommendations } from "../utils/GeminiApiReccomendations.js";
+import MovieCard from "./MovieCard.jsx";
+import NotFound from "./NotFound.jsx";
 const MoviePage = () => {
   const navigate = useNavigate();
   const { imdbID } = useParams();
@@ -24,6 +27,8 @@ const MoviePage = () => {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [review, setReview] = useState("");
+  const [recommendations, setRecommendations] = useState([]);
+
   const [personalReview, setPersonalReview] = useState(null);
   const [likes, setLikes] = useState(0);
   const [userHasLiked, setUserHasLiked] = useState(false);
@@ -35,7 +40,11 @@ const MoviePage = () => {
       fetch(`http://www.omdbapi.com/?i=${imdbID}&plot=full&apikey=1f0a0eb9`)
         .then((response) => response.json())
         .then((res) => {
+          if (res.Error === "Incorrect IMDb ID." || res.Response === "False") {
+          }
           setSingleMovieData(res);
+
+          console.log("12312313123123123", res);
           localStorage.setItem(imdbID, res.Poster);
           setLoading(false);
         })
@@ -48,7 +57,7 @@ const MoviePage = () => {
     const fetchOtherReviews = (reviewID) => {
       console.log(reviewID);
       fetch(
-        `https://movie-review-app-do6z.onrender.com/api/review/getOtherReviews/${imdbID}/${reviewID}`,
+        `http://localhost:3000/api/review/getOtherReviews/${imdbID}/${reviewID}`,
         {
           method: "GET",
           headers: {
@@ -72,16 +81,13 @@ const MoviePage = () => {
     };
 
     const fetchPersonalReview = () => {
-      fetch(
-        `https://movie-review-app-do6z.onrender.com/api/review/getPersonalReview/${imdbID}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-        }
-      )
+      fetch(`http://localhost:3000/api/review/getPersonalReview/${imdbID}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      })
         .then((res) => {
           console.log(res);
           if (!res.ok) {
@@ -104,7 +110,7 @@ const MoviePage = () => {
         })
         .then((res) => {
           // console.log(res);
-          if (res.message === "NO REVIEW FOUND") {
+          if (res?.message === "NO REVIEW FOUND") {
             setPersonalReview(null);
           } else {
             setPersonalReview(res.review);
@@ -121,16 +127,13 @@ const MoviePage = () => {
     };
 
     const fetchLikes = () => {
-      fetch(
-        `https://movie-review-app-do6z.onrender.com/api/movie/getLikes/${imdbID}/likes`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-        }
-      )
+      fetch(`http://localhost:3000/api/movie/getLikes/${imdbID}/likes`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      })
         .then((res) => {
           // console.log("!2", res);
           return res.json();
@@ -153,9 +156,31 @@ const MoviePage = () => {
 
     fetchLikes();
   }, []);
+  const [loadingRecommendations, setLoadingRecommendations] = useState(true);
 
+  useEffect(() => {
+    const getRecommendations = async () => {
+      if (singleMovieData?.Title && singleMovieData?.Year) {
+        setLoadingRecommendations(true);
+        try {
+          const recs = await fetchRecommendations(
+            imdbID,
+            singleMovieData.Title,
+            singleMovieData.Year
+          );
+          setRecommendations(recs);
+        } catch (error) {
+          console.error("Error fetching recommendations:", error);
+        } finally {
+          setLoadingRecommendations(false);
+        }
+      }
+    };
+
+    getRecommendations();
+  }, [singleMovieData, imdbID]);
   const toggleModal = () => {
-    fetch("https://movie-review-app-do6z.onrender.com/api/auth/verify/", {
+    fetch("http://localhost:3000/api/auth/verify/", {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -195,7 +220,7 @@ const MoviePage = () => {
     const year = date.getFullYear();
 
     const formattedDate = `${day}/${month}/${year}`;
-    fetch("https://movie-review-app-do6z.onrender.com/api/review/postReview", {
+    fetch("http://localhost:3000/api/review/postReview", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -237,7 +262,7 @@ const MoviePage = () => {
   };
 
   const handleLike = () => {
-    fetch(`https://movie-review-app-do6z.onrender.com/api/movie/postLikes`, {
+    fetch(`http://localhost:3000/api/movie/postLikes`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -283,9 +308,12 @@ const MoviePage = () => {
     setDateLogged(date);
   };
 
-  // if (!user) {
-  //   return <Loading loading={true}></Loading>;
-  // }
+  if (
+    singleMovieData?.Error === "Incorrect IMDb ID." ||
+    singleMovieData?.Response === "False"
+  ) {
+    return <NotFound />;
+  }
 
   return (
     <div className="container bg-gray-900 text-gray-100 mx-auto p-4 md:px-12 lg:px-24">
@@ -294,7 +322,7 @@ const MoviePage = () => {
       ) : (
         <>
           <h1 className="text-4xl font-bold mb-6 text-center">
-            {singleMovieData.Title}
+            {`${singleMovieData.Title} (${singleMovieData.Year})`}
           </h1>
           <div className="flex flex-col md:flex-row items-center md:items-start space-y-4 md:space-y-0 md:space-x-8">
             <img
@@ -394,8 +422,47 @@ const MoviePage = () => {
               <p>No other reviews available.</p>
             )}
           </div>
+          <div className="mt-8">
+            <h2 className="text-2xl font-bold mb-4">Recommended Movies</h2>
+            <div className="flex flex-wrap gap-4">
+              {loadingRecommendations ? (
+                // Pulse loading placeholders
+                Array(4)
+                  .fill()
+                  .map((_, index) => (
+                    <div
+                      key={index}
+                      className="w-56 h-80 bg-gray-800 rounded-lg animate-pulse"
+                    >
+                      <div className="w-full h-48 bg-gray-700 rounded-t-lg"></div>
+                      <div className="p-4">
+                        <div className="h-4 bg-gray-700 rounded w-3/4 mb-2"></div>
+                        <div className="h-4 bg-gray-700 rounded w-1/2"></div>
+                      </div>
+                    </div>
+                  ))
+              ) : recommendations.length > 0 ? (
+                recommendations.map((movie) => (
+                  <Link
+                    to={`/movie-page/${movie.imdbID}`}
+                    onClick={() => window.location.reload()}
+                    key={movie.imdbID}
+                  >
+                    <MovieCard
+                      id={movie.imdbID}
+                      title={movie.name}
+                      image={movie.poster}
+                      year={movie.Year}
+                      type={movie.Type}
+                    />
+                  </Link>
+                ))
+              ) : (
+                <p>No recommendations available.</p>
+              )}
+            </div>
+          </div>
 
-          {/* Modal for writing a review */}
           <Modal isOpen={showModal} toggleModal={toggleModal}>
             <h2 className="text-2xl font-bold mb-4 text-gray-800">
               Write a Review

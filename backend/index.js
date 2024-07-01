@@ -7,7 +7,7 @@ const process = require("process");
 
 app.use(express.json());
 app.use(cors({
-    origin: 'https://movie-review-app-inky.vercel.app', // Replace with your React app's URL
+    origin: 'http://localhost:5173', // Replace with your React app's URL
     credentials: true
 }));
 

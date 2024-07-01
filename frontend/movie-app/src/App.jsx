@@ -12,7 +12,7 @@ import UserPage from "./components/UserPage";
 import { UserProvider } from "./components/UserContext";
 import ForgotPassword from "./components/ForgotPassword";
 import ResetPassword from "./components/ResetPassword";
-
+import NotFound from "./components/NotFound";
 const App = () => {
   return (
     <UserProvider>
@@ -37,6 +37,7 @@ const App = () => {
             />
             <Route path="/user/:username" element={<UserPage />} />
             <Route path="/movie-page/:imdbID" element={<MoviePage />} />
+            <Route component={NotFound} />
           </Routes>
         ) : (
           <p>NO INTERNET CONNECTION</p>

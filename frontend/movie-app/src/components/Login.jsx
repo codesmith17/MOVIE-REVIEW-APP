@@ -25,13 +25,10 @@ const Home = () => {
     setRemember(savedBoxChecked);
 
     if (savedEmail && savedPassword) {
-      fetch(
-        "https://movie-review-app-do6z.onrender.com/api/auth/verify/login",
-        {
-          method: "GET",
-          credentials: "include",
-        }
-      )
+      fetch("http://localhost:3000/api/auth/verify/login", {
+        method: "GET",
+        credentials: "include",
+      })
         .then((res) => res.json())
         .then((res) => {
           console.log(res.message);
@@ -55,7 +52,7 @@ const Home = () => {
   const onSubmit = (e) => {
     e.preventDefault();
 
-    fetch("https://movie-review-app-do6z.onrender.com/api/auth/signin", {
+    fetch("http://localhost:3000/api/auth/signin", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(formData),

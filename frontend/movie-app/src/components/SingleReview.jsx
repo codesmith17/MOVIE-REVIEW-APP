@@ -46,7 +46,7 @@ const SingleReview = () => {
 
     try {
       const response = await fetch(
-        `https://movie-review-app-do6z.onrender.com/api/auth/getOthersData/${username}`,
+        `http://localhost:3000/api/auth/getOthersData/${username}`,
         {
           method: "GET",
           headers: {
@@ -88,7 +88,7 @@ const SingleReview = () => {
   const fetchSingleReview = async () => {
     try {
       const response = await fetch(
-        `https://movie-review-app-do6z.onrender.com/api/review/getReviewById/${imdbID}/${reviewID}`,
+        `http://localhost:3000/api/review/getReviewById/${imdbID}/${reviewID}`,
         {
           method: "GET",
           headers: {
@@ -133,7 +133,7 @@ const SingleReview = () => {
   const fetchComments = async () => {
     try {
       const response = await fetch(
-        `https://movie-review-app-do6z.onrender.com/api/comment/getCommentsByReviewId/${reviewID}?limit=${commentsToFetch}`,
+        `http://localhost:3000/api/comment/getCommentsByReviewId/${reviewID}?limit=${commentsToFetch}`,
         {
           method: "GET",
           headers: {
@@ -173,19 +173,16 @@ const SingleReview = () => {
   const handleLike = () => {
     if (!personalReview) return;
 
-    fetch(
-      "https://movie-review-app-do6z.onrender.com/api/review/postReviewLikes",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          currentReviewID: personalReview._id, // Using personalReview._id to get the current review ID
-        }),
-      }
-    )
+    fetch("http://localhost:3000/api/review/postReviewLikes", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify({
+        currentReviewID: personalReview._id, // Using personalReview._id to get the current review ID
+      }),
+    })
       .then((response) => {
         // console.log(response);
         if (!response.ok) {
@@ -229,7 +226,7 @@ const SingleReview = () => {
   const handleReviewEditSubmit = async () => {
     try {
       const response = await fetch(
-        `https://movie-review-app-do6z.onrender.com/api/review/updateReview/${personalReview?._id}`,
+        `http://localhost:3000/api/review/updateReview/${personalReview?._id}`,
         {
           method: "PUT",
           headers: {
@@ -265,7 +262,7 @@ const SingleReview = () => {
 
     try {
       const response = await fetch(
-        `https://movie-review-app-do6z.onrender.com/api/comment/postComment`,
+        `http://localhost:3000/api/comment/postComment`,
         {
           method: "POST",
           headers: {
@@ -299,7 +296,7 @@ const SingleReview = () => {
   const handleCommentLike = async (commentID) => {
     try {
       const response = await fetch(
-        `https://movie-review-app-do6z.onrender.com/api/comment/likeComment`,
+        `http://localhost:3000/api/comment/likeComment`,
         {
           method: "POST",
           headers: {
@@ -344,7 +341,7 @@ const SingleReview = () => {
   const handleCommentDislike = async (commentID) => {
     try {
       const response = await fetch(
-        `https://movie-review-app-do6z.onrender.com/api/comment/dislikeComment`,
+        `http://localhost:3000/api/comment/dislikeComment`,
         {
           method: "POST",
           headers: {
@@ -393,7 +390,7 @@ const SingleReview = () => {
     }
     try {
       const response = await fetch(
-        `https://movie-review-app-do6z.onrender.com/api/comment/postReply`,
+        `http://localhost:3000/api/comment/postReply`,
         {
           method: "POST",
           headers: {
@@ -435,7 +432,7 @@ const SingleReview = () => {
   const fetchMoreComments = async () => {
     try {
       const response = await fetch(
-        `https://movie-review-app-do6z.onrender.com/api/comment/getCommentsByReviewId/${reviewID}?limit=${commentsToFetch}`,
+        `http://localhost:3000/api/comment/getCommentsByReviewId/${reviewID}?limit=${commentsToFetch}`,
         {
           method: "GET",
           headers: {
@@ -468,7 +465,7 @@ const SingleReview = () => {
   const deleteReview = async () => {
     try {
       const response = await fetch(
-        `https://movie-review-app-do6z.onrender.com/api/review/deleteReview/${reviewID}`,
+        `http://localhost:3000/api/review/deleteReview/${reviewID}`,
         {
           method: "DELETE",
           headers: {
