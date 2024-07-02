@@ -1,4 +1,5 @@
 const Movie = require("../models/Movie.model");
+const { fetchRecommendations, trendingMovies } = require("../utils/GeminiApiReccomendations")
 const getLikes = (req, res, next) => {
     const imdbID = req.params.imdbID;
     const email = req.user ? req.user.email : null;
@@ -24,6 +25,28 @@ const getLikes = (req, res, next) => {
             return;
         });
 
+}
+const getRecommendations = async(req, res, next) => {
+    const { imdbID, title, year } = req.params;
+    try {
+        const recoMovies = await fetchRecommendations(imdbID, title, year);
+        res.status(200).json({ message: "SUCCESSFULLY FETCHED RECOMMENDATIONS", recoMovies });
+        return;
+    } catch {
+        console.error("ERROR OCCURED WHILE FETCHING RECOMMENDATIONS");
+        res.status(404).json({ message: "UNABLE TO FETCH RECOMMENDATIONS" });
+    }
+}
+const getTrending = async(req, res, next) => {
+
+    try {
+        const trendMovies = await trendingMovies();
+        res.status(200).json({ message: "SUCCESSFULLY FETCHED TRENDING", trendMovies });
+        return;
+    } catch {
+        console.error("ERROR OCCURED WHILE FETCHING TRENDING");
+        res.status(404).json({ message: "UNABLE TO FETCH TREDNING" });
+    }
 }
 const postLikes = (req, res, next) => {
     const imdbID = req.body.imdbID;
@@ -88,4 +111,4 @@ const postLikes = (req, res, next) => {
 };
 
 
-module.exports = { postLikes, getLikes };
+module.exports = { postLikes, getLikes, getRecommendations, getTrending };

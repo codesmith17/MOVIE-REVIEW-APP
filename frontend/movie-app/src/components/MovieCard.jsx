@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 const defaultImage =
   "https://www.reelviews.net/resources/img/default_poster.jpg";
 
-const MovieCard = ({ id, title, year, type, image }) => {
+const MovieCard = ({ id, title, year, type, image, key }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
 
@@ -30,7 +30,12 @@ const MovieCard = ({ id, title, year, type, image }) => {
           <div className="w-full h-48 sm:h-56 md:h-64 bg-gray-700 animate-pulse"></div>
         ) : (
           <img
-            src={imageError ? defaultImage : image}
+            src={
+              imageError ||
+              image === "https://cdn.watchmode.com/posters/blank.gif"
+                ? defaultImage
+                : image
+            }
             alt={title}
             className="w-full h-48 sm:h-56 md:h-64 object-cover"
           />

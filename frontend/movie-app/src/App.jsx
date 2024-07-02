@@ -36,7 +36,7 @@ const App = () => {
               element={<ResetPassword />}
             />
             <Route path="/user/:username" element={<UserPage />} />
-            <Route path="/movie-page/:imdbID" element={<MoviePage />} />
+            <Route path="/movie-page/:watchmodeID" element={<MoviePage />} />
             <Route component={NotFound} />
           </Routes>
         ) : (

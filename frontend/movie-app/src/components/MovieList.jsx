@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import MovieCard from "./MovieCard";
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import Loading from "./Loading";
 
 const MovieList = () => {
@@ -20,14 +20,14 @@ const MovieList = () => {
     }
 
     fetch(
-      `https://www.omdbapi.com/?apikey=1f0a0eb9&s=${searchText}&page=${
-        currentPage + 1
-      }`
+      `https://api.watchmode.com/v1/autocomplete-search/?apiKey=${
+        import.meta.env.VITE_WATCHMODE_API_KEY
+      }&search_value=${searchText}&search_type=1`
     )
       .then((res) => res.json())
       .then((response) => {
-        if (response.Search) {
-          setMovieData((prevData) => [...prevData, ...response.Search]);
+        if (response.results) {
+          setMovieData((prevData) => [...prevData, ...response.results]);
           searchParams.set("page", currentPage + 1);
           window.history.replaceState(null, "", "?" + searchParams.toString());
         }
@@ -49,12 +49,17 @@ const MovieList = () => {
         return;
       }
 
-      fetch(`https://www.omdbapi.com/?apikey=1f0a0eb9&s=${searchText}&page=1`)
+      fetch(
+        `https://api.watchmode.com/v1/autocomplete-search/?apiKey=${
+          import.meta.env.VITE_WATCHMODE_API_KEY
+        }&search_value=${searchText}&search_type=2`
+      )
         .then((res) => res.json())
         .then((response) => {
-          if (response.Search) {
-            setMovieData(response.Search);
-            setTotalResults(parseInt(response.totalResults, 10));
+          console.log(response);
+          if (response.results) {
+            setMovieData(response.results);
+            setTotalResults(response.results.length);
           }
           setLoading(false);
         })
@@ -75,14 +80,17 @@ const MovieList = () => {
             <Loading loading={loading}></Loading>
           ) : movieData.length > 0 ? (
             movieData.map((movie) => (
-              <MovieCard
-                key={movie.imdbID}
-                id={movie.imdbID}
-                title={movie.Title}
-                year={movie.Year}
-                type={movie.Type}
-                image={movie.Poster}
-              />
+              <Link to={`/movie-page/${movie.imdb_id}`}>
+                <MovieCard
+                  key={movie.id}
+                  id={movie.id || movie.imdb_id}
+                  title={movie.name}
+                  year={movie.year}
+                  type={movie.type}
+                  image={movie.image_url}
+                />
+                <p>HELLO</p>
+              </Link>
             ))
           ) : (
             <p className="text-gray-300 text-center">
@@ -90,7 +98,7 @@ const MovieList = () => {
             </p>
           )}
         </div>
-        {movieData.length > 0 && (
+        {/* {movieData.length > 0 && (
           <div className="flex justify-center mt-6">
             <button
               onClick={loadMoreMovies}
@@ -99,7 +107,7 @@ const MovieList = () => {
               Load More
             </button>
           </div>
-        )}
+        )} */}
       </div>
     </div>
   );

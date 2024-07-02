@@ -7,19 +7,20 @@ import { TiHeartFullOutline } from "react-icons/ti";
 import OtherReviews from "./OtherReviews";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { FaStar } from "react-icons/fa";
+import { FaStar, FaFilm, FaPlay } from "react-icons/fa";
 import ReadOnlyStarRating from "./ReadOnlyStarRating.jsx";
 import { useContext } from "react";
 import { UserContext } from "./UserContext";
 // import Loading from "./Loading.jsx";
-import Recommendations from "./Recommendations.jsx";
+
 import Modal from "./Modal.jsx";
 import { fetchRecommendations } from "../utils/GeminiApiReccomendations.js";
 import MovieCard from "./MovieCard.jsx";
 import NotFound from "./NotFound.jsx";
 const MoviePage = () => {
   const navigate = useNavigate();
-  const { imdbID } = useParams();
+  const { watchmodeID } = useParams();
+  // console.log(useParams());
   const [dateLogged, setDateLogged] = useState(null);
   const [starRating, setStarRating] = useState(0);
   const [starRatingTemp, setStarRatingTemp] = useState(0);
@@ -34,17 +35,23 @@ const MoviePage = () => {
   const [userHasLiked, setUserHasLiked] = useState(false);
   const [otherReviews, setOtherReviews] = useState([]);
   const [currentReviewID, setCurrentReviewID] = useState("");
+  const [imdbID, setImdbID] = useState("");
   const { user } = useContext(UserContext);
   useEffect(() => {
     const fetchMovieData = () => {
-      fetch(`http://www.omdbapi.com/?i=${imdbID}&plot=full&apikey=1f0a0eb9`)
+      // console.log(watchmodeID);
+      fetch(
+        `https://api.watchmode.com/v1/title/${watchmodeID}/details/?apiKey=5lDOaemgU9N05xbuoa1n6WHFGkok3EAkQ9qyefIQ`
+      )
         .then((response) => response.json())
         .then((res) => {
+          console.log(res);
+          setImdbID(res.imdb_id);
           if (res.Error === "Incorrect IMDb ID." || res.Response === "False") {
           }
           setSingleMovieData(res);
 
-          console.log("12312313123123123", res);
+          // console.log("12312313123123123", res);
           localStorage.setItem(imdbID, res.Poster);
           setLoading(false);
         })
@@ -160,13 +167,13 @@ const MoviePage = () => {
 
   useEffect(() => {
     const getRecommendations = async () => {
-      if (singleMovieData?.Title && singleMovieData?.Year) {
+      if (singleMovieData?.title && singleMovieData?.year) {
         setLoadingRecommendations(true);
         try {
           const recs = await fetchRecommendations(
             imdbID,
-            singleMovieData.Title,
-            singleMovieData.Year
+            singleMovieData.title,
+            singleMovieData.year
           );
           setRecommendations(recs);
         } catch (error) {
@@ -316,216 +323,262 @@ const MoviePage = () => {
   }
 
   return (
-    <div className="container bg-gray-900 text-gray-100 mx-auto p-4 md:px-12 lg:px-24">
-      {loading ? (
-        <p className="text-center">Loading...</p>
-      ) : (
-        <>
-          <h1 className="text-4xl font-bold mb-6 text-center">
-            {`${singleMovieData.Title} (${singleMovieData.Year})`}
-          </h1>
-          <div className="flex flex-col md:flex-row items-center md:items-start space-y-4 md:space-y-0 md:space-x-8">
-            <img
-              src={singleMovieData.Poster}
-              alt={singleMovieData.Title}
-              className="w-full max-w-xs md:w-1/3 rounded-lg shadow-md"
-            />
-            <div className="flex-1 space-y-4">
-              <p>
-                <strong>Runtime:</strong> {singleMovieData.Runtime}
-              </p>
-              <p>
-                <strong>Genre:</strong> {singleMovieData.Genre}
-              </p>
-              <p>
-                <strong>Director:</strong> {singleMovieData.Director}
-              </p>
-              <p>
-                <strong>Plot:</strong> {singleMovieData.Plot}
-              </p>
-              <p>
-                <strong>Average Rating: </strong>
-                {singleMovieData.imdbRating / 2}
-              </p>
-              <div className="flex items-center space-x-2">
-                <p className="font-bold">Your Rating:</p>
-                <ReadOnlyStarRating rating={starRating} />
-                {!personalReview && <p>YOU HAVEN'T RATED IT YET</p>}
-              </div>
-              <div className="flex items-center mt-4">
-                <button
-                  className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                  onClick={toggleModal}
-                >
-                  Write a Review
-                </button>
-                <div className="flex items-center ml-4">
+    <div className="bg-gray-900 text-gray-100 min-h-screen relative overflow-hidden">
+      <div
+        className="absolute top-0 left-0 w-full h-full bg-cover bg-center opacity-20 pointer-events-none"
+        style={{
+          backgroundImage: `url(${singleMovieData.backdrop})`,
+          backgroundAttachment: "fixed",
+          zIndex: 0,
+        }}
+      ></div>
+
+      <div
+        className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-transparent via-gray-900 to-gray-900 pointer-events-none"
+        style={{ zIndex: 1 }}
+      ></div>
+      <div className="container mx-auto px-4 py-8 max-w-6xl relative z-10">
+        {loading ? (
+          <p className="text-center text-2xl">Loading...</p>
+        ) : (
+          <>
+            <h1 className="text-4xl md:text-5xl font-bold mb-8 text-center text-yellow-400">
+              {`${singleMovieData?.title} (${singleMovieData?.year})`}
+            </h1>
+            <div className="flex flex-col md:flex-row items-center md:items-start space-y-8 md:space-y-0 md:space-x-12">
+              <img
+                src={singleMovieData?.poster}
+                alt={singleMovieData?.title}
+                className="w-full max-w-sm md:w-1/3 rounded-lg shadow-lg"
+              />
+              <div className="flex-1 space-y-6">
+                <p className="text-lg">
+                  <span className="font-semibold text-yellow-400">
+                    Runtime:
+                  </span>{" "}
+                  {singleMovieData.runtime_minutes} minutes
+                </p>
+                <p className="text-lg">
+                  <span className="font-semibold text-yellow-400">Genre:</span>{" "}
+                  {singleMovieData?.genre_names
+                    ? singleMovieData.genre_names.join(", ")
+                    : "N/A"}
+                </p>
+                <p className="text-lg">
+                  <span className="font-semibold text-yellow-400">Plot:</span>{" "}
+                  {singleMovieData.plot_overview}
+                </p>
+
+                <p className="text-lg">
+                  <span className="font-semibold text-yellow-400">
+                    User Rating:
+                  </span>{" "}
+                  {singleMovieData.user_rating / 2}
+                </p>
+                <div className="flex items-center space-x-4">
+                  <p className="font-semibold text-yellow-400">Your Rating:</p>
+                  <ReadOnlyStarRating rating={starRating} />
+                  {!personalReview && (
+                    <p className="text-gray-400 italic">
+                      You haven't rated it yet
+                    </p>
+                  )}
+                </div>
+                {singleMovieData.trailer ? (
+                  <a
+                    href={singleMovieData.trailer}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition duration-300"
+                  >
+                    <FaPlay className="mr-2" /> Watch Trailer
+                  </a>
+                ) : (
+                  <div className="inline-flex items-center bg-gray-700 text-gray-300 font-bold py-2 px-4 rounded">
+                    <FaFilm className="mr-2" /> No Trailer Available
+                  </div>
+                )}
+                <div className="flex items-center mt-6 space-x-4 flex-wrap">
                   <button
-                    className={`flex items-center ${
-                      userHasLiked ? "text-red-500 " : "text-gray-600"
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 mb-4 md:mb-0"
+                    onClick={toggleModal}
+                  >
+                    Write a Review
+                  </button>
+                  <button
+                    className={`flex items-center bg-gray-800 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-full transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 ${
+                      userHasLiked ? "text-red-500" : "text-gray-300"
                     }`}
                     onClick={handleLike}
                   >
-                    <TiHeartFullOutline className="mr-1" size={25} />
+                    <TiHeartFullOutline className="mr-2" size={25} />
                     {likes}
                   </button>
                 </div>
               </div>
             </div>
-          </div>
-          {personalReview && (
-            <Link
-              to={`/movie-page/${imdbID}/${personalReview._id}`}
-              className="block mx-auto max-w-lg"
-            >
-              <div className="mt-8 p-4 rounded-lg shadow-md text-black bg-white hover:text-gray-100 hover:bg-gray-800 transition duration-300">
-                <h2 className="text-2xl font-bold mb-4 text-center">
-                  Your Latest Review
-                </h2>
-                <div className="flex items-start space-x-4">
-                  <div className="flex-shrink-0">
+
+            {personalReview && (
+              <Link
+                to={`/movie-page/${imdbID}/${personalReview._id}`}
+                className="block mx-auto max-w-3xl mt-12"
+              >
+                <div className="p-6 rounded-lg shadow-xl bg-gray-800 hover:bg-gray-700 transition duration-300">
+                  <h2 className="text-3xl font-bold mb-6 text-center text-yellow-400">
+                    Your Latest Review
+                  </h2>
+                  <div className="flex items-start space-x-6">
                     <img
                       src={singleMovieData.Poster}
                       alt={`${singleMovieData.Title} poster`}
-                      className="rounded-lg shadow-md w-32"
+                      className="rounded-lg shadow-md w-40"
                     />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center mb-2 space-x-2">
-                      <ReadOnlyStarRating rating={personalReview.rating} />
-                      <span className="text-gray-600">
-                        {personalReview.dateLogged}
-                      </span>
+                    <div className="flex-1">
+                      <div className="flex items-center mb-4 space-x-4">
+                        <ReadOnlyStarRating rating={personalReview.rating} />
+                        <span className="text-gray-400">
+                          {personalReview.dateLogged}
+                        </span>
+                      </div>
+                      <ReactQuill
+                        value={
+                          personalReview.review.substring(
+                            0,
+                            personalReview.review.length * 0.2
+                          ) + "...."
+                        }
+                        readOnly={true}
+                        theme="snow"
+                        modules={{ toolbar: false }}
+                        className="bg-gray-700 text-gray-200 p-4 rounded-lg"
+                      />
                     </div>
-                    <ReactQuill
-                      value={
-                        personalReview.review.substring(
-                          0,
-                          personalReview.review.length * 0.2
-                        ) + "...."
-                      }
-                      readOnly={true}
-                      theme="snow"
-                      modules={{ toolbar: false }}
-                      className="bg-gray-700 text-gray-200 p-2 rounded-lg max-w-64"
-                    />
                   </div>
                 </div>
-              </div>
-            </Link>
-          )}
-          <div className="mt-8">
-            <h2 className="text-2xl font-bold mb-4">Other Reviews</h2>
-            {otherReviews && otherReviews.length > 0 ? (
-              <OtherReviews reviews={otherReviews} />
-            ) : (
-              <p>No other reviews available.</p>
+              </Link>
             )}
-          </div>
-          <div className="mt-8">
-            <h2 className="text-2xl font-bold mb-4">Recommended Movies</h2>
-            <div className="flex flex-wrap gap-4">
-              {loadingRecommendations ? (
-                // Pulse loading placeholders
-                Array(4)
-                  .fill()
-                  .map((_, index) => (
-                    <div
-                      key={index}
-                      className="w-56 h-80 bg-gray-800 rounded-lg animate-pulse"
-                    >
-                      <div className="w-full h-48 bg-gray-700 rounded-t-lg"></div>
-                      <div className="p-4">
-                        <div className="h-4 bg-gray-700 rounded w-3/4 mb-2"></div>
-                        <div className="h-4 bg-gray-700 rounded w-1/2"></div>
-                      </div>
-                    </div>
-                  ))
-              ) : recommendations.length > 0 ? (
-                recommendations.map((movie) => (
-                  <Link
-                    to={`/movie-page/${movie.imdbID}`}
-                    onClick={() => window.location.reload()}
-                    key={movie.imdbID}
-                  >
-                    <MovieCard
-                      id={movie.imdbID}
-                      title={movie.name}
-                      image={movie.poster}
-                      year={movie.Year}
-                      type={movie.Type}
-                    />
-                  </Link>
-                ))
+
+            <div className="mt-16">
+              <h2 className="text-3xl font-bold mb-8 text-center text-yellow-400">
+                Other Reviews
+              </h2>
+              {otherReviews && otherReviews.length > 0 ? (
+                <OtherReviews reviews={otherReviews} />
               ) : (
-                <p>No recommendations available.</p>
+                <p className="text-center text-gray-400">
+                  No other reviews available.
+                </p>
               )}
             </div>
-          </div>
 
-          <Modal isOpen={showModal} toggleModal={toggleModal}>
-            <h2 className="text-2xl font-bold mb-4 text-gray-800">
-              Write a Review
-            </h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-gray-700 font-bold mb-2">
-                  Date Logged
-                </label>
-                <DatePicker
-                  selected={dateLogged}
-                  onChange={handleDateChange}
-                  dateFormat="dd-MM-yyyy"
-                  className="text-gray-900 p-2 border border-gray-300 rounded-lg w-full"
-                  maxDate={new Date()}
-                  todayButton="Today"
-                />
-              </div>
-
-              <div>
-                <label className="block text-gray-700 font-bold mb-2">
-                  Your Review
-                </label>
-                <ReactQuill
-                  value={review}
-                  onChange={setReview}
-                  theme="snow"
-                  className="bg-gray-100 text-gray-900 p-2 rounded-lg"
-                />
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <p className="font-bold text-gray-900">Your Rating:</p>
-                <div className="flex items-center space-x-1">
-                  {[...Array(5)].map((star, index) => {
-                    const ratingValue = index + 1;
-                    return (
-                      <FaStar
+            <div className="mt-16">
+              <h2 className="text-3xl font-bold mb-8 text-center text-yellow-400">
+                Recommended Movies
+              </h2>
+              <div className="flex flex-wrap justify-center gap-8">
+                {loadingRecommendations ? (
+                  Array(4)
+                    .fill()
+                    .map((_, index) => (
+                      <div
                         key={index}
-                        className="cursor-pointer"
-                        color={
-                          ratingValue <= starRatingTemp ? "#ffc107" : "#e4e5e9"
-                        }
-                        size={25}
-                        onClick={() => setStarRatingTemp(ratingValue)}
+                        className="w-56 h-80 bg-gray-800 rounded-lg animate-pulse"
+                      >
+                        <div className="w-full h-48 bg-gray-700 rounded-t-lg"></div>
+                        <div className="p-4">
+                          <div className="h-4 bg-gray-700 rounded w-3/4 mb-2"></div>
+                          <div className="h-4 bg-gray-700 rounded w-1/2"></div>
+                        </div>
+                      </div>
+                    ))
+                ) : recommendations.length > 0 ? (
+                  recommendations.map((movie) => (
+                    <Link
+                      to={`/movie-page/${movie.imdbID}`}
+                      onClick={() => window.location.reload()}
+                      key={movie.imdbID}
+                      className="transform hover:scale-105 transition duration-300"
+                    >
+                      <MovieCard
+                        id={movie.imdbID}
+                        title={movie.name}
+                        image={movie.poster}
+                        year={movie.Year}
+                        type={movie.Type}
                       />
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="flex justify-end">
-                <button
-                  className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                  onClick={handleReviewSubmit}
-                >
-                  Submit Review
-                </button>
+                    </Link>
+                  ))
+                ) : (
+                  <p className="text-center text-gray-400">
+                    No recommendations available.
+                  </p>
+                )}
               </div>
             </div>
-          </Modal>
-        </>
-      )}
+          </>
+        )}
+      </div>
+      <Modal isOpen={showModal} toggleModal={toggleModal}>
+        <h2 className="text-2xl font-bold mb-4 text-gray-800">
+          Write a Review
+        </h2>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-gray-700 font-bold mb-2">
+              Date Logged
+            </label>
+            <DatePicker
+              selected={dateLogged}
+              onChange={handleDateChange}
+              dateFormat="dd-MM-yyyy"
+              className="text-gray-900 p-2 border border-gray-300 rounded-lg w-full"
+              maxDate={new Date()}
+              todayButton="Today"
+            />
+          </div>
+
+          <div>
+            <label className="block text-gray-700 font-bold mb-2">
+              Your Review
+            </label>
+            <ReactQuill
+              value={review}
+              onChange={setReview}
+              theme="snow"
+              className="bg-gray-100 text-gray-900 p-2 rounded-lg"
+            />
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <p className="font-bold text-gray-900">Your Rating:</p>
+            <div className="flex items-center space-x-1">
+              {[...Array(5)].map((star, index) => {
+                const ratingValue = index + 1;
+                return (
+                  <FaStar
+                    key={index}
+                    className="cursor-pointer"
+                    color={
+                      ratingValue <= starRatingTemp ? "#ffc107" : "#e4e5e9"
+                    }
+                    size={25}
+                    onClick={() => setStarRatingTemp(ratingValue)}
+                  />
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="flex justify-end">
+            <button
+              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+              onClick={handleReviewSubmit}
+            >
+              Submit Review
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

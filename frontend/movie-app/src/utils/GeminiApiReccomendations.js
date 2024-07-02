@@ -1,6 +1,11 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const genAI = new GoogleGenerativeAI("AIzaSyAfFJIE6VNGi4479FOqu2XAGsoOZJNIICU");
+const GOOGLE_API_KEY =
+    import.meta.env.VITE_GEMINI_API_KEY;
+const OMDB_API_KEY =
+    import.meta.env.VITE_OMDB_API_KEY_2;
+
+const genAI = new GoogleGenerativeAI(GOOGLE_API_KEY);
 
 export const fetchRecommendations = async(imdbID, title, year) => {
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
@@ -26,7 +31,7 @@ export const fetchRecommendations = async(imdbID, title, year) => {
 
 async function fetchMovieDetails(title) {
     try {
-        const response = await fetch(`http://www.omdbapi.com/?t=${encodeURIComponent(title)}&apikey=1f0a0eb9`);
+        const response = await fetch(`http://www.omdbapi.com/?t=${encodeURIComponent(title)}&apikey=${OMDB_API_KEY}`);
         const data = await response.json();
 
         if (data.Response === "True") {
@@ -45,3 +50,6 @@ async function fetchMovieDetails(title) {
         return null;
     }
 }
+
+
+// fetchRecommendations("tt0086250", "Scarface", "1980");

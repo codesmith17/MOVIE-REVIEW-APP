@@ -209,7 +209,11 @@ const SingleReview = () => {
   };
 
   const handlePosterError = () => {
-    fetch(`http://www.omdbapi.com/?i=${imdbID}&plot=full&apikey=1f0a0eb9`)
+    fetch(
+      `http://www.omdbapi.com/?i=${imdbID}&plot=full&apikey=${
+        import.meta.env.VITE_OMDB_API_KEY_2
+      }`
+    )
       .then((response) => response.json())
       .then((data) => {
         if (data.Poster) {
