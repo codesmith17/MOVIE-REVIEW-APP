@@ -24,7 +24,12 @@ const MovieCard = ({ id, title, year, type, image, key }) => {
   }, [image]);
 
   return (
-    <Link to={`/movie-page/${id}`}>
+    <Link
+      to={`/movie-page/${id}`}
+      onClick={() => {
+        window.location.reload();
+      }}
+    >
       <div className="bg-gray-800 cursor-pointer border border-gray-700 rounded-lg shadow-lg overflow-hidden w-full sm:w-56 md:w-64 text-center transform transition-transform duration-300 hover:scale-105">
         {isLoading ? (
           <div className="w-full h-48 sm:h-56 md:h-64 bg-gray-700 animate-pulse"></div>

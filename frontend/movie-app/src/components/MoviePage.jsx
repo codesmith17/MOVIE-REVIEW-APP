@@ -29,7 +29,7 @@ const MoviePage = () => {
   const [showModal, setShowModal] = useState(false);
   const [review, setReview] = useState("");
   const [recommendations, setRecommendations] = useState([]);
-
+  const [recoIDs, setRecoIDs] = useState([]);
   const [personalReview, setPersonalReview] = useState(null);
   const [likes, setLikes] = useState(0);
   const [userHasLiked, setUserHasLiked] = useState(false);
@@ -50,7 +50,9 @@ const MoviePage = () => {
           if (res.Error === "Incorrect IMDb ID." || res.Response === "False") {
           }
           setSingleMovieData(res);
-
+          setRecoIDs(
+            res.similar_titles.slice(0, Math.min(5, res.similar_titles.length))
+          );
           // console.log("12312313123123123", res);
           localStorage.setItem(imdbID, res.Poster);
           setLoading(false);
@@ -166,16 +168,44 @@ const MoviePage = () => {
   const [loadingRecommendations, setLoadingRecommendations] = useState(true);
 
   useEffect(() => {
+    const getDataFromAPI = async (singleID) => {
+      try {
+        const singleData = await fetch(
+          `https://api.watchmode.com/v1/title/${singleID}/details/?apiKey=5lDOaemgU9N05xbuoa1n6WHFGkok3EAkQ9qyefIQ`
+        );
+        const data = await singleData.json();
+        if (
+          data.success === false ||
+          data.statusCode === 404 ||
+          data.statusMessage === "Title not found"
+        ) {
+          console.warn(`Movie not found: ${singleID}`);
+          return null;
+        }
+        return {
+          year: data.year,
+          type: data.type,
+          name: data.title,
+          id: data.id,
+          imdbID: data.imdb_id,
+          poster: data.poster !== null ? data.poster : null,
+        };
+      } catch (error) {
+        console.error("Error fetching movie details:", error);
+        return null;
+      }
+    };
+
     const getRecommendations = async () => {
       if (singleMovieData?.title && singleMovieData?.year) {
         setLoadingRecommendations(true);
         try {
-          const recs = await fetchRecommendations(
-            imdbID,
-            singleMovieData.title,
-            singleMovieData.year
+          const data = await Promise.all(
+            recoIDs.map((singleID) => getDataFromAPI(singleID))
           );
-          setRecommendations(recs);
+          const filteredData = data.filter((item) => item !== null);
+          console.log(filteredData);
+          setRecommendations(filteredData);
         } catch (error) {
           console.error("Error fetching recommendations:", error);
         } finally {
@@ -316,8 +346,8 @@ const MoviePage = () => {
   };
 
   if (
-    singleMovieData?.Error === "Incorrect IMDb ID." ||
-    singleMovieData?.Response === "False"
+    singleMovieData?.errorMessage === "Over plan quota on this API Key." ||
+    singleMovieData?.success === false
   ) {
     return <NotFound />;
   }
@@ -349,7 +379,7 @@ const MoviePage = () => {
               <img
                 src={singleMovieData?.poster}
                 alt={singleMovieData?.title}
-                className="w-full max-w-sm md:w-1/3 rounded-lg shadow-lg"
+                className="w-full max-w-xs md:w-1/4 rounded-lg shadow-lg"
               />
               <div className="flex-1 space-y-6">
                 <p className="text-lg">
@@ -429,8 +459,8 @@ const MoviePage = () => {
                   </h2>
                   <div className="flex items-start space-x-6">
                     <img
-                      src={singleMovieData.Poster}
-                      alt={`${singleMovieData.Title} poster`}
+                      src={singleMovieData.poster}
+                      alt={`${singleMovieData.title} poster`}
                       className="rounded-lg shadow-md w-40"
                     />
                     <div className="flex-1">
@@ -493,20 +523,13 @@ const MoviePage = () => {
                     ))
                 ) : recommendations.length > 0 ? (
                   recommendations.map((movie) => (
-                    <Link
-                      to={`/movie-page/${movie.imdbID}`}
-                      onClick={() => window.location.reload()}
-                      key={movie.imdbID}
-                      className="transform hover:scale-105 transition duration-300"
-                    >
-                      <MovieCard
-                        id={movie.imdbID}
-                        title={movie.name}
-                        image={movie.poster}
-                        year={movie.Year}
-                        type={movie.Type}
-                      />
-                    </Link>
+                    <MovieCard
+                      id={movie.id}
+                      title={movie.name}
+                      image={movie.poster}
+                      year={movie.year}
+                      type={movie.type}
+                    />
                   ))
                 ) : (
                   <p className="text-center text-gray-400">
