@@ -2,6 +2,46 @@ const User = require("../models/User.model.js");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer")
 const crypto = require("crypto-js");
+const { bucket } = require("../utils/firebaseAdmin");
+
+const uploadProfilePicture = async(req, res, next) => {
+    const file = req.file;
+
+    if (!file) {
+        return next(createError(400, 'No file uploaded'));
+    }
+
+    try {
+        const filename = new Date().getTime() + '-' + file.originalname;
+        const fileRef = bucket.file('profile-pictures/' + filename);
+        await fileRef.save(file.buffer, {
+            metadata: { contentType: file.mimetype },
+        });
+        const imageURL = await fileRef.getSignedUrl({
+            action: 'read',
+            expires: '03-01-2500',
+        });
+
+        const userId = req.user.id; // Ensure you have the user ID from the Firebase token
+
+        // Update the user's profile picture URL in the database
+        const updatedUser = await User.findByIdAndUpdate(
+            userId, { profilePicture: imageURL[0] }, { new: true }
+        );
+
+        if (!updatedUser) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        res.status(200).json({ profilePictureUrl: imageURL[0] });
+    } catch (error) {
+        console.error("Error uploading profile picture:", error);
+        return next(createError(502, error.message));
+    }
+};
+
+// module.exports = {};
+
 const verifyUser = (req, res, next) => {
     // console.log("!", req.headers)
 
@@ -266,4 +306,4 @@ const resetPassword = (req, res, next) => {
         })
 }
 
-module.exports = { signin, verifyUser, signup, getUserData, getOthersData, forgotPassword, resetPassword };
+module.exports = { signin, verifyUser, signup, getUserData, getOthersData, forgotPassword, resetPassword, uploadProfilePicture };

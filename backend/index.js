@@ -17,7 +17,10 @@ const reviewRoutes = require("./routes/Review.route");
 const movieRoutes = require("./routes/Movie.route");
 const commentRoutes = require("./routes/Comment.route");
 
-mongoose.connect("mongodb+srv://krishna170902:44AueKgqHr2eDL8o@clusteracademind.ub2btq6.mongodb.net/movies-app?retryWrites=true&w=majority&appName=ClusterAcademind")
+mongoose.connect("mongodb://localhost:27017/movies-app", {
+
+        family: 4,
+    })
     .then(result => {
         console.log("CONNECTED");
         // console.log(process.env);

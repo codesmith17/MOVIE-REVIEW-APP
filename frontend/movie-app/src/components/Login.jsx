@@ -1,14 +1,17 @@
-import React, { useEffect, useState, useContext } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-// Assuming UserContext is in the same directory
+import { useSelector, useDispatch } from "react-redux";
+import { setUser } from "./features/user/userSlice"; // Adjust the path as needed
 
 const Home = () => {
   const [remember, setRemember] = useState(false);
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [boxChecked, setBoxChecked] = useState(false);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const user = useSelector((state) => state.user.data);
 
   const handleRememberCredentials = (e) => {
     setRemember(e.target.checked);
@@ -35,6 +38,7 @@ const Home = () => {
 
           const currentTime = Math.floor(Date.now() / 1000);
           if (res.message === "User verified." && res.data.exp > currentTime) {
+            dispatch(setUser(res.data));
             toast.success("WELCOME!!!");
             navigate("/upcoming");
           }
@@ -43,7 +47,7 @@ const Home = () => {
     } else {
       console.log("No saved credentials found.");
     }
-  }, [navigate]);
+  }, [navigate, dispatch]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.id]: e.target.value.trim() });
@@ -62,6 +66,7 @@ const Home = () => {
         console.log(response);
         if (response && response.message === "Authentication successful.") {
           document.cookie = `access_token=${response.user.access_token}; path=/`;
+          dispatch(setUser(response.user));
 
           if (remember) {
             localStorage.setItem("email", formData.email);

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
@@ -9,18 +9,23 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { FaStar, FaFilm, FaPlay } from "react-icons/fa";
 import ReadOnlyStarRating from "./ReadOnlyStarRating.jsx";
-import { useContext } from "react";
-import { UserContext } from "./UserContext";
-// import Loading from "./Loading.jsx";
-
+// import { useContext } from "react";
+// import { UserContext } from "./UserContext";
+import { useSelector } from "react-redux";
 import Modal from "./Modal.jsx";
-import { fetchRecommendations } from "../utils/GeminiApiReccomendations.js";
 import MovieCard from "./MovieCard.jsx";
 import NotFound from "./NotFound.jsx";
+
+const TMDB_API_KEY = "YOUR_TMDB_API_KEY";
+
 const MoviePage = () => {
+  const male_image =
+    "https://w7.pngwing.com/pngs/328/335/png-transparent-icon-user-male-avatar-business-person-profile.png";
+  const female_image =
+    "https://w7.pngwing.com/pngs/869/174/png-transparent-icon-user-female-avatar-business-person-profile-thumbnail.png";
+
   const navigate = useNavigate();
   const { watchmodeID } = useParams();
-  // console.log(useParams());
   const [dateLogged, setDateLogged] = useState(null);
   const [starRating, setStarRating] = useState(0);
   const [starRatingTemp, setStarRatingTemp] = useState(0);
@@ -29,32 +34,61 @@ const MoviePage = () => {
   const [showModal, setShowModal] = useState(false);
   const [review, setReview] = useState("");
   const [recommendations, setRecommendations] = useState([]);
-  const [recoIDs, setRecoIDs] = useState([]);
   const [personalReview, setPersonalReview] = useState(null);
   const [likes, setLikes] = useState(0);
   const [userHasLiked, setUserHasLiked] = useState(false);
   const [otherReviews, setOtherReviews] = useState([]);
   const [currentReviewID, setCurrentReviewID] = useState("");
   const [imdbID, setImdbID] = useState("");
-  const { user } = useContext(UserContext);
+  const [cast, setCast] = useState([]);
+  const [crew, setCrew] = useState([]);
+  // const { user } = useContext(UserContext);
+  const user = useSelector((state) => state.user.data);
+  const [loadingRecommendations, setLoadingRecommendations] = useState(true);
+  const fetchCastData = useCallback(() => {
+    if (singleMovieData?.id) {
+      fetch(
+        `https://api.themoviedb.org/3/movie/${singleMovieData.id}/credits?language=en-US`,
+        {
+          method: "GET",
+          headers: {
+            accept: "application/json",
+            Authorization:
+              "Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI2ZmY0Mjc2MDc2MmUyZWVmZjY1ZTgwNDE5MmVhZDk3MSIsIm5iZiI6MTcyMDAyNjYyNC40OTUzNDEsInN1YiI6IjY1OWQ1OWZjYjZjZmYxMDE0Y2Y3NTdjZSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.7k2PEFKq60uUNx9SvvbJPr6UhNOu8RiKkbWYSbYhCd8",
+          },
+        }
+      )
+        .then((res) => res.json())
+        .then((data) => {
+          console.log(data.crew);
+          setCast(data.cast.slice(0, 10));
+          setCrew(data.crew.slice(0, 10));
+        })
+        .catch((err) => console.error("Error fetching cast:", err));
+    }
+  }, [singleMovieData?.id]);
+
+  useEffect(() => {
+    fetchCastData();
+  }, [fetchCastData]);
   useEffect(() => {
     const fetchMovieData = () => {
-      // console.log(watchmodeID);
       fetch(
-        `https://api.watchmode.com/v1/title/${watchmodeID}/details/?apiKey=5lDOaemgU9N05xbuoa1n6WHFGkok3EAkQ9qyefIQ`
+        `https://api.themoviedb.org/3/movie/${watchmodeID}?language=en-US`,
+        {
+          method: "GET",
+          headers: {
+            accept: "application/json",
+            Authorization:
+              "bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjNmU5MzM1Yjg5Y2E3NWE3MGJjY2UxYzcyYmZkMDQ4ZCIsInN1YiI6IjYzYmVkN2FiODU4Njc4MDBmMDhjZjI3NiIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.sQHes_rn51wewxY_7nZLxGssnd67J8ieiLOIo2Bg_FI",
+          },
+        }
       )
         .then((response) => response.json())
         .then((res) => {
           console.log(res);
           setImdbID(res.imdb_id);
-          if (res.Error === "Incorrect IMDb ID." || res.Response === "False") {
-          }
           setSingleMovieData(res);
-          setRecoIDs(
-            res.similar_titles.slice(0, Math.min(5, res.similar_titles.length))
-          );
-          // console.log("12312313123123123", res);
-          localStorage.setItem(imdbID, res.Poster);
           setLoading(false);
         })
         .catch((err) => {
@@ -64,7 +98,6 @@ const MoviePage = () => {
     };
 
     const fetchOtherReviews = (reviewID) => {
-      console.log(reviewID);
       fetch(
         `http://localhost:3000/api/review/getOtherReviews/${imdbID}/${reviewID}`,
         {
@@ -75,14 +108,11 @@ const MoviePage = () => {
         }
       )
         .then((res) => {
-          // console.log(res);
           if (res.status === 204) return;
           return res.json();
         })
         .then((data) => {
-          console.log(data.reviews);
           if (data) setOtherReviews(data.reviews);
-          else return;
         })
         .catch((err) => {
           console.error("Error fetching other reviews:", err);
@@ -98,10 +128,8 @@ const MoviePage = () => {
         credentials: "include",
       })
         .then((res) => {
-          console.log(res);
           if (!res.ok) {
             if (res.status === 401) {
-              console.log("hih");
               fetchOtherReviews("");
               return;
             } else {
@@ -114,11 +142,9 @@ const MoviePage = () => {
               return;
             }
           }
-
           return res.json();
         })
         .then((res) => {
-          // console.log(res);
           if (res?.message === "NO REVIEW FOUND") {
             setPersonalReview(null);
           } else {
@@ -131,7 +157,7 @@ const MoviePage = () => {
         })
         .catch((err) => {
           console.log(err);
-          setPersonalReview(null); // Handle error case
+          setPersonalReview(null);
         });
     };
 
@@ -143,14 +169,9 @@ const MoviePage = () => {
         },
         credentials: "include",
       })
-        .then((res) => {
-          // console.log("!2", res);
-          return res.json();
-        })
+        .then((res) => res.json())
         .then((data) => {
-          // console.log("123123", data);
           setLikes(data.likes);
-          // console.log(data.liked);
           setUserHasLiked(data.liked);
         })
         .catch((err) => {
@@ -159,53 +180,30 @@ const MoviePage = () => {
     };
 
     fetchMovieData();
-    // console.log(user);
-
     fetchPersonalReview();
-
     fetchLikes();
-  }, []);
-  const [loadingRecommendations, setLoadingRecommendations] = useState(true);
+  }, [watchmodeID, imdbID]);
 
   useEffect(() => {
-    const getDataFromAPI = async (singleID) => {
-      try {
-        const singleData = await fetch(
-          `https://api.watchmode.com/v1/title/${singleID}/details/?apiKey=5lDOaemgU9N05xbuoa1n6WHFGkok3EAkQ9qyefIQ`
-        );
-        const data = await singleData.json();
-        if (
-          data.success === false ||
-          data.statusCode === 404 ||
-          data.statusMessage === "Title not found"
-        ) {
-          console.warn(`Movie not found: ${singleID}`);
-          return null;
-        }
-        return {
-          year: data.year,
-          type: data.type,
-          name: data.title,
-          id: data.id,
-          imdbID: data.imdb_id,
-          poster: data.poster !== null ? data.poster : null,
-        };
-      } catch (error) {
-        console.error("Error fetching movie details:", error);
-        return null;
-      }
-    };
-
     const getRecommendations = async () => {
-      if (singleMovieData?.title && singleMovieData?.year) {
+      if (singleMovieData?.id) {
         setLoadingRecommendations(true);
         try {
-          const data = await Promise.all(
-            recoIDs.map((singleID) => getDataFromAPI(singleID))
+          const response = await fetch(
+            `https://api.themoviedb.org/3/movie/${singleMovieData.id}/recommendations?language=en-US&page=1`,
+            {
+              method: "GET",
+              headers: {
+                accept: "application/json",
+                Authorization:
+                  "bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjNmU5MzM1Yjg5Y2E3NWE3MGJjY2UxYzcyYmZkMDQ4ZCIsInN1YiI6IjYzYmVkN2FiODU4Njc4MDBmMDhjZjI3NiIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.sQHes_rn51wewxY_7nZLxGssnd67J8ieiLOIo2Bg_FI",
+              },
+            }
           );
-          const filteredData = data.filter((item) => item !== null);
-          console.log(filteredData);
-          setRecommendations(filteredData);
+
+          const data = await response.json();
+          console.log(data);
+          setRecommendations(data.results.slice(0, 5));
         } catch (error) {
           console.error("Error fetching recommendations:", error);
         } finally {
@@ -215,7 +213,8 @@ const MoviePage = () => {
     };
 
     getRecommendations();
-  }, [singleMovieData, imdbID]);
+  }, [singleMovieData]);
+
   const toggleModal = () => {
     fetch("http://localhost:3000/api/auth/verify/", {
       method: "GET",
@@ -251,12 +250,10 @@ const MoviePage = () => {
       return;
     }
     const date = new Date(dateLogged);
+    const formattedDate = `${date.getDate()}/${
+      date.getMonth() + 1
+    }/${date.getFullYear()}`;
 
-    const day = date.getDate();
-    const month = date.getMonth() + 1;
-    const year = date.getFullYear();
-
-    const formattedDate = `${day}/${month}/${year}`;
     fetch("http://localhost:3000/api/review/postReview", {
       method: "POST",
       headers: {
@@ -283,10 +280,10 @@ const MoviePage = () => {
           toast.success("YOUR REVIEW HAS BEEN POSTED");
           setPersonalReview({
             review,
-            rating: starRatingTemp, // Update the state with starRatingTemp
+            rating: starRatingTemp,
             dateLogged: formattedDate,
           });
-          setShowModal(false); // Close the modal after submitting
+          setShowModal(false);
           navigate(`/movie-page/${imdbID}`);
         } else {
           toast.error(res.message);
@@ -309,10 +306,7 @@ const MoviePage = () => {
       }),
       credentials: "include",
     })
-      .then((res) => {
-        console.log("like", res);
-        return res.json();
-      })
+      .then((res) => res.json())
       .then((data) => {
         if (
           data.message === "UNAUTHORIZED, LOGIN AGAIN WITH YOUR CREDENTIALS"
@@ -321,7 +315,6 @@ const MoviePage = () => {
             "UNAUTHORIZED, LOGIN WITH YOUR CREDENTIALS TO LOG, REVIEW OR RATE."
           );
           navigate("/login");
-
           return;
         }
         if (data.message === "Like removed successfully.") {
@@ -340,15 +333,11 @@ const MoviePage = () => {
       });
   };
 
-  // Handle change in date logged input
   const handleDateChange = (date) => {
     setDateLogged(date);
   };
 
-  if (
-    singleMovieData?.errorMessage === "Over plan quota on this API Key." ||
-    singleMovieData?.success === false
-  ) {
+  if (singleMovieData?.success === false) {
     return <NotFound />;
   }
 
@@ -357,7 +346,7 @@ const MoviePage = () => {
       <div
         className="absolute top-0 left-0 w-full h-full bg-cover bg-center opacity-20 pointer-events-none"
         style={{
-          backgroundImage: `url(${singleMovieData.backdrop})`,
+          backgroundImage: `url(https://image.tmdb.org/t/p/original${singleMovieData.backdrop_path})`,
           backgroundAttachment: "fixed",
           zIndex: 0,
         }}
@@ -373,11 +362,13 @@ const MoviePage = () => {
         ) : (
           <>
             <h1 className="text-4xl md:text-5xl font-bold mb-8 text-center text-yellow-400">
-              {`${singleMovieData?.title} (${singleMovieData?.year})`}
+              {`${singleMovieData?.title} (${new Date(
+                singleMovieData?.release_date
+              ).getFullYear()})`}
             </h1>
             <div className="flex flex-col md:flex-row items-center md:items-start space-y-8 md:space-y-0 md:space-x-12">
               <img
-                src={singleMovieData?.poster}
+                src={`https://image.tmdb.org/t/p/w500${singleMovieData?.poster_path}`}
                 alt={singleMovieData?.title}
                 className="w-full max-w-xs md:w-1/4 rounded-lg shadow-lg"
               />
@@ -386,24 +377,25 @@ const MoviePage = () => {
                   <span className="font-semibold text-yellow-400">
                     Runtime:
                   </span>{" "}
-                  {singleMovieData.runtime_minutes} minutes
+                  {singleMovieData.runtime} minutes
                 </p>
                 <p className="text-lg">
                   <span className="font-semibold text-yellow-400">Genre:</span>{" "}
-                  {singleMovieData?.genre_names
-                    ? singleMovieData.genre_names.join(", ")
+                  {singleMovieData?.genres
+                    ? singleMovieData.genres
+                        .map((genre) => genre.name)
+                        .join(", ")
                     : "N/A"}
                 </p>
                 <p className="text-lg">
                   <span className="font-semibold text-yellow-400">Plot:</span>{" "}
-                  {singleMovieData.plot_overview}
+                  {singleMovieData.overview}
                 </p>
-
                 <p className="text-lg">
                   <span className="font-semibold text-yellow-400">
                     User Rating:
                   </span>{" "}
-                  {singleMovieData.user_rating / 2}
+                  {singleMovieData.vote_average}
                 </p>
                 <div className="flex items-center space-x-4">
                   <p className="font-semibold text-yellow-400">Your Rating:</p>
@@ -414,9 +406,9 @@ const MoviePage = () => {
                     </p>
                   )}
                 </div>
-                {singleMovieData.trailer ? (
+                {singleMovieData.videos?.results.length > 0 ? (
                   <a
-                    href={singleMovieData.trailer}
+                    href={`https://www.youtube.com/watch?v=${singleMovieData.videos.results[0].key}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition duration-300"
@@ -459,7 +451,7 @@ const MoviePage = () => {
                   </h2>
                   <div className="flex items-start space-x-6">
                     <img
-                      src={singleMovieData.poster}
+                      src={`https://image.tmdb.org/t/p/w200${singleMovieData.poster_path}`}
                       alt={`${singleMovieData.title} poster`}
                       className="rounded-lg shadow-md w-40"
                     />
@@ -488,6 +480,58 @@ const MoviePage = () => {
               </Link>
             )}
 
+            <div className="mt-16">
+              <h2 className="text-3xl font-bold mb-8 text-center text-yellow-400">
+                Top Cast
+              </h2>
+              <div className="flex flex-wrap justify-center gap-4">
+                {cast.map((actor) => (
+                  <Link to={`/celebrity/${actor.id}`}>
+                    <div key={actor.id} className="w-32 text-center">
+                      <img
+                        src={`https://image.tmdb.org/t/p/w200${actor.profile_path}`}
+                        alt={actor.name}
+                        className="w-32 h-32 rounded-lg object-cover mx-auto mb-2"
+                        onError={(e) => {
+                          e.target.onerror = null;
+
+                          e.target.src =
+                            actor.gender === 1 ? female_image : male_image;
+                        }}
+                      />
+                      <p className="font-semibold text-sm">{actor.name}</p>
+                      <p className="text-gray-400 text-xs">{actor.character}</p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+            <div className="mt-16">
+              <h2 className="text-3xl font-bold mb-8 text-center text-yellow-400">
+                Crew
+              </h2>
+              <div className="flex flex-wrap justify-center gap-4">
+                {crew.map((crewMember) => (
+                  <Link to={`/celebrity/${crewMember.id}`}>
+                    <div key={crewMember.id} className="w-32 text-center">
+                      <img
+                        src={`https://image.tmdb.org/t/p/w200${crewMember.profile_path}`}
+                        alt={crewMember.name}
+                        className="w-32 h-32 rounded-lg object-cover mx-auto mb-2"
+                        onError={(e) => {
+                          e.target.onerror = null;
+
+                          e.target.src =
+                            crewMember.gender === 1 ? female_image : male_image;
+                        }}
+                      />
+                      <p className="font-semibold text-sm">{crewMember.name}</p>
+                      <p className="text-gray-400 text-xs">{crewMember.job}</p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
             <div className="mt-16">
               <h2 className="text-3xl font-bold mb-8 text-center text-yellow-400">
                 Other Reviews
@@ -524,11 +568,12 @@ const MoviePage = () => {
                 ) : recommendations.length > 0 ? (
                   recommendations.map((movie) => (
                     <MovieCard
+                      key={movie.id}
                       id={movie.id}
-                      title={movie.name}
-                      image={movie.poster}
-                      year={movie.year}
-                      type={movie.type}
+                      title={movie.title}
+                      image={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
+                      year={new Date(movie.release_date).getFullYear()}
+                      type="movie"
                     />
                   ))
                 ) : (

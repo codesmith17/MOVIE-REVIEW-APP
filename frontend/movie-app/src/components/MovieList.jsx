@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import MovieCard from "./MovieCard";
 import { Link, useLocation } from "react-router-dom";
 import Loading from "./Loading";
@@ -6,30 +6,33 @@ import Loading from "./Loading";
 const MovieList = () => {
   const [movieData, setMovieData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [totalResults, setTotalResults] = useState(0);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
   let location = useLocation();
+  const observer = useRef();
 
-  const loadMoreMovies = () => {
-    const searchParams = new URLSearchParams(location.search);
-    const searchText = searchParams.get("searchText");
-    const currentPage = parseInt(searchParams.get("page") || "1");
-
-    const totalPages = Math.ceil(totalResults / 12);
-    if (currentPage >= totalPages) {
-      return;
-    }
-
+  const fetchMovies = useCallback((searchText, pageNum) => {
+    setLoading(true);
     fetch(
-      `https://api.watchmode.com/v1/autocomplete-search/?apiKey=${
-        import.meta.env.VITE_WATCHMODE_API_KEY
-      }&search_value=${searchText}&search_type=1`
+      `https://api.themoviedb.org/3/search/multi?query=${searchText}&page=${pageNum}`,
+      {
+        method: "GET",
+        headers: {
+          accept: "application/json",
+          Authorization:
+            "Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjNmU5MzM1Yjg5Y2E3NWE3MGJjY2UxYzcyYmZkMDQ4ZCIsInN1YiI6IjYzYmVkN2FiODU4Njc4MDBmMDhjZjI3NiIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.sQHes_rn51wewxY_7nZLxGssnd67J8ieiLOIo2Bg_FI",
+        },
+      }
     )
       .then((res) => res.json())
       .then((response) => {
+        console.log(response);
         if (response.results) {
-          setMovieData((prevData) => [...prevData, ...response.results]);
-          searchParams.set("page", currentPage + 1);
-          window.history.replaceState(null, "", "?" + searchParams.toString());
+          const filteredResults = response.results.filter(
+            (item) => item.media_type === "movie" || item.media_type === "tv"
+          );
+          setMovieData((prevData) => [...prevData, ...filteredResults]);
+          setHasMore(response.page < response.total_pages);
         }
         setLoading(false);
       })
@@ -37,77 +40,74 @@ const MovieList = () => {
         console.error("Error fetching movies:", error);
         setLoading(false);
       });
-  };
+  }, []);
 
   useEffect(() => {
-    const fetchMovies = () => {
+    const searchParams = new URLSearchParams(location.search);
+    const searchText = searchParams.get("searchText");
+
+    if (!searchText) {
+      setLoading(false);
+      return;
+    }
+
+    setMovieData([]);
+    setPage(1);
+    fetchMovies(searchText, 1);
+  }, [location.search, fetchMovies]);
+
+  const lastMovieElementRef = useCallback(
+    (node) => {
+      if (loading) return;
+      if (observer.current) observer.current.disconnect();
+      observer.current = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && hasMore) {
+          setPage((prevPage) => prevPage + 1);
+        }
+      });
+      if (node) observer.current.observe(node);
+    },
+    [loading, hasMore]
+  );
+
+  useEffect(() => {
+    if (page > 1) {
       const searchParams = new URLSearchParams(location.search);
       const searchText = searchParams.get("searchText");
-
-      if (!searchText) {
-        setLoading(false);
-        return;
-      }
-
-      fetch(
-        `https://api.watchmode.com/v1/autocomplete-search/?apiKey=${
-          import.meta.env.VITE_WATCHMODE_API_KEY
-        }&search_value=${searchText}&search_type=2`
-      )
-        .then((res) => res.json())
-        .then((response) => {
-          console.log(response);
-          if (response.results) {
-            setMovieData(response.results);
-            setTotalResults(response.results.length);
-          }
-          setLoading(false);
-        })
-        .catch((error) => {
-          console.error("Error fetching movies:", error);
-          setLoading(false);
-        });
-    };
-
-    fetchMovies();
-  }, [location.search]);
+      fetchMovies(searchText, page);
+    }
+  }, [page, fetchMovies, location.search]);
 
   return (
     <div className="bg-gray-900 min-h-screen">
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {loading ? (
-            <Loading loading={loading}></Loading>
-          ) : movieData.length > 0 ? (
-            movieData.map((movie) => (
-              <Link to={`/movie-page/${movie.imdb_id}`}>
-                <MovieCard
-                  key={movie.id}
-                  id={movie.id || movie.imdb_id}
-                  title={movie.name}
-                  year={movie.year}
-                  type={movie.type}
-                  image={movie.image_url}
-                />
-                <p>HELLO</p>
-              </Link>
-            ))
-          ) : (
-            <p className="text-gray-300 text-center">
-              No movies/shows/games found
-            </p>
-          )}
-        </div>
-        {/* {movieData.length > 0 && (
-          <div className="flex justify-center mt-6">
-            <button
-              onClick={loadMoreMovies}
-              className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          {movieData.map((item, index) => (
+            <Link
+              key={item.id || index}
+              to={`/${item.media_type}-page/${item.id}`}
+              ref={index === movieData.length - 1 ? lastMovieElementRef : null}
             >
-              Load More
-            </button>
-          </div>
-        )} */}
+              <MovieCard
+                id={item.id}
+                title={item.media_type === "movie" ? item.title : item.name}
+                year={
+                  item.media_type === "movie"
+                    ? item.release_date?.substring(0, 4)
+                    : item.first_air_date?.substring(0, 4)
+                }
+                type={item.media_type}
+                image={`https://image.tmdb.org/t/p/w500${item.poster_path}`}
+              />
+            </Link>
+          ))}
+        </div>
+        {loading && <Loading loading={loading} />}
+        {!loading && movieData.length === 0 && (
+          <p className="text-gray-300 text-center">
+            No movies or TV shows found
+          </p>
+        )}
       </div>
     </div>
   );

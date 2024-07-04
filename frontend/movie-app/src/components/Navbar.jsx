@@ -1,11 +1,39 @@
-import React, { useContext, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { UserContext } from "./UserContext";
+import { useSelector, useDispatch } from "react-redux";
+import { setUser, logout } from "./features/user/userSlice";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
-  const { user, setUser } = useContext(UserContext);
+  const dispatch = useDispatch();
+
+  const user = useSelector((state) => state.user.data);
+  console.log(user);
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const response = await fetch(
+          "http://localhost:3000/api/auth/getUserData",
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            credentials: "include",
+          }
+        );
+        if (response.ok) {
+          const data = await response.json();
+          dispatch(setUser(data));
+        }
+      } catch (error) {
+        console.error("Failed to fetch user data:", error);
+      }
+    };
+
+    fetchUserData();
+  }, [dispatch]);
 
   const searchHandler = (e) => {
     e.preventDefault();
@@ -17,11 +45,9 @@ const Navbar = () => {
   };
 
   const handleLogout = () => {
-    // Perform logout actions here, e.g., clear localStorage, setUser(null)
     document.cookie =
       "access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-
-    setUser(null);
+    dispatch(logout());
     navigate("/login");
   };
 

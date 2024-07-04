@@ -9,13 +9,13 @@ import { ToastContainer } from "react-toastify";
 import HomePage from "./components/HomePage";
 import "react-toastify/dist/ReactToastify.css";
 import UserPage from "./components/UserPage";
-import { UserProvider } from "./components/UserContext";
+// import { UserProvider } from "./components/UserContext";
 import ForgotPassword from "./components/ForgotPassword";
 import ResetPassword from "./components/ResetPassword";
 import NotFound from "./components/NotFound";
 const App = () => {
   return (
-    <UserProvider>
+    <>
       <ToastContainer />
       <BrowserRouter>
         <Navbar />
@@ -43,7 +43,7 @@ const App = () => {
           <p>NO INTERNET CONNECTION</p>
         )}
       </BrowserRouter>
-    </UserProvider>
+    </>
   );
 };
 

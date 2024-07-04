@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { AiFillDislike } from "react-icons/ai";
 import DatePicker from "react-datepicker";
@@ -10,7 +10,8 @@ import { AiFillLike } from "react-icons/ai";
 import { FaStar, FaStarHalfAlt } from "react-icons/fa";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { UserContext } from "./UserContext";
+// import { UserContext } from "./UserContext";
+import { useSelector } from "react-redux";
 import Loading from "./Loading";
 import { MdDelete } from "react-icons/md";
 import { FaEdit } from "react-icons/fa";
@@ -19,7 +20,8 @@ const SingleReview = () => {
   const { imdbID, reviewID } = useParams();
   const [rating, setRating] = useState(0);
   const [selectedDate, setSelectedDate] = useState(null);
-  const { user, setUser } = useContext(UserContext);
+  // const { user, setUser } = useContext(UserContext);
+  const user = useSelector((state) => state.user.data);
   const [currentReviewLiked, setCurrentReviewLiked] = useState([]);
   const [currentReview, setCurrentReview] = useState(null);
   const [currentLiked, setCurrentLiked] = useState([]);
