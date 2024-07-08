@@ -9,6 +9,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { FaStar, FaFilm, FaPlay } from "react-icons/fa";
 import ReadOnlyStarRating from "./ReadOnlyStarRating.jsx";
+import MovieVideos from "./MovieVideos.jsx";
 // import { useContext } from "react";
 // import { UserContext } from "./UserContext";
 import { useSelector } from "react-redux";
@@ -17,20 +18,48 @@ import MovieCard from "./MovieCard.jsx";
 import NotFound from "./NotFound.jsx";
 
 const TMDB_API_KEY = "YOUR_TMDB_API_KEY";
-
+import ActorCard from "./ActorCard.jsx";
 const MoviePage = () => {
   const male_image =
     "https://w7.pngwing.com/pngs/328/335/png-transparent-icon-user-male-avatar-business-person-profile.png";
   const female_image =
     "https://w7.pngwing.com/pngs/869/174/png-transparent-icon-user-female-avatar-business-person-profile-thumbnail.png";
-
   const navigate = useNavigate();
+  const LoadingSkeleton = () => (
+    <div className="animate-pulse">
+      <div className="h-8 bg-gray-700 rounded w-3/4 mx-auto mb-8"></div>
+      <div className="flex flex-col md:flex-row items-center md:items-start space-y-8 md:space-y-0 md:space-x-12">
+        <div className="w-full max-w-xs md:w-1/4 h-96 bg-gray-700 rounded-lg"></div>
+        <div className="flex-1 space-y-6">
+          <div className="h-4 bg-gray-700 rounded w-3/4"></div>
+          <div className="h-4 bg-gray-700 rounded w-1/2"></div>
+          <div className="h-20 bg-gray-700 rounded"></div>
+          <div className="h-4 bg-gray-700 rounded w-1/4"></div>
+          <div className="h-10 bg-gray-700 rounded w-1/3"></div>
+        </div>
+      </div>
+      <div className="mt-16">
+        <div className="h-8 bg-gray-700 rounded w-1/2 mx-auto mb-8"></div>
+        <div className="flex flex-wrap justify-center gap-4">
+          {[...Array(5)].map((_, index) => (
+            <div key={index} className="w-32">
+              <div className="w-32 h-32 bg-gray-700 rounded-lg mb-2"></div>
+              <div className="h-4 bg-gray-700 rounded w-3/4 mx-auto"></div>
+              <div className="h-3 bg-gray-700 rounded w-1/2 mx-auto mt-1"></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+  const [videos, setVideos] = useState([]);
   const { watchmodeID } = useParams();
   const [dateLogged, setDateLogged] = useState(null);
   const [starRating, setStarRating] = useState(0);
   const [starRatingTemp, setStarRatingTemp] = useState(0);
   const [singleMovieData, setSingleMovieData] = useState({});
   const [loading, setLoading] = useState(true);
+  const [videoLoading, setVideoLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [review, setReview] = useState("");
   const [recommendations, setRecommendations] = useState([]);
@@ -90,6 +119,7 @@ const MoviePage = () => {
           setImdbID(res.imdb_id);
           setSingleMovieData(res);
           setLoading(false);
+          fetchVideos(); // Call fetchVideos after movie data is fetched
         })
         .catch((err) => {
           console.error(err);
@@ -178,10 +208,36 @@ const MoviePage = () => {
           console.error("Error fetching likes:", err);
         });
     };
-
+    const fetchVideos = async () => {
+      setVideoLoading(true);
+      try {
+        const response = await fetch(
+          `https://api.themoviedb.org/3/movie/${watchmodeID}/videos?language=en-US`,
+          {
+            method: "GET",
+            headers: {
+              accept: "application/json",
+              Authorization:
+                "Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjNmU5MzM1Yjg5Y2E3NWE3MGJjY2UxYzcyYmZkMDQ4ZCIsInN1YiI6IjYzYmVkN2FiODU4Njc4MDBmMDhjZjI3NiIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.sQHes_rn51wewxY_7nZLxGssnd67J8ieiLOIo2Bg_FI",
+            },
+          }
+        );
+        const data = await response.json();
+        console.log(data);
+        setVideos(
+          data.results && data.results.slice(Math.max(data.results.length - 6, 0)) || []
+        );
+        console.log(videos);
+        setVideoLoading(false);
+      } catch (err) {
+        console.error(err);
+        setVideoLoading(false);
+      }
+    };
     fetchMovieData();
     fetchPersonalReview();
     fetchLikes();
+    // fetchVideos();
   }, [watchmodeID, imdbID]);
 
   useEffect(() => {
@@ -202,8 +258,9 @@ const MoviePage = () => {
           );
 
           const data = await response.json();
-          console.log(data);
+          console.log("123123123", data);
           setRecommendations(data.results.slice(0, 5));
+          consol;
         } catch (error) {
           console.error("Error fetching recommendations:", error);
         } finally {
@@ -358,7 +415,7 @@ const MoviePage = () => {
       ></div>
       <div className="container mx-auto px-4 py-8 max-w-6xl relative z-10">
         {loading ? (
-          <p className="text-center text-2xl">Loading...</p>
+          <LoadingSkeleton />
         ) : (
           <>
             <h1 className="text-4xl md:text-5xl font-bold mb-8 text-center text-yellow-400">
@@ -406,20 +463,7 @@ const MoviePage = () => {
                     </p>
                   )}
                 </div>
-                {singleMovieData.videos?.results.length > 0 ? (
-                  <a
-                    href={`https://www.youtube.com/watch?v=${singleMovieData.videos.results[0].key}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition duration-300"
-                  >
-                    <FaPlay className="mr-2" /> Watch Trailer
-                  </a>
-                ) : (
-                  <div className="inline-flex items-center bg-gray-700 text-gray-300 font-bold py-2 px-4 rounded">
-                    <FaFilm className="mr-2" /> No Trailer Available
-                  </div>
-                )}
+
                 <div className="flex items-center mt-6 space-x-4 flex-wrap">
                   <button
                     className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 mb-4 md:mb-0"
@@ -479,30 +523,28 @@ const MoviePage = () => {
                 </div>
               </Link>
             )}
-
+            {videos.length > 0 && (
+              <div className="mt-16">
+                <h2 className="text-3xl font-bold mb-8 text-center text-yellow-400">
+                  Videos
+                </h2>
+                <MovieVideos videos={videos} />
+              </div>
+            )}
             <div className="mt-16">
               <h2 className="text-3xl font-bold mb-8 text-center text-yellow-400">
                 Top Cast
               </h2>
               <div className="flex flex-wrap justify-center gap-4">
                 {cast.map((actor) => (
-                  <Link to={`/celebrity/${actor.id}`}>
-                    <div key={actor.id} className="w-32 text-center">
-                      <img
-                        src={`https://image.tmdb.org/t/p/w200${actor.profile_path}`}
-                        alt={actor.name}
-                        className="w-32 h-32 rounded-lg object-cover mx-auto mb-2"
-                        onError={(e) => {
-                          e.target.onerror = null;
-
-                          e.target.src =
-                            actor.gender === 1 ? female_image : male_image;
-                        }}
-                      />
-                      <p className="font-semibold text-sm">{actor.name}</p>
-                      <p className="text-gray-400 text-xs">{actor.character}</p>
-                    </div>
-                  </Link>
+                  <ActorCard
+                    key={actor.id}
+                    id={actor.id}
+                    name={actor.name}
+                    profilePath={actor.profile_path}
+                    character={actor.character}
+                    gender={actor.gender}
+                  />
                 ))}
               </div>
             </div>
@@ -574,6 +616,7 @@ const MoviePage = () => {
                       image={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
                       year={new Date(movie.release_date).getFullYear()}
                       type="movie"
+                      rating={movie.vote_average}
                     />
                   ))
                 ) : (

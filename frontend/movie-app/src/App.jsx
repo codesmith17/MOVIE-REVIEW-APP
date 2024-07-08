@@ -13,6 +13,7 @@ import UserPage from "./components/UserPage";
 import ForgotPassword from "./components/ForgotPassword";
 import ResetPassword from "./components/ResetPassword";
 import NotFound from "./components/NotFound";
+import PersonPage from "./components/PersonPage";
 const App = () => {
   return (
     <>
@@ -37,6 +38,7 @@ const App = () => {
             />
             <Route path="/user/:username" element={<UserPage />} />
             <Route path="/movie-page/:watchmodeID" element={<MoviePage />} />
+            <Route path="/celebrity/:id" element={<PersonPage />}></Route>
             <Route component={NotFound} />
           </Routes>
         ) : (

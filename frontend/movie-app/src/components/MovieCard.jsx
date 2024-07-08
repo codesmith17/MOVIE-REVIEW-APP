@@ -32,7 +32,7 @@ const MovieCard = ({ id, title, year, type, image, rating }) => {
       : "text-red-500";
 
   return (
-    <Link to={`/movie-page/${id}`} className="group">
+    <Link to={`/movie-page/${id}${type}`} className="group">
       <div className="bg-gray-800 cursor-pointer rounded-lg shadow-lg overflow-hidden w-full sm:w-56 md:w-64 text-center transform transition-all duration-300 hover:scale-105 hover:shadow-xl">
         <div className="relative">
           {isLoading ? (
@@ -58,7 +58,7 @@ const MovieCard = ({ id, title, year, type, image, rating }) => {
           )}
           {rating && !isLoading && (
             <div
-              className={`absolute top-2 right-2 bg-gray-900 bg-opacity-75 rounded-full p-2 ${ratingColor}`}
+              className={`absolute bottom-2 right-2 bg-gray-900 bg-opacity-100 rounded-full p-2 ${ratingColor}`}
             >
               <FaStar className="inline mr-1" />
               <span className="font-bold">{rating.toFixed(1)}</span>
