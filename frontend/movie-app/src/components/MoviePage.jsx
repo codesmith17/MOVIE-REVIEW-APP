@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import { toast } from "react-toastify";
-import { TiHeartFullOutline } from "react-icons/ti";
+import { FaHeart } from "react-icons/fa";
 import OtherReviews from "./OtherReviews";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -76,17 +76,19 @@ const MoviePage = () => {
   const [loadingRecommendations, setLoadingRecommendations] = useState(true);
   const fetchCastData = useCallback(() => {
     if (singleMovieData?.id) {
-      fetch(
-        `https://api.themoviedb.org/3/movie/${singleMovieData.id}/credits?language=en-US`,
-        {
-          method: "GET",
-          headers: {
-            accept: "application/json",
-            Authorization:
-              "Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI2ZmY0Mjc2MDc2MmUyZWVmZjY1ZTgwNDE5MmVhZDk3MSIsIm5iZiI6MTcyMDAyNjYyNC40OTUzNDEsInN1YiI6IjY1OWQ1OWZjYjZjZmYxMDE0Y2Y3NTdjZSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.7k2PEFKq60uUNx9SvvbJPr6UhNOu8RiKkbWYSbYhCd8",
-          },
-        }
-      )
+      let url = `https://api.themoviedb.org/3/movie/${singleMovieData.id}/credits?language=en-US`;
+      if (watchmodeID.includes("tv")) url = url.replace("/movie/", "/tv/");
+      // let movieID = watchmodeID.replace("tv", "");
+      // movieID = watchmodeID.replace("movie", "");
+      // url = url.replace(watchmodeID, movieID);
+      fetch(url, {
+        method: "GET",
+        headers: {
+          accept: "application/json",
+          Authorization:
+            "Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI2ZmY0Mjc2MDc2MmUyZWVmZjY1ZTgwNDE5MmVhZDk3MSIsIm5iZiI6MTcyMDAyNjYyNC40OTUzNDEsInN1YiI6IjY1OWQ1OWZjYjZjZmYxMDE0Y2Y3NTdjZSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.7k2PEFKq60uUNx9SvvbJPr6UhNOu8RiKkbWYSbYhCd8",
+        },
+      })
         .then((res) => res.json())
         .then((data) => {
           console.log(data.crew);
@@ -102,22 +104,25 @@ const MoviePage = () => {
   }, [fetchCastData]);
   useEffect(() => {
     const fetchMovieData = () => {
-      fetch(
-        `https://api.themoviedb.org/3/movie/${watchmodeID}?language=en-US`,
-        {
-          method: "GET",
-          headers: {
-            accept: "application/json",
-            Authorization:
-              "bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjNmU5MzM1Yjg5Y2E3NWE3MGJjY2UxYzcyYmZkMDQ4ZCIsInN1YiI6IjYzYmVkN2FiODU4Njc4MDBmMDhjZjI3NiIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.sQHes_rn51wewxY_7nZLxGssnd67J8ieiLOIo2Bg_FI",
-          },
-        }
-      )
+      let url = `https://api.themoviedb.org/3/movie/${watchmodeID}?language=en-US`;
+      if (watchmodeID.includes("tv")) url = url.replace("/movie/", "/tv/");
+      let movieID = watchmodeID.replace("tv", "");
+      movieID = watchmodeID.replace("movie", "");
+      url = url.replace(watchmodeID, movieID);
+      console.log(url);
+      fetch(url, {
+        method: "GET",
+        headers: {
+          accept: "application/json",
+          Authorization:
+            "bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjNmU5MzM1Yjg5Y2E3NWE3MGJjY2UxYzcyYmZkMDQ4ZCIsInN1YiI6IjYzYmVkN2FiODU4Njc4MDBmMDhjZjI3NiIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.sQHes_rn51wewxY_7nZLxGssnd67J8ieiLOIo2Bg_FI",
+        },
+      })
         .then((response) => response.json())
-        .then((res) => {
-          console.log(res);
+        .then(async (res) => {
+          console.log("brakinsdf", res);
           setImdbID(res.imdb_id);
-          setSingleMovieData(res);
+          await setSingleMovieData(res);
           setLoading(false);
           fetchVideos(); // Call fetchVideos after movie data is fetched
         })
@@ -211,21 +216,25 @@ const MoviePage = () => {
     const fetchVideos = async () => {
       setVideoLoading(true);
       try {
-        const response = await fetch(
-          `https://api.themoviedb.org/3/movie/${watchmodeID}/videos?language=en-US`,
-          {
-            method: "GET",
-            headers: {
-              accept: "application/json",
-              Authorization:
-                "Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjNmU5MzM1Yjg5Y2E3NWE3MGJjY2UxYzcyYmZkMDQ4ZCIsInN1YiI6IjYzYmVkN2FiODU4Njc4MDBmMDhjZjI3NiIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.sQHes_rn51wewxY_7nZLxGssnd67J8ieiLOIo2Bg_FI",
-            },
-          }
-        );
+        let url = `https://api.themoviedb.org/3/movie/${watchmodeID}/videos?language=en-US`;
+        if (watchmodeID.includes("tv")) url = url.replace("/movie/", "/tv/");
+        let movieID = watchmodeID.replace("tv", "");
+        movieID = watchmodeID.replace("movie", "");
+        url = url.replace(watchmodeID, movieID);
+        const response = await fetch(url, {
+          method: "GET",
+          headers: {
+            accept: "application/json",
+            Authorization:
+              "Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjNmU5MzM1Yjg5Y2E3NWE3MGJjY2UxYzcyYmZkMDQ4ZCIsInN1YiI6IjYzYmVkN2FiODU4Njc4MDBmMDhjZjI3NiIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.sQHes_rn51wewxY_7nZLxGssnd67J8ieiLOIo2Bg_FI",
+          },
+        });
         const data = await response.json();
         console.log(data);
         setVideos(
-          data.results && data.results.slice(Math.max(data.results.length - 6, 0)) || []
+          (data.results &&
+            data.results.slice(Math.max(data.results.length - 6, 0))) ||
+            []
         );
         console.log(videos);
         setVideoLoading(false);
@@ -245,17 +254,19 @@ const MoviePage = () => {
       if (singleMovieData?.id) {
         setLoadingRecommendations(true);
         try {
-          const response = await fetch(
-            `https://api.themoviedb.org/3/movie/${singleMovieData.id}/recommendations?language=en-US&page=1`,
-            {
-              method: "GET",
-              headers: {
-                accept: "application/json",
-                Authorization:
-                  "bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjNmU5MzM1Yjg5Y2E3NWE3MGJjY2UxYzcyYmZkMDQ4ZCIsInN1YiI6IjYzYmVkN2FiODU4Njc4MDBmMDhjZjI3NiIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.sQHes_rn51wewxY_7nZLxGssnd67J8ieiLOIo2Bg_FI",
-              },
-            }
-          );
+          let url = `https://api.themoviedb.org/3/movie/${singleMovieData.id}/recommendations?language=en-US&page=1`;
+          if (watchmodeID.includes("tv")) url = url.replace("/movie/", "/tv/");
+          // let movieID = watchmodeID.replace("tv", "");
+          // movieID = watchmodeID.replace("movie", "");
+          // url = url.replace(watchmodeID, movieID);
+          const response = await fetch(url, {
+            method: "GET",
+            headers: {
+              accept: "application/json",
+              Authorization:
+                "bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjNmU5MzM1Yjg5Y2E3NWE3MGJjY2UxYzcyYmZkMDQ4ZCIsInN1YiI6IjYzYmVkN2FiODU4Njc4MDBmMDhjZjI3NiIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.sQHes_rn51wewxY_7nZLxGssnd67J8ieiLOIo2Bg_FI",
+            },
+          });
 
           const data = await response.json();
           console.log("123123123", data);
@@ -419,14 +430,14 @@ const MoviePage = () => {
         ) : (
           <>
             <h1 className="text-4xl md:text-5xl font-bold mb-8 text-center text-yellow-400">
-              {`${singleMovieData?.title} (${new Date(
-                singleMovieData?.release_date
+              {`${singleMovieData?.title || singleMovieData?.name} (${new Date(
+                singleMovieData?.release_date || singleMovieData?.first_air_date
               ).getFullYear()})`}
             </h1>
             <div className="flex flex-col md:flex-row items-center md:items-start space-y-8 md:space-y-0 md:space-x-12">
               <img
                 src={`https://image.tmdb.org/t/p/w500${singleMovieData?.poster_path}`}
-                alt={singleMovieData?.title}
+                alt={singleMovieData.title || singleMovieData.name}
                 className="w-full max-w-xs md:w-1/4 rounded-lg shadow-lg"
               />
               <div className="flex-1 space-y-6">
@@ -472,12 +483,12 @@ const MoviePage = () => {
                     Write a Review
                   </button>
                   <button
-                    className={`flex items-center bg-gray-800 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-full transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 ${
-                      userHasLiked ? "text-red-500" : "text-gray-300"
+                    className={`flex items-center bg-gray-800  text-white font-bold py-3 px-6 rounded-full transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 ${
+                      userHasLiked ? "bg-red-500" : "text-gray-300"
                     }`}
                     onClick={handleLike}
                   >
-                    <TiHeartFullOutline className="mr-2" size={25} />
+                    <FaHeart className="mr-2" size={25} />
                     {likes}
                   </button>
                 </div>
@@ -510,7 +521,7 @@ const MoviePage = () => {
                         value={
                           personalReview.review.substring(
                             0,
-                            personalReview.review.length * 0.2
+                            personalReview.review.length / 2
                           ) + "...."
                         }
                         readOnly={true}
@@ -589,7 +600,7 @@ const MoviePage = () => {
 
             <div className="mt-16">
               <h2 className="text-3xl font-bold mb-8 text-center text-yellow-400">
-                Recommended Movies
+                Recommended {watchmodeID.includes("tv") ? `Shows` : `Movies`}
               </h2>
               <div className="flex flex-wrap justify-center gap-8">
                 {loadingRecommendations ? (
@@ -612,10 +623,12 @@ const MoviePage = () => {
                     <MovieCard
                       key={movie.id}
                       id={movie.id}
-                      title={movie.title}
+                      title={movie.title || movie.name}
                       image={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
-                      year={new Date(movie.release_date).getFullYear()}
-                      type="movie"
+                      year={new Date(
+                        movie.release_date || movie.first_air_date
+                      ).getFullYear()}
+                      type={watchmodeID.includes("tv") ? "tv" : "movie"}
                       rating={movie.vote_average}
                     />
                   ))

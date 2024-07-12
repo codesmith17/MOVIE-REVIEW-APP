@@ -1,4 +1,5 @@
 const Review = require("../models/Review.model");
+const User = require("../models/User.model");
 
 const postReview = (req, res, next) => {
     const { imdbID, rating, review, dateLogged, username } = req.body;
@@ -177,7 +178,41 @@ const editReview = (req, res, next) => {
             res.status(500).json({ error: "Failed to update review" });
         });
 };
+const getReviews = async(req, res, next) => {
+    const { username } = req.params;
+    try {
+        const userCount = await User.find({ username }).countDocuments();
+        if (userCount === 0) {
+            return res.status(404).json({ message: "No such user exists" });
+        }
+
+        const reviews = await Review.aggregate([
+            { $match: { username } },
+            {
+                $project: {
+                    title: 1,
+                    review: 1,
+                    rating: 1,
+                    dateLogged: 1,
+                    imdbID: 1,
+                    username: 1,
+                    _id: 1
+
+                }
+            }
+        ]);
+
+        if (reviews.length === 0) {
+            return res.status(404).json({ message: "No reviews available" });
+        }
+
+        return res.status(200).json({ message: "Reviews fetched successfully", reviews });
+    } catch (err) {
+        console.error("Error fetching reviews:", err);
+        res.status(500).json({ error: "Failed to fetch reviews" });
+    }
+};
 
 
 
-module.exports = { postReview, getPersonalReview, getReviewById, getOtherReviews, postReviewLikes, deleteReview, editReview };
+module.exports = { postReview, getPersonalReview, getReviewById, getOtherReviews, postReviewLikes, deleteReview, editReview, getReviews };

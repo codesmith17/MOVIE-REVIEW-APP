@@ -9,7 +9,10 @@ const {
     getOthersData,
     forgotPassword,
     resetPassword,
-    uploadProfilePicture
+    uploadProfilePicture,
+    toggleFollow,
+    basicGraphNetworkInitialisation,
+    getMutualFriends
 } = require("../controllers/Auth.controller.js");
 
 router.post("/signin", signin);
@@ -20,6 +23,7 @@ router.get("/getUserData", verifyUser, getUserData);
 router.post("/forgotPassword", forgotPassword);
 router.post("/resetPassword", resetPassword);
 router.post('/upload-profile-picture', verifyUser, upload.single('profilePicture'), uploadProfilePicture);
-
-
+router.post("/toggleFollow/:username", verifyUser, toggleFollow);
+router.get('/initializeGraph', verifyUser, basicGraphNetworkInitialisation);
+router.get("/getMutualFriends/:myUsername/:otherUsername", getMutualFriends);
 module.exports = router;

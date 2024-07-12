@@ -3,6 +3,45 @@ const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer")
 const crypto = require("crypto-js");
 const { bucket } = require("../utils/firebaseAdmin");
+const Graph = require("../utils/Graph.js");
+const { initializeGraph, getGraph } = require("../utils/GraphInstance.js");
+
+const basicGraphNetworkInitialisation = async(req, res, next) => {
+    try {
+        initializeGraph(); // Initialize a new graph
+        const graph = getGraph();
+        const { username } = req.user;
+        const user = await User.findOne({ username });
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        const followingList = user.followingList || [];
+        const followersList = user.followersList || [];
+
+        graph.addVertex(user.username);
+
+        followingList.forEach(following => {
+            graph.addVertex(following);
+            graph.addEdge(user.username, following);
+        });
+        // console.log(graph)
+        followersList.forEach(follower => {
+            graph.addVertex(follower);
+            graph.addEdge(follower, user.username);
+        });
+
+        console.log(graph);
+        res.status(200).json({ message: "GRAPH CREATED SUCCESSFULLY" });
+    } catch (error) {
+        console.error("Error occurred while constructing graph:", error);
+        res.status(500).json({ message: "INTERNAL SERVER ERROR" });
+    }
+};
+
+
+
+
 
 const uploadProfilePicture = async(req, res, next) => {
     const file = req.file;
@@ -40,7 +79,68 @@ const uploadProfilePicture = async(req, res, next) => {
     }
 };
 
-// module.exports = {};
+const toggleFollow = async(req, res, next) => {
+    const usernameFollowing = req.user.username;
+    const usernameBeingFollowed = req.params.username;
+    // console.log(usernameBeingFollowed, req.user);
+    try {
+        const userToFollow = await User.findOne({ username: usernameBeingFollowed });
+        if (!userToFollow) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        const isFollowing = userToFollow.followersList.includes(usernameFollowing);
+
+        let updateOperation, followingUpdateOperation;
+        let message;
+
+        if (isFollowing) {
+            // Unfollow
+            updateOperation = {
+                $inc: { followers: -1 },
+                $pull: { followersList: usernameFollowing }
+            };
+            followingUpdateOperation = {
+                $inc: { following: -1 },
+                $pull: { followingList: usernameBeingFollowed }
+            };
+            message = "Unfollowed successfully";
+            // Graph.adjacencyList[usernameFollowing] = Graph.adjacencyList[usernameFollowing].filter(friend => friend !== usernameBeingFollowed);
+
+        } else {
+            // Follow
+            updateOperation = {
+                $inc: { followers: 1 },
+                $push: { followersList: usernameFollowing }
+            };
+            followingUpdateOperation = {
+                $inc: { following: 1 },
+                $push: { followingList: usernameBeingFollowed }
+            };
+            message = "Followed successfully";
+            // Graph.addEdge(usernameFollowing, usernameBeingFollowed);
+        }
+
+        // Update the followed/unfollowed user
+        await User.updateOne({ username: usernameBeingFollowed }, updateOperation);
+        // console.log(updatedUser)
+        // Update the current user's following list
+        await User.updateOne({ username: usernameFollowing }, followingUpdateOperation);
+
+
+        const updatedUser = await User.findOne({ username: usernameBeingFollowed });
+
+        res.status(200).json({
+            message,
+            isFollowing: !isFollowing,
+            followersCount: updatedUser.followers
+        });
+
+    } catch (error) {
+        console.error("Error in toggleFollow:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
 
 const verifyUser = (req, res, next) => {
     // console.log("!", req.headers)
@@ -97,7 +197,7 @@ const signin = (req, res, next) => {
                 return res.status(401).json({ message: "Invalid credentials." });
             }
 
-            const token = jwt.sign({ id: user._id, email: email }, "krishna170902", {
+            const token = jwt.sign({ id: user._id, email: email, username: user.username }, "krishna170902", {
                 expiresIn: "24h",
             });
 
@@ -169,6 +269,17 @@ const getUserData = (req, res, next) => {
         .then(user => {
             if (user) {
                 const { password, __v, ...rest } = user.toObject();
+                const followingList = user.followingList;
+                const followersList = user.followersList;
+                Graph.addVertex(user.username);
+                followingList.forEach(following => {
+                    Graph.addVertex(following);
+                    Graph.addEdge(user.username, following);
+                });
+                followersList.forEach(follower => {
+                    Graph.addVertex(follower);
+                    Graph.addEdge(follower, user.username);
+                });
                 res.status(200).json({ message: "DATA SENT SUCCESSFULLY.", data: rest });
             } else {
                 res.status(404).json({ message: "User not found." });
@@ -179,6 +290,31 @@ const getUserData = (req, res, next) => {
             res.status(500).json({ message: "Internal Server Error" });
         });
 };
+
+const getMutualFriends = async(req, res, next) => {
+    const { myUsername, otherUsername } = req.params;
+    const myNeighbors = new Set(Graph.adjacencyList[myUsername] || []);
+
+    try {
+        const otherUserData = await User.aggregate([{
+            $match: {
+                username: otherUsername
+            }
+        }, {
+            $project: {
+                _id: 0,
+                followingList: 1
+            }
+        }])
+        res.status(200).json({ otherUserData, myNeighbors });
+        return;
+    } catch {
+        console.error("Er")
+    }
+
+
+
+}
 const getOthersData = (req, res, next) => {
     const username = req.params.username;
     console.log(username);
@@ -306,4 +442,4 @@ const resetPassword = (req, res, next) => {
         })
 }
 
-module.exports = { signin, verifyUser, signup, getUserData, getOthersData, forgotPassword, resetPassword, uploadProfilePicture };
+module.exports = { signin, verifyUser, signup, getUserData, getOthersData, forgotPassword, resetPassword, uploadProfilePicture, toggleFollow, getMutualFriends, basicGraphNetworkInitialisation };

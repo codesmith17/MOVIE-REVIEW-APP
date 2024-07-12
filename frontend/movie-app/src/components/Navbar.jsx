@@ -2,14 +2,15 @@ import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { setUser, logout } from "./features/user/userSlice";
-
+import { LazyLoadImage } from "react-lazy-load-image-component";
+import "react-lazy-load-image-component/src/effects/blur.css";
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
   const user = useSelector((state) => state.user.data);
-  console.log(user);
+  // console.log(user);
   useEffect(() => {
     const fetchUserData = async () => {
       try {
@@ -68,24 +69,35 @@ const Navbar = () => {
           {user && (
             <div>
               <div className="md:hidden">
-                <Link to={`/user/${user?.data.username}`}>
-                  <img
-                    src={user.data.profilePicture}
-                    alt="Profile"
-                    className="w-8 h-8 rounded-full"
-                  />
+                <Link to={`/user/${user?.data?.username}`}>
+                  (user?.data?.profilePicture)&&
+                  {
+                    <LazyLoadImage
+                      src={user.data.profilePicture}
+                      alt="Profile"
+                      effect="blur"
+                      className="w-8 h-8 rounded-full"
+                      wrapperProps={{
+                        // If you need to, you can tweak the effect transition using the wrapper style.
+                        style: { transitionDelay: "1s" },
+                      }}
+                      placeholderSrc="/path/to/placeholder.jpg" // Add a small placeholder image
+                    />
+                  }
                 </Link>
               </div>
               <div className="hidden md:flex items-center space-x-4 md:ml-4">
-                <Link to={`/user/${user?.data.username}`}>
-                  <img
+                <Link to={`/user/${user?.data?.username}`}>
+                  <LazyLoadImage
                     src={user.data.profilePicture}
                     alt="Profile"
-                    className="w-10 h-10 rounded-full"
+                    effect="blur"
+                    className="w-8 h-8 rounded-full"
+                    placeholderSrc="/path/to/placeholder.jpg" // Add a small placeholder image
                   />
                 </Link>
-                <Link to={`/user/${user?.data.username}`}>
-                  <span className="text-white">{user.data.username}</span>{" "}
+                <Link to={`/user/${user?.data?.username}`}>
+                  <span className="text-white">{user?.data?.username}</span>{" "}
                 </Link>
               </div>
             </div>
