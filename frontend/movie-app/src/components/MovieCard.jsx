@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { FaStar } from "react-icons/fa";
+import { IoMdOpen } from "react-icons/io";
 
 const defaultImage =
   "https://www.reelviews.net/resources/img/default_poster.jpg";
@@ -26,17 +27,17 @@ const MovieCard = ({ id, title, year, type, image, rating }) => {
 
   const ratingColor =
     rating >= 7
-      ? "text-green-500"
+      ? "text-green-400"
       : rating >= 5
-      ? "text-yellow-500"
-      : "text-red-500";
+      ? "text-yellow-400"
+      : "text-red-400";
 
   return (
-    <Link to={`/movie-page/${id}${type}`} className="group">
-      <div className="bg-gray-800 cursor-pointer rounded-lg shadow-lg overflow-hidden w-full sm:w-56 md:w-64 text-center transform transition-all duration-300 hover:scale-105 hover:shadow-xl">
-        <div className="relative">
+    <Link to={`/movie-page/${id}${type}`} className="group block">
+      <div className="bg-gray-900 cursor-pointer rounded-xl shadow-lg overflow-hidden w-full max-w-[220px] mx-auto text-center transform transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+        <div className="relative w-full h-[330px]">
           {isLoading ? (
-            <div className="w-full h-48 sm:h-72 md:h-80 bg-gray-700 animate-pulse"></div>
+            <div className="w-full h-full bg-gray-800 animate-pulse"></div>
           ) : (
             <>
               <img
@@ -47,38 +48,40 @@ const MovieCard = ({ id, title, year, type, image, rating }) => {
                     : image
                 }
                 alt={title}
-                className="w-full h-48 sm:h-72 md:h-80 object-cover transition-opacity duration-300 group-hover:opacity-75"
+                className="w-full h-full object-cover transition-all duration-300 group-hover:brightness-75"
               />
-              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-60 flex items-center justify-center transition-all duration-300 opacity-0 group-hover:opacity-100">
-                <span className="text-white text-lg font-bold">
-                  View Details
-                </span>
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <div className="bg-white bg-opacity-20 backdrop-blur-sm rounded-full p-3">
+                  <IoMdOpen className="text-white text-2xl" />
+                </div>
               </div>
             </>
           )}
           {rating && !isLoading && (
             <div
-              className={`absolute bottom-2 right-2 bg-gray-900 bg-opacity-100 rounded-full p-2 ${ratingColor}`}
+              className={`absolute top-2 left-2 flex items-center bg-black bg-opacity-70 rounded-full px-2 py-1 ${ratingColor}`}
             >
-              <FaStar className="inline mr-1" />
-              <span className="font-bold">{rating.toFixed(1)}</span>
+              <FaStar className="mr-1" />
+              <span className="font-bold text-sm">{rating.toFixed(1)}</span>
             </div>
           )}
         </div>
         <div className="p-4">
           {isLoading ? (
             <>
-              <div className="h-6 bg-gray-700 rounded w-3/4 mb-2 animate-pulse"></div>
-              <div className="h-4 bg-gray-700 rounded w-1/2 mb-2 animate-pulse"></div>
-              <div className="h-4 bg-gray-700 rounded w-1/3 animate-pulse"></div>
+              <div className="h-5 bg-gray-800 rounded w-3/4 mb-2 animate-pulse"></div>
+              <div className="h-4 bg-gray-800 rounded w-1/2 mb-2 animate-pulse"></div>
+              <div className="h-4 bg-gray-800 rounded w-1/3 animate-pulse"></div>
             </>
           ) : (
             <>
-              <h2 className="text-xl font-semibold mb-2 text-gray-100 group-hover:text-white transition-colors duration-300 line-clamp-2">
+              <h2 className="text-lg font-semibold mb-1 text-gray-100 group-hover:text-white transition-colors duration-300 line-clamp-2">
                 {title}
               </h2>
-              <p className="text-gray-400 mb-1 text-sm">{year}</p>
-              <p className="text-gray-400 text-sm capitalize">{type}</p>
+              <p className="text-gray-400 mb-1 text-xs">{year}</p>
+              <p className="text-gray-400 text-xs capitalize bg-gray-800 inline-block px-2 py-1 rounded-full">
+                {type}
+              </p>
             </>
           )}
         </div>

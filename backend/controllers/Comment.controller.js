@@ -32,6 +32,56 @@ const getComments = (req, res, next) => {
             return;
         })
 }
+
+
+const replyLike = async(req, res, next) => {
+    try {
+        // const { } = req.params;
+        const { username, commentId, replyIndex } = req.body;
+
+        if (!commentId || replyIndex === undefined || !username) {
+            return res.status(400).json({ error: "Missing required parameters" });
+        }
+
+        const comment = await Comment.findById(commentId);
+
+        if (!comment) {
+            return res.status(404).json({ error: "Comment not found" });
+        }
+
+        if (replyIndex >= comment.replies.length) {
+            return res.status(404).json({ error: "Reply not found" });
+        }
+
+        const reply = comment.replies[replyIndex];
+        const userLikedIndex = reply.likedBy.indexOf(username);
+
+        if (userLikedIndex === -1) {
+            // User hasn't liked the reply yet, so add the like
+            reply.likedBy.push(username);
+            reply.likes += 1;
+        } else {
+            // User already liked the reply, so remove the like
+            reply.likedBy.splice(userLikedIndex, 1);
+            reply.likes = Math.max(0, reply.likes - 1); // Ensure likes don't go below 0
+        }
+
+        await comment.save();
+
+        res.status(200).json({
+            message: userLikedIndex === -1 ? "Reply liked successfully" : "Reply unliked successfully",
+            likes: reply.likes,
+            likedBy: reply.likedBy
+        });
+
+    } catch (err) {
+        console.error("Error in replyLike:", err);
+        res.status(500).json({ error: "Internal server error" });
+    }
+};
+
+module.exports = replyLike;
+
 const postLikeComment = (req, res, next) => {
     const likedBy = req.body.username;
     const commentID = req.body.commentID;
@@ -133,13 +183,14 @@ const postReply = async(req, res, next) => {
             reply,
             username,
             profilePicture,
+
         };
 
         // Add the new reply to the comment's replies array
         comment.replies.push(newReply);
 
         // Save the updated comment
-        const updatedComment = await comment.save();
+        await comment.save();
 
         res.status(200).json({ message: "Reply posted successfully", reply: newReply });
     } catch (error) {
@@ -147,4 +198,4 @@ const postReply = async(req, res, next) => {
         res.status(500).json({ message: "Something went wrong" });
     }
 };
-module.exports = { postComment, getComments, postLikeComment, postDislikeComment, postReply }
+module.exports = { postComment, getComments, postLikeComment, postDislikeComment, postReply, replyLike }

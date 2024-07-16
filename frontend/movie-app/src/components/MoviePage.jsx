@@ -10,6 +10,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import { FaStar, FaFilm, FaPlay } from "react-icons/fa";
 import ReadOnlyStarRating from "./ReadOnlyStarRating.jsx";
 import MovieVideos from "./MovieVideos.jsx";
+import WatchProviders from "./WatchProviders.jsx";
 // import { useContext } from "react";
 // import { UserContext } from "./UserContext";
 import { useSelector } from "react-redux";
@@ -17,7 +18,7 @@ import Modal from "./Modal.jsx";
 import MovieCard from "./MovieCard.jsx";
 import NotFound from "./NotFound.jsx";
 
-const TMDB_API_KEY = "YOUR_TMDB_API_KEY";
+// const TMDB_API_KEY = "YOUR_TMDB_API_KEY";
 import ActorCard from "./ActorCard.jsx";
 const MoviePage = () => {
   const male_image =
@@ -53,6 +54,7 @@ const MoviePage = () => {
     </div>
   );
   const [videos, setVideos] = useState([]);
+  const [watchProviders, setWatchProviders] = useState(null);
   const { watchmodeID } = useParams();
   const [dateLogged, setDateLogged] = useState(null);
   const [starRating, setStarRating] = useState(0);
@@ -213,6 +215,25 @@ const MoviePage = () => {
           console.error("Error fetching likes:", err);
         });
     };
+    const fetchWatchProviders = async () => {
+      try {
+        const response = await fetch(
+          `https://api.themoviedb.org/3/movie/${watchmodeID}/watch/providers`,
+          {
+            method: "GET",
+            headers: {
+              accept: "application/json",
+              Authorization:
+                "Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjNmU5MzM1Yjg5Y2E3NWE3MGJjY2UxYzcyYmZkMDQ4ZCIsInN1YiI6IjYzYmVkN2FiODU4Njc4MDBmMDhjZjI3NiIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.sQHes_rn51wewxY_7nZLxGssnd67J8ieiLOIo2Bg_FI",
+            },
+          }
+        );
+        const data = await response.json();
+        setWatchProviders(data.results.IN);
+      } catch (error) {
+        console.error("Error fetching watch providers:", error);
+      }
+    };
     const fetchVideos = async () => {
       setVideoLoading(true);
       try {
@@ -246,6 +267,7 @@ const MoviePage = () => {
     fetchMovieData();
     fetchPersonalReview();
     fetchLikes();
+    fetchWatchProviders();
     // fetchVideos();
   }, [watchmodeID, imdbID]);
 
@@ -584,6 +606,9 @@ const MoviePage = () => {
                   </Link>
                 ))}
               </div>
+            </div>
+            <div className="mt-16">
+              <WatchProviders providers={watchProviders} />
             </div>
             <div className="mt-16">
               <h2 className="text-3xl font-bold mb-8 text-center text-yellow-400">

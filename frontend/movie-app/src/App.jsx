@@ -1,3 +1,4 @@
+import React from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Login from "./components/Login";
@@ -9,11 +10,15 @@ import { ToastContainer } from "react-toastify";
 import HomePage from "./components/HomePage";
 import "react-toastify/dist/ReactToastify.css";
 import UserPage from "./components/UserPage";
-// import { UserProvider } from "./components/UserContext";
 import ForgotPassword from "./components/ForgotPassword";
 import ResetPassword from "./components/ResetPassword";
 import NotFound from "./components/NotFound";
+import ListDetailsPage from "./components/ListDetailPage";
 import PersonPage from "./components/PersonPage";
+// import LobbyScreen from "./components/LobbyScreen";
+// import RoomPage from "./components/RoomPage";
+// import io from "socket.io-client";
+
 const App = () => {
   return (
     <>
@@ -36,10 +41,14 @@ const App = () => {
               path="/reset-password/:resetToken"
               element={<ResetPassword />}
             />
-            <Route path="/user/:username" element={<UserPage />} />
+
             <Route path="/movie-page/:watchmodeID" element={<MoviePage />} />
-            <Route path="/celebrity/:id" element={<PersonPage />}></Route>
-            <Route component={NotFound} />
+            <Route path="/celebrity/:id" element={<PersonPage />} />
+            <Route path="/user/:username" element={<UserPage />} />
+            <Route path="/list/:listId" element={<ListDetailsPage />} />
+            {/* <Route path="/video-call" element={<LobbyScreen />} />
+            <Route path="/room/:roomId" element={<RoomPage />} /> */}
+            <Route path="*" element={<NotFound />} />
           </Routes>
         ) : (
           <p>NO INTERNET CONNECTION</p>

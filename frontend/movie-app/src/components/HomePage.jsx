@@ -5,7 +5,7 @@ const HomePage = () => {
   const [popularMovies, setPopularMovies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
+  const [trendingMoviesByDay, setTrendingMoviesByDay] = useState(null);
   useEffect(() => {
     const fetchMovies = async (url, setMovies) => {
       try {
@@ -36,6 +36,10 @@ const HomePage = () => {
       setLoading(true);
       await Promise.all([
         fetchMovies(
+          "https://api.themoviedb.org/3/trending/movie/day?language=en-US&page=1",
+          setTrendingMoviesByDay
+        ),
+        fetchMovies(
           "https://api.themoviedb.org/3/movie/now_playing?language=en-US&page=1",
           setNowPlayingMovies
         ),
@@ -51,11 +55,18 @@ const HomePage = () => {
   }, []);
 
   return (
-    <div className="bg-gray-900 text-gray-100 min-h-screen py-12">
+    <div className="bg-gradient-to-br from-gray-900 to-blue-900 text-gray-100 min-h-screen py-12">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
         <h1 className="text-4xl sm:text-5xl font-bold mb-12 text-center text-yellow-400">
           Movie Explorer
         </h1>
+
+        <MovieSection
+          title="Trending"
+          movies={trendingMoviesByDay}
+          loading={loading}
+          error={error}
+        />
         <MovieSection
           title="Now Playing"
           movies={nowPlayingMovies}

@@ -12,6 +12,15 @@ const replySchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    likes: {
+        type: Number,
+        required: true,
+        default: 0,
+    },
+    likedBy: [{
+        type: String,
+        required: true,
+    }],
 });
 const commentSchema = new mongoose.Schema({
     reviewID: {

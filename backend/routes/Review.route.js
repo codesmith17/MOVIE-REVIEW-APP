@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { postReview, getPersonalReview, getReviewById, getOtherReviews, postReviewLikes, deleteReview, editReview, getReviews } = require("../controllers/Review.controller");
+const { postReview, updateRating, getPersonalReview, getReviewById, getOtherReviews, postReviewLikes, deleteReview, editReview, getReviews } = require("../controllers/Review.controller");
 const { verifyUser } = require("../controllers/Auth.controller"); // Assuming your middleware is exported correctly
 
 router.post("/postReview", verifyUser, postReview);
@@ -10,5 +10,6 @@ router.get("/getOtherReviews/:imdbID/:reviewID?", getOtherReviews);
 router.post("/postReviewLikes", verifyUser, postReviewLikes);
 router.delete("/deleteReview/:reviewID", verifyUser, deleteReview);
 router.put("/updateReview/:reviewID", verifyUser, editReview);
-router.get("/getReviews/:username", getReviews)
+router.get("/getReviews/:username", getReviews);
+router.put("/updateRating/:reviewID", verifyUser, updateRating);
 module.exports = router;

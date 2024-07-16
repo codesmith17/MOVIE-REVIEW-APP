@@ -47,6 +47,7 @@ const MovieSection = ({ title, movies, loading, error }) => (
                   ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
                   : defaultImage
               }
+              rating={movie.vote_average}
             />
           </div>
         ))

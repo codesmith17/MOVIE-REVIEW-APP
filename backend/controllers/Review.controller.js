@@ -214,5 +214,38 @@ const getReviews = async(req, res, next) => {
 };
 
 
+const updateRating = async(req, res, next) => {
+    try {
+        const { rating } = req.body;
+        const { reviewID } = req.params;
 
-module.exports = { postReview, getPersonalReview, getReviewById, getOtherReviews, postReviewLikes, deleteReview, editReview, getReviews };
+        if (!reviewID) {
+            return res.status(400).json({ error: "Review ID is required" });
+        }
+        const review = await Review.findById(reviewID);
+        console.log("!@3123123123123123", req.user);
+        if (req.user.username !== String(review.username)) {
+
+            res.status(401).json({ message: "YOU ARE UNAUTHORISED" })
+            return;
+
+
+        }
+        const updatedReview = await Review.findByIdAndUpdate(
+            reviewID, { rating }, { new: true, runValidators: true }
+        );
+
+        if (!updatedReview) {
+            return res.status(404).json({ error: "Review not found" });
+        }
+
+        res.status(200).json(updatedReview);
+    } catch (err) {
+        console.error("Error updating rating:", err);
+        if (err.name === 'CastError') {
+            return res.status(400).json({ error: "Invalid Review ID format" });
+        }
+        res.status(500).json({ error: "Failed to update rating" });
+    }
+};
+module.exports = { postReview, getPersonalReview, getReviewById, getOtherReviews, postReviewLikes, deleteReview, editReview, getReviews, updateRating };
