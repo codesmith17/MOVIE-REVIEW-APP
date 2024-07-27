@@ -8,6 +8,7 @@ import OtherReviews from "./OtherReviews";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { FaStar, FaFilm, FaPlay } from "react-icons/fa";
+import StarRating from "./StarRating.jsx";
 import ReadOnlyStarRating from "./ReadOnlyStarRating.jsx";
 import MovieVideos from "./MovieVideos.jsx";
 import WatchProviders from "./WatchProviders.jsx";
@@ -489,7 +490,7 @@ const MoviePage = () => {
                 </p>
                 <div className="flex items-center space-x-4">
                   <p className="font-semibold text-yellow-400">Your Rating:</p>
-                  <ReadOnlyStarRating rating={starRating} />
+                  <StarRating rating={starRating} />
                   {!personalReview && (
                     <p className="text-gray-400 italic">
                       You haven't rated it yet
