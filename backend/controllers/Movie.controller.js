@@ -110,5 +110,117 @@ const postLikes = (req, res, next) => {
         });
 };
 
+const cheerio = require('cheerio');
+const https = require('https');
+const fetchHTML = (url) => {
+    return new Promise((resolve, reject) => {
+        https.get(url, { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.162 Safari/537.36' } }, (res) => {
+            let data = '';
+            res.on('data', (chunk) => {
+                data += chunk;
+            });
+            res.on('end', () => {
+                resolve(data);
+            });
+        }).on('error', (err) => {
+            reject(err);
+        });
+    });
+};
 
-module.exports = { postLikes, getLikes, getRecommendations, getTrending };
+const scrapeIMDb = async(req, res, next) => {
+    const { imdbID } = req.params;
+    const url = `https://www.imdb.com/title/${imdbID}/`;
+    try {
+        const html = await fetchHTML(url);
+        const $ = cheerio.load(html);
+
+        const posterCardPromises = [];
+
+        $('section[data-testid="MoreLikeThis"] div.ipc-poster-card').each((index, element) => {
+            const href = $(element).find('a').attr('href');
+            const text = $(element).find('a').attr('aria-label');
+            const poster = $(element).find('img.ipc-image').attr('src');
+
+            if (href && text && poster) {
+                const fullUrl = new URL(href, 'https://www.imdb.com').href;
+                const promise = parseMovieShow(fullUrl).then(restOfTheData => ({
+                    href: restOfTheData.url,
+                    name: restOfTheData.text,
+                    poster: restOfTheData.poster,
+                    year: restOfTheData.year.substring(11, 15),
+                    type: restOfTheData.type
+                }));
+                posterCardPromises.push(promise);
+            }
+        });
+
+        const posterCards = await Promise.all(posterCardPromises);
+
+        if (posterCards.length === 0) {
+            console.error('Target elements not found on the page');
+        }
+
+        return res.status(200).json(posterCards);
+
+    } catch (error) {
+        console.error('Error fetching or parsing HTML:', error);
+        next(error); // Pass the error to the error handling middleware
+    }
+};
+
+const parseMovieShow = async(url) => {
+    try {
+        const html = await fetchHTML(url);
+        const $ = cheerio.load(html);
+
+        const name = $('span.hero__primary-text').text().trim();
+
+        const infoList = $('ul.ipc-inline-list.ipc-inline-list--show-dividers.baseAlt');
+        const year = infoList.find('li:first-child a').text().trim();
+
+        // Extract type from the HTML
+        let type = '';
+        infoList.find('li').each((index, element) => {
+            const text = $(element).text().trim();
+            if (text.includes('TV Series') || text.includes('Movie') || text.includes('TV Movie') || text.includes('TV Mini Series')) {
+                type = text;
+                return false;
+            }
+        });
+
+        // If type is still empty, it might be a movie (assuming no type info means it's a movie)
+        if (!type) {
+            type = 'Movie';
+        }
+
+        let poster = $('img[loading="eager"]').attr('src');
+        const srcset = $('img[loading="eager"]').attr('srcset');
+
+        if (srcset) {
+            const urls = srcset.match(/https:\/\/.*?\.jpg/g);
+            const widths = srcset.match(/\d+w/g);
+
+            if (urls && widths) {
+                const maxWidthIndex = widths.map(width => parseInt(width)).indexOf(Math.max(...widths.map(width => parseInt(width))));
+                poster = urls[maxWidthIndex];
+            }
+        }
+
+        const movieShow = {
+            text: name,
+            poster: poster,
+            year: year,
+            type: type,
+            url: url
+        };
+
+        // console.log(movieShow);
+        return movieShow;
+
+    } catch (error) {
+        console.error('Error fetching or parsing HTML:', error);
+        throw error;
+    }
+};
+module.exports = { postLikes, getLikes, getRecommendations, getTrending, scrapeIMDb };

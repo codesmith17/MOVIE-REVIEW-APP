@@ -6,8 +6,8 @@ const postReview = (req, res, next) => {
     const userEmail = req.user.email;
 
     // Validate request body
-    if (!imdbID || !review) {
-        return res.status(400).json({ message: "IMDB ID and review are required." });
+    if (!imdbID) {
+        return res.status(400).json({ message: "IMDB ID is required." });
     }
 
     const newReview = new Review({
@@ -145,7 +145,7 @@ const postReviewLikes = (req, res, next) => {
         });
 };
 
-module.exports = postReviewLikes;
+
 
 const deleteReview = (req, res, next) => {
     const reviewID = req.params.reviewID
@@ -223,7 +223,6 @@ const updateRating = async(req, res, next) => {
             return res.status(400).json({ error: "Review ID is required" });
         }
         const review = await Review.findById(reviewID);
-        console.log("!@3123123123123123", req.user);
         if (req.user.username !== String(review.username)) {
 
             res.status(401).json({ message: "YOU ARE UNAUTHORISED" })
@@ -248,4 +247,56 @@ const updateRating = async(req, res, next) => {
         res.status(500).json({ error: "Failed to update rating" });
     }
 };
-module.exports = { postReview, getPersonalReview, getReviewById, getOtherReviews, postReviewLikes, deleteReview, editReview, getReviews, updateRating };
+
+
+const upsertRating = async(req, res, next) => {
+    const { imdbID, rating, review, dateLogged } = req.body;
+    const { username, email } = req.user;
+
+    try {
+        // Check if a review already exists
+        const existingReview = await Review.findOne({ email, imdbID });
+        console.log(existingReview);
+        if (existingReview) {
+            // If review exists, update the rating
+            req.params.reviewID = existingReview._id;
+            req.body = { imdbID, rating, review, dateLogged };
+            return updateRating(req, res, next);
+        } else {
+            // If no review exists, create a new one
+            req.body = {
+                imdbID,
+                rating,
+                review: '',
+                dateLogged: new Date(),
+                username
+            };
+            return postReview(req, res, next);
+        }
+    } catch (err) {
+        console.error("Error upserting rating:", err);
+        res.status(500).json({ error: "Failed to upsert rating" });
+    }
+};
+const getRating = async(req, res, next) => {
+    const { imdbID } = req.params;
+    const { username } = req.user;
+    try {
+        if (!imdbID || !username) {
+            return res.status(400).json({ message: "IMDB ID AND USERNAME ARE REQUIRED" });
+        }
+        const review = await Review.findOne({ imdbID, username }, { rating: 1, _id: 0 });
+        if (!review) {
+            return res.status(404).json({ message: "Review not found" });
+        }
+        return res.status(200).json({ message: "RATING FETCHED SUCCESSFULLY", rating: review.rating });
+    } catch (err) {
+        console.error("Error fetching rating:", err);
+        res.status(500).json({ error: "Failed to fetch rating" });
+    }
+}
+
+
+
+
+module.exports = { postReview, getPersonalReview, getReviewById, getOtherReviews, postReviewLikes, deleteReview, editReview, getReviews, updateRating, upsertRating, getRating };

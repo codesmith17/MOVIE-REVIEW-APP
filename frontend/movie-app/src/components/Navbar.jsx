@@ -73,7 +73,7 @@ const Navbar = () => {
                   (user?.data?.profilePicture)&&
                   {
                     <LazyLoadImage
-                      src={user.data.profilePicture}
+                      src={user?.data?.profilePicture}
                       alt="Profile"
                       effect="blur"
                       className="w-8 h-8 rounded-full"
@@ -81,20 +81,23 @@ const Navbar = () => {
                         // If you need to, you can tweak the effect transition using the wrapper style.
                         style: { transitionDelay: "1s" },
                       }}
-                      placeholderSrc="/path/to/placeholder.jpg" // Add a small placeholder image
+                      placeholderSrc="https://w7.pngwing.com/pngs/328/335/png-transparent-icon-user-male-avatar-business-person-profile.png"
+                      // Add a small placeholder image
                     />
                   }
                 </Link>
               </div>
               <div className="hidden md:flex items-center space-x-4 md:ml-4">
                 <Link to={`/user/${user?.data?.username}`}>
+                  (user?.data &&
                   <LazyLoadImage
-                    src={user.data.profilePicture}
+                    src={user?.data?.profilePicture}
                     alt="Profile"
                     effect="blur"
                     className="w-8 h-8 rounded-full"
-                    placeholderSrc="/path/to/placeholder.jpg" // Add a small placeholder image
+                    placeholderSrc="https://w7.pngwing.com/pngs/328/335/png-transparent-icon-user-male-avatar-business-person-profile.png"
                   />
+                  )
                 </Link>
                 <Link to={`/user/${user?.data?.username}`}>
                   <span className="text-white">{user?.data?.username}</span>{" "}

@@ -148,7 +148,7 @@
 
         let token = req.headers && req.headers.cookie ? req.headers.cookie.split("access_token=")[1] : null;
         const likes = "likes";
-        console.log("TOKEN:", req.headers.cookie);
+        // console.log("TOKEN:", req.headers.cookie);
         const source = req.params ? req.params.source : null;
         if (!token && source === likes) {
             next();

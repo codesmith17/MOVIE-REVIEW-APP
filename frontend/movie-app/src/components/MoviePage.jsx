@@ -18,8 +18,6 @@ import { useSelector } from "react-redux";
 import Modal from "./Modal.jsx";
 import MovieCard from "./MovieCard.jsx";
 import NotFound from "./NotFound.jsx";
-
-// const TMDB_API_KEY = "YOUR_TMDB_API_KEY";
 import ActorCard from "./ActorCard.jsx";
 const MoviePage = () => {
   const male_image =
@@ -77,6 +75,58 @@ const MoviePage = () => {
   // const { user } = useContext(UserContext);
   const user = useSelector((state) => state.user.data);
   const [loadingRecommendations, setLoadingRecommendations] = useState(true);
+
+  const handleRatingChange = async (rating) => {
+    try {
+      const response = await fetch(
+        `http://localhost:3000/api/review/upsertRating`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            rating,
+            dateLogged: new Date(),
+            review: "",
+            imdbID,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.status === 400) {
+        toast.error("Failed to update rating. Please login to rate");
+        navigate("/login");
+        return;
+      }
+
+      if (response.status === 401) {
+        toast.error("You are unauthorized");
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to update rating");
+      }
+
+      setStarRating(rating);
+      toast.success("Rating updated successfully!");
+
+      // Optionally, you can update other state or trigger a re-fetch of reviews here
+      // For example:
+      // fetchReviews();
+      // or
+      // setUserReview(prevReview => ({ ...prevReview, rating }));
+    } catch (error) {
+      console.error("Error updating rating:", error);
+      toast.error(
+        "An error occurred while updating the rating. Please try again."
+      );
+    }
+  };
   const fetchCastData = useCallback(() => {
     if (singleMovieData?.id) {
       let url = `https://api.themoviedb.org/3/movie/${singleMovieData.id}/credits?language=en-US`;
@@ -185,6 +235,8 @@ const MoviePage = () => {
         .then((res) => {
           if (res?.message === "NO REVIEW FOUND") {
             setPersonalReview(null);
+            setStarRating(0);
+            setStarRatingTemp(0);
           } else {
             setPersonalReview(res.review);
             setCurrentReviewID(res.review._id);
@@ -269,6 +321,7 @@ const MoviePage = () => {
     fetchPersonalReview();
     fetchLikes();
     fetchWatchProviders();
+    // if (imdbID) getRating();
     // fetchVideos();
   }, [watchmodeID, imdbID]);
 
@@ -490,7 +543,10 @@ const MoviePage = () => {
                 </p>
                 <div className="flex items-center space-x-4">
                   <p className="font-semibold text-yellow-400">Your Rating:</p>
-                  <StarRating rating={starRating} />
+                  <StarRating
+                    rating={starRating}
+                    onRatingChange={(rating) => handleRatingChange(rating)}
+                  />
                   {!personalReview && (
                     <p className="text-gray-400 italic">
                       You haven't rated it yet
