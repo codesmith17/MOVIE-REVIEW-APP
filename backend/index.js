@@ -25,7 +25,7 @@ const movieRoutes = require("./routes/Movie.route");
 const commentRoutes = require("./routes/Comment.route");
 const listRoutes = require("./routes/List.route");
 
-mongoose.connect("mongodb://localhost:27017/movies-app", {
+mongoose.connect("mongodb+srv://krishna170902:44AueKgqHr2eDL8o@clusteracademind.ub2btq6.mongodb.net/movies-app?retryWrites=true&w=majority&appName=ClusterAcademind", {
         family: 4,
     })
     .then(result => {
