@@ -42,7 +42,7 @@ app.use("/api/review", reviewRoutes);
 app.use("/api/movie", movieRoutes);
 app.use("/api/comment", commentRoutes);
 app.use("/api/list", listRoutes);
-
+module.exports = app;
 // // Video call room functionality
 
 // const server = http.createServer(app);
