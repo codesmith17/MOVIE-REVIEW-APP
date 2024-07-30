@@ -36,7 +36,9 @@ mongoose.connect("mongodb+srv://krishna170902:44AueKgqHr2eDL8o@clusteracademind.
     .catch(err => console.log(err));
 
 app.use(bodyParser.urlencoded({ extended: false }));
-
+app.get("/", (req, res) => {
+    res.sendFile(path.join(__dirname, 'test.html'));
+});
 app.use("/api/auth", authRoutes);
 app.use("/api/review", reviewRoutes);
 app.use("/api/movie", movieRoutes);
