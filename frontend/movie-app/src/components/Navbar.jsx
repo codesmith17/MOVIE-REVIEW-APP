@@ -48,8 +48,8 @@ const Navbar = () => {
   const handleLogout = () => {
     document.cookie =
       "access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    dispatch(logout());
     navigate("/login");
+    dispatch(logout());
   };
 
   return (
@@ -89,15 +89,15 @@ const Navbar = () => {
               </div>
               <div className="hidden md:flex items-center space-x-4 md:ml-4">
                 <Link to={`/user/${user?.data?.username}`}>
-                  (user?.data &&
-                  <LazyLoadImage
-                    src={user?.data?.profilePicture}
-                    alt="Profile"
-                    effect="blur"
-                    className="w-8 h-8 rounded-full"
-                    placeholderSrc="https://w7.pngwing.com/pngs/328/335/png-transparent-icon-user-male-avatar-business-person-profile.png"
-                  />
-                  )
+                  {user?.data && (
+                    <LazyLoadImage
+                      src={user?.data?.profilePicture}
+                      alt="Profile"
+                      effect="blur"
+                      className="w-8 h-8 rounded-full"
+                      placeholderSrc="https://w7.pngwing.com/pngs/328/335/png-transparent-icon-user-male-avatar-business-person-profile.png"
+                    />
+                  )}
                 </Link>
                 <Link to={`/user/${user?.data?.username}`}>
                   <span className="text-white">{user?.data?.username}</span>{" "}
