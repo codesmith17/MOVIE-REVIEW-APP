@@ -24,7 +24,7 @@ const EditReviewModal = ({ isOpen, onClose, initialReview, onSave }) => {
         <textarea
           value={review}
           onChange={(e) => setReview(e.target.value)}
-          className="w-full h-40 p-2 border rounded focus:outline-none focus:border-blue-500"
+          className="w-full h-44 p-2 border rounded focus:outline-none focus:border-blue-500"
         />
         <div className="mt-4 flex justify-end">
           <button
