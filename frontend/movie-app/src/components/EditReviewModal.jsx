@@ -29,7 +29,7 @@ const EditReviewModal = ({ isOpen, onClose, initialReview, onSave }) => {
         <div className="mt-4 flex justify-end">
           <button
             onClick={handleSave}
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-2"
+            className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded mr-2"
           >
             Save
           </button>
