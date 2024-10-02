@@ -20,7 +20,7 @@ const EditReviewModal = ({ isOpen, onClose, initialReview, onSave }) => {
   return (
     <Modal open={isOpen} onClose={onClose} center>
       <div className="p-4">
-        <h2 className="text-xl font-bold mb-4">Edit Review</h2>
+        <h2 className="text-xl font-bold mb-5">Edit Review</h2>
         <textarea
           value={review}
           onChange={(e) => setReview(e.target.value)}
