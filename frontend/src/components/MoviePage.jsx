@@ -173,7 +173,6 @@ const MoviePage = () => {
       })
         .then((response) => response.json())
         .then(async (res) => {
-          console.log("brakinsdf", res);
           setImdbID(res.imdb_id);
           await setSingleMovieData(res);
           setLoading(false);

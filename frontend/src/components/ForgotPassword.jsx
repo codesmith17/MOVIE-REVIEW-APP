@@ -1,45 +1,43 @@
+// ForgotPassword.jsx
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-// import { useContext } from "react";
-// import { UserContext } from "./UserContext";
+import { setUser } from "./features/user/userSlice";
+
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
   const navigate = useNavigate();
-  const { user } = useContext(UserContext);
-  const handleChange = (e) => {
-    setEmail(e.target.value.trim());
-  };
+  const dispatch = useDispatch();
+  const user = useSelector((state) => state.user.data);
+
   useEffect(() => {
     if (user) {
       navigate("/upcoming");
     }
-  }, []);
+  }, [user, navigate]);
+
+  const handleChange = (e) => setEmail(e.target.value.trim());
+
   const onSubmit = async (e) => {
     e.preventDefault();
-
-    // Replace with your actual API call to send reset password email
-    const response = await fetch(
-      "http://localhost:3000/api/auth/forgotPassword",
-      {
+    try {
+      const response = await fetch("http://localhost:3000/api/auth/forgotPassword", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
+      });
+      const data = await response.json();
+      if (data?.message === "User not found") {
+        toast.error("SUCH EMAIL HASN'T BEEN REGISTERED!");
+      } else if (data?.message === "Reset email sent!") {
+        toast.success("A password reset email has been sent to your inbox!");
+      } else {
+        toast.error(data.message || "An error occurred. Please try again.");
       }
-    );
-
-    const data = await response.json();
-    if (data && data.message === "User not found") {
-      toast.error("SUCH EMAIL HASN'T BEEN REGISTERED!");
-      return;
-    }
-    if (data && data.message === "Reset email sent!") {
-      toast.success("A password reset email has been sent to your inbox!");
-      // navigate("/login");
-      // localStorage.setItem("resetEmail", email);
-    } else {
-      toast.error(data.message || "An error occurred. Please try again.");
+    } catch (error) {
+      toast.error("Something went wrong. Please try again later.");
     }
   };
 
@@ -52,10 +50,6 @@ const ForgotPassword = () => {
               <h1 className="text-xl font-bold leading-tight tracking-tight text-white md:text-2xl">
                 Forgot Your Password?
               </h1>
-              <p className="text-gray-400 text-base mb-6">
-                Enter the email address associated with your account and we'll
-                send you instructions to reset your password.
-              </p>
               <form className="space-y-4 md:space-y-6" onSubmit={onSubmit}>
                 <div>
                   <label
@@ -77,19 +71,10 @@ const ForgotPassword = () => {
                 </div>
                 <button
                   type="submit"
-                  className="w-full text-white bg-primary-500 border border-primary-400 hover:bg-primary-600 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center transition-all duration-300 ease-in-out transform hover:scale-105"
+                  className="w-full text-white bg-primary-500 hover:bg-primary-600 focus:ring-4 focus:outline-none font-medium rounded-lg px-5 py-2.5"
                 >
                   Send Reset Instructions
                 </button>
-                <p className="text-sm font-light text-gray-400 text-center">
-                  Remember your password?{" "}
-                  <Link
-                    to="/login"
-                    className="font-medium text-primary-400 hover:underline"
-                  >
-                    Sign in
-                  </Link>
-                </p>
               </form>
             </div>
           </div>
