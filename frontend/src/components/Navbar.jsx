@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import { setUser, logout } from "./features/user/userSlice";
+import { logout } from "./features/user/userSlice";
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import "react-lazy-load-image-component/src/effects/blur.css";
 const Navbar = () => {
@@ -10,31 +10,6 @@ const Navbar = () => {
   const dispatch = useDispatch();
 
   const user = useSelector((state) => state.user.data);
-  // console.log(user);
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const response = await fetch(
-          "http://localhost:3000/api/auth/getUserData",
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            credentials: "include",
-          }
-        );
-        if (response.ok) {
-          const data = await response.json();
-          dispatch(setUser(data));
-        }
-      } catch (error) {
-        console.error("Failed to fetch user data:", error);
-      }
-    };
-
-    fetchUserData();
-  }, [dispatch]);
 
   const searchHandler = (e) => {
     e.preventDefault();
@@ -53,19 +28,19 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="bg-gray-900 border-gray-700">
-      <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
-        <Link to="/" className="flex items-center space-x-3">
+    <nav className="bg-gradient-to-b from-gray-900 to-blue-900 sticky top-0 z-50 border-b border-blue-900/80 shadow-md">
+      <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto px-4 py-2">
+        <Link to="/" className="flex items-center space-x-2">
           <img
-            src="https://flowbite.com/docs/images/logo.svg"
-            className="h-8"
+            src="https://cdn-icons-png.flaticon.com/512/3917/3917032.png"
+            className="h-8 w-8 rounded-full shadow border border-blue-500 bg-gray-900"
             alt="Logo"
           />
-          <span className="self-center text-2xl font-semibold whitespace-nowrap text-white">
+          <span className="self-center text-xl font-extrabold whitespace-nowrap text-white tracking-tight">
             Cine Critique
           </span>
         </Link>
-        <div className="flex items-center md:order-2">
+        <div className="flex items-center md:order-2 gap-4">
           {user && (
             <div>
               <div className="md:hidden">
@@ -76,7 +51,7 @@ const Navbar = () => {
                       src={user?.data?.profilePicture}
                       alt="Profile"
                       effect="blur"
-                      className="w-8 h-8 rounded-full"
+                      className="w-8 h-8 rounded-full border border-blue-500 shadow"
                       wrapperProps={{
                         // If you need to, you can tweak the effect transition using the wrapper style.
                         style: { transitionDelay: "1s" },
@@ -94,13 +69,13 @@ const Navbar = () => {
                       src={user?.data?.profilePicture}
                       alt="Profile"
                       effect="blur"
-                      className="w-8 h-8 rounded-full"
+                      className="w-8 h-8 rounded-full border border-blue-500 shadow"
                       placeholderSrc="https://w7.pngwing.com/pngs/328/335/png-transparent-icon-user-male-avatar-business-person-profile.png"
                     />
                   )}
                 </Link>
                 <Link to={`/user/${user?.data?.username}`}>
-                  <span className="text-white">{user?.data?.username}</span>{" "}
+                  <span className="text-white font-semibold text-base">{user?.data?.username}</span>{" "}
                 </Link>
               </div>
             </div>
@@ -129,18 +104,25 @@ const Navbar = () => {
           </button>
         </div>
         <div
-          className={`items-center justify-between w-full md:flex md:w-auto md:order-1 ${
+          className={`items-center justify-between w-full md:flex md:w-auto md:order-1 transition-all duration-300 ${
             isMenuOpen ? "block" : "hidden"
-          }`}
+          } bg-gradient-to-b from-gray-900 to-blue-900 md:bg-transparent border-t border-blue-900/60 md:border-none mt-2 md:mt-0`}
           id="navbar-search"
         >
-          <ul className="flex flex-col p-4 md:p-0 md:space-x-8 md:flex-row md:mt-0 md:border-0 md:bg-gray-900 dark:bg-gray-800 md:dark:bg-gray-900 dark:border-gray-700">
-            <li>
-              <form onSubmit={searchHandler} className="mb-4 md:mb-0">
+          <ul className="flex flex-col p-4 md:p-0 md:space-x-6 md:flex-row md:mt-0 md:border-0 md:bg-transparent dark:bg-transparent gap-2 md:gap-0">
+            <li className="flex items-center justify-center md:justify-start mb-4 md:mb-0">
+              <form onSubmit={searchHandler} className="w-full max-w-xs">
                 <div className="relative">
+                  <input
+                    type="text"
+                    name="search"
+                    id="search-navbar"
+                    className="block w-full py-1.5 pl-9 pr-3 text-sm text-white border border-blue-700/40 rounded-full bg-gray-800/90 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition shadow"
+                    placeholder="Search..."
+                  />
                   <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                     <svg
-                      className="w-4 h-4 text-gray-400"
+                      className="w-4 h-4 text-blue-300"
                       aria-hidden="true"
                       xmlns="http://www.w3.org/2000/svg"
                       fill="none"
@@ -154,22 +136,14 @@ const Navbar = () => {
                         d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"
                       />
                     </svg>
-                    <span className="sr-only">Search icon</span>
                   </div>
-                  <input
-                    type="text"
-                    name="search"
-                    id="search-navbar"
-                    className="block w-full p-2 pl-10 text-sm text-white border border-gray-600 rounded-lg bg-gray-800 placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Search..."
-                  />
                 </div>
               </form>
             </li>
             <li>
               <Link
                 to="/"
-                className="block py-2 px-3 text-white bg-blue-700 rounded md:bg-transparent md:text-blue-500 md:p-0"
+                className="block py-1.5 px-5 text-white font-bold rounded-full hover:bg-blue-700/80 hover:text-white transition md:bg-transparent md:text-blue-400 md:hover:bg-blue-700/20 md:hover:text-white md:p-2"
                 aria-current="page"
               >
                 Home
@@ -178,7 +152,7 @@ const Navbar = () => {
             <li>
               <Link
                 to="/about"
-                className="block py-2 px-3 text-white rounded hover:bg-gray-700 md:hover:bg-transparent md:hover:text-blue-500 md:p-0"
+                className="block py-1.5 px-5 text-white font-bold rounded-full hover:bg-blue-700/80 hover:text-white transition md:bg-transparent md:text-blue-400 md:hover:bg-blue-700/20 md:hover:text-white md:p-2"
               >
                 About
               </Link>
@@ -186,7 +160,7 @@ const Navbar = () => {
             <li>
               <Link
                 to="/services"
-                className="block py-2 px-3 text-white rounded hover:bg-gray-700 md:hover:bg-transparent md:hover:text-blue-500 md:p-0"
+                className="block py-1.5 px-5 text-white font-bold rounded-full hover:bg-blue-700/80 hover:text-white transition md:bg-transparent md:text-blue-400 md:hover:bg-blue-700/20 md:hover:text-white md:p-2"
               >
                 Services
               </Link>
@@ -195,7 +169,7 @@ const Navbar = () => {
               <li>
                 <Link
                   onClick={handleLogout}
-                  className="block py-2 px-3 text-white rounded hover:bg-gray-700 md:hover:bg-transparent md:hover:text-blue-500 md:p-0"
+                  className="block py-1.5 px-5 text-white font-bold rounded-full hover:bg-red-600/80 hover:text-white transition md:bg-transparent md:text-red-400 md:hover:bg-red-700/20 md:hover:text-white md:p-2"
                 >
                   Logout
                 </Link>
@@ -205,7 +179,7 @@ const Navbar = () => {
               {!user && (
                 <Link
                   to="/login"
-                  className="block py-2 px-3 text-white rounded hover:bg-gray-700 md:hover:bg-transparent md:hover:text-blue-500 md:p-0"
+                  className="block py-1.5 px-5 text-white font-bold rounded-full hover:bg-blue-700/80 hover:text-white transition md:bg-transparent md:text-blue-400 md:hover:bg-blue-700/20 md:hover:text-white md:p-2"
                 >
                   Login
                 </Link>

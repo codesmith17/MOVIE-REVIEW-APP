@@ -23,6 +23,7 @@
     "flowbite-react": "^0.9.0",
     "framer-motion": "^11.2.12",
     "lucide-react": "^0.408.0",
+    "plyr": "^3.7.8",
     "preline": "^2.3.0",
     "process": "^0.11.10",
     "react": "^18.3.1",

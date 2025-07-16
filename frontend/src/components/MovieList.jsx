@@ -3,7 +3,8 @@ import MovieCard from "./MovieCard";
 import { Link, useLocation } from "react-router-dom";
 import Loading from "./Loading";
 
-const API_KEY = import.meta.env.REACT_APP_TMDB_API_KEY;
+// Use the Bearer token from .env
+const TMDB_BEARER_TOKEN = import.meta.env.VITE_TMDB_BEARER_TOKEN;
 const BASE_URL = "https://api.themoviedb.org/3";
 
 const MovieList = () => {
@@ -11,11 +12,30 @@ const MovieList = () => {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [error, setError] = useState("");
+  const [imageErrors, setImageErrors] = useState(new Set());
   const location = useLocation();
   const observer = useRef();
 
+  const handleImageError = (itemId) => {
+    setImageErrors(prev => new Set(prev).add(itemId));
+  };
+
+  const renderFallbackImage = (item) => (
+    <div className="w-full sm:w-32 h-48 bg-gradient-to-br from-gray-700 to-gray-800 flex flex-col items-center justify-center text-gray-400 flex-shrink-0">
+      <div className="text-4xl mb-2">🎬</div>
+      <div className="text-xs text-center px-2 font-medium">
+        {item.media_type === "movie" ? "Movie" : "TV Show"}
+      </div>
+      <div className="text-xs text-center px-2 mt-1 line-clamp-2">
+        {(item.title || item.name)?.slice(0, 20)}...
+      </div>
+    </div>
+  );
+
   const fetchMovies = useCallback(async (searchText, pageNum) => {
     setLoading(true);
+    setError("");
     try {
       const response = await fetch(
         `${BASE_URL}/search/multi?query=${searchText}&page=${pageNum}`,
@@ -23,11 +43,23 @@ const MovieList = () => {
           method: "GET",
           headers: {
             accept: "application/json",
-            Authorization: `Bearer ${API_KEY}`,
+            Authorization: `Bearer ${TMDB_BEARER_TOKEN}`,
           },
         }
       );
       const data = await response.json();
+      if (data.status_code === 7) {
+        setError("Invalid API key. Please contact support or check your API key.");
+        setMovieData([]);
+        setHasMore(false);
+        return;
+      }
+      if (data.success === false) {
+        setError(data.status_message || "An error occurred while fetching movies.");
+        setMovieData([]);
+        setHasMore(false);
+        return;
+      }
       if (data.results) {
         const filteredResults = data.results.filter(
           (item) => item.media_type === "movie" || item.media_type === "tv"
@@ -37,6 +69,9 @@ const MovieList = () => {
       }
     } catch (error) {
       console.error("Error fetching movies:", error);
+      setError("Network error. Please try again.");
+      setMovieData([]);
+      setHasMore(false);
     } finally {
       setLoading(false);
     }
@@ -80,31 +115,58 @@ const MovieList = () => {
 
   return (
     <div className="bg-gradient-to-br from-gray-900 to-blue-900 text-gray-100 min-h-screen">
-      <div className="container mx-auto px-4 py-8">
+      <div className="max-w-3xl mx-auto px-4 py-6">
         {loading && <Loading />}
-        {!loading && movieData.length === 0 && (
+        {error && (
+          <div className="text-red-400 text-center my-4">{error}</div>
+        )}
+        {!loading && !error && movieData.length === 0 && (
           <p className="text-gray-300 text-center">
             No movies or TV shows found
           </p>
         )}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div className="flex flex-col gap-6">
           {movieData.map((item, index) => (
             <Link
-              key={item.id}
-              to={`/${item.media_type}-page/${item.id}`}
+              key={item.media_type + '-' + item.id}
+              to={`/${item.media_type}/${item.id}`}
+              className="flex flex-col sm:flex-row bg-gray-900 rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-shadow"
               ref={index === movieData.length - 1 ? lastMovieElementRef : null}
             >
-              <MovieCard
-                id={item.id}
-                title={item.media_type === "movie" ? item.title : item.name}
-                year={
-                  item.media_type === "movie"
-                    ? item.release_date?.substring(0, 4)
-                    : item.first_air_date?.substring(0, 4)
-                }
-                type={item.media_type}
-                image={`https://image.tmdb.org/t/p/w500${item.poster_path}`}
-              />
+              {!item.poster_path || imageErrors.has(item.id) ? (
+                renderFallbackImage(item)
+              ) : (
+                <img
+                  src={`https://image.tmdb.org/t/p/w154${item.poster_path}`}
+                  alt={item.title || item.name}
+                  className="w-full sm:w-32 h-48 object-cover bg-gray-800 flex-shrink-0"
+                  loading="lazy"
+                  onError={() => handleImageError(item.id)}
+                />
+              )}
+              <div className="flex flex-col justify-between p-4 flex-1">
+                <div>
+                  <h3 className="text-xl font-bold text-white">
+                    {item.media_type === "movie" ? item.title : item.name}{" "}
+                    <span className="text-gray-400 font-normal">
+                      {item.release_date?.slice(0, 4) || item.first_air_date?.slice(0, 4)}
+                    </span>
+                  </h3>
+                  {item.overview && (
+                    <p className="text-gray-300 mt-2 line-clamp-2">{item.overview}</p>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {item.vote_average && (
+                    <span className="bg-yellow-600 text-white px-2 py-0.5 rounded text-xs">
+                      ⭐ {item.vote_average.toFixed(1)}
+                    </span>
+                  )}
+                  <span className={`px-2 py-0.5 rounded text-xs font-semibold ${item.media_type === "movie" ? "bg-blue-600" : "bg-green-600"} text-white`}>
+                    {item.media_type.charAt(0).toUpperCase() + item.media_type.slice(1)}
+                  </span>
+                </div>
+              </div>
             </Link>
           ))}
         </div>

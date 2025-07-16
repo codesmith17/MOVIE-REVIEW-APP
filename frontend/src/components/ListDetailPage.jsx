@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import MovieCard from "./MovieCard"; // Assuming MovieCard component is in the same directory
 
+const TMDB_BEARER_TOKEN = import.meta.env.VITE_TMDB_BEARER_TOKEN;
+
 const ListDetailsPage = () => {
   const location = useLocation();
   const list = location.state?.list;
@@ -20,8 +22,7 @@ const ListDetailsPage = () => {
             method: "GET",
             headers: {
               accept: "application/json",
-              Authorization:
-                "Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjNmU5MzM1Yjg5Y2E3NWE3MGJjY2UxYzcyYmZkMDQ4ZCIsInN1YiI6IjYzYmVkN2FiODU4Njc4MDBmMDhjZjI3NiIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.sQHes_rn51wewxY_7nZLxGssnd67J8ieiLOIo2Bg_FI",
+              Authorization: `Bearer ${TMDB_BEARER_TOKEN}`,
             },
           });
           if (!response.ok) {
@@ -64,8 +65,9 @@ const ListDetailsPage = () => {
                 ? new Date(movie.release_date).getFullYear()
                 : "-"
             }
-            type="Movie" // Assuming all are movies
-            image={`https://image.tmdb.org/t/p/w500${movie.poster_path}`} // Example URL, adjust as per API response
+            type={movie.media_type || "movie"}
+            mediaType={movie.media_type || "movie"}
+            image={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
             rating={movie.vote_average}
           />
         ))}

@@ -10,7 +10,7 @@ const Modal = ({ isOpen, toggleModal, children }) => {
         className="absolute inset-0 bg-black opacity-75"
         onClick={toggleModal}
       ></div>
-      <div className="bg-white p-8 rounded-lg shadow-lg z-50 max-w-md w-full">
+      <div className="bg-gray-900 text-white p-8 rounded-lg shadow-lg z-50 max-w-md w-full border border-gray-700">
         {children}
       </div>
     </div>

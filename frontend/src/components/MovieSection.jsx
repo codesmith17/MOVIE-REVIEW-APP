@@ -14,14 +14,14 @@ const MovieCardSkeleton = () => (
 );
 
 const MovieSection = ({ title, movies, loading, error }) => (
-  <section className="mb-16">
-    <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-center text-yellow-400">
+  <section className="mb-20">
+    <h2 className="text-3xl sm:text-4xl font-extrabold mb-8 text-center text-yellow-400 tracking-tight drop-shadow-lg">
       {title}
     </h2>
-    <div className="movie-list grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 justify-items-center">
+    <div className="movie-list grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8 justify-items-center">
       {loading ? (
         [...Array(8)].map((_, index) => (
-          <div key={index} className="w-full max-w-sm">
+          <div key={index} className="w-full max-w-xs">
             <MovieCardSkeleton />
           </div>
         ))
@@ -35,13 +35,14 @@ const MovieSection = ({ title, movies, loading, error }) => (
         movies.map((movie) => (
           <div
             key={movie.id}
-            className="w-full max-w-sm transform hover:scale-105 transition duration-300 ease-in-out"
+            className="w-full max-w-xs transform hover:scale-105 transition duration-300 ease-in-out bg-white/10 rounded-2xl shadow-xl backdrop-blur-md p-2"
           >
             <MovieCard
               id={movie.id}
               title={movie.title}
               year={new Date(movie.release_date).getFullYear()}
-              type="movie"
+              type={movie.media_type || "movie"}
+              mediaType={movie.media_type || "movie"}
               image={
                 movie.poster_path
                   ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`

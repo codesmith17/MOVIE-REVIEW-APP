@@ -4,6 +4,7 @@ import { AiFillDislike } from "react-icons/ai";
 import DatePicker from "react-datepicker";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
+import "../styles/quill-dark.css";
 import ReadOnlyStarRating from "./ReadOnlyStarRating.jsx";
 import StarRating from "./StarRating.jsx";
 import "react-datepicker/dist/react-datepicker.css";
@@ -17,6 +18,9 @@ import Loading from "./Loading";
 import { MdDelete } from "react-icons/md";
 import { FaEdit } from "react-icons/fa";
 import Modal from "./Modal";
+
+const API_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
+
 const SingleReview = () => {
   const { imdbID, reviewID } = useParams();
 
@@ -50,7 +54,7 @@ const SingleReview = () => {
 
     try {
       const response = await fetch(
-        `http://localhost:3000/api/review/updateRating/${personalReview._id}`,
+        `${API_BASE_URL}/api/review/updateRating/${personalReview._id}`,
         {
           method: "PUT",
           headers: {
@@ -91,7 +95,7 @@ const SingleReview = () => {
     // console.log(replyIndex);
     try {
       const response = await fetch(
-        `http://localhost:3000/api/comment/likeReply`,
+        `${API_BASE_URL}/api/comment/likeReply`,
         {
           method: "POST",
           headers: {
@@ -146,7 +150,7 @@ const SingleReview = () => {
 
     try {
       const response = await fetch(
-        `http://localhost:3000/api/auth/getOthersData/${username}`,
+        `${API_BASE_URL}/api/auth/getOthersData/${username}`,
         {
           method: "GET",
           headers: {
@@ -188,7 +192,7 @@ const SingleReview = () => {
   const fetchSingleReview = async () => {
     try {
       const response = await fetch(
-        `http://localhost:3000/api/review/getReviewById/${imdbID}/${reviewID}`,
+        `${API_BASE_URL}/api/review/getReviewById/${imdbID}/${reviewID}`,
         {
           method: "GET",
           headers: {
@@ -234,7 +238,7 @@ const SingleReview = () => {
   const fetchComments = async () => {
     try {
       const response = await fetch(
-        `http://localhost:3000/api/comment/getCommentsByReviewId/${reviewID}?limit=${commentsToFetch}`,
+        `${API_BASE_URL}/api/comment/getCommentsByReviewId/${reviewID}?limit=${commentsToFetch}`,
         {
           method: "GET",
           headers: {
@@ -274,7 +278,7 @@ const SingleReview = () => {
   const handleLike = () => {
     if (!personalReview) return;
 
-    fetch("http://localhost:3000/api/review/postReviewLikes", {
+    fetch(`${API_BASE_URL}/api/review/postReviewLikes`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -331,7 +335,7 @@ const SingleReview = () => {
   const handleReviewEditSubmit = async () => {
     try {
       const response = await fetch(
-        `http://localhost:3000/api/review/updateReview/${personalReview?._id}`,
+        `${API_BASE_URL}/api/review/updateReview/${personalReview?._id}`,
         {
           method: "PUT",
           headers: {
@@ -367,7 +371,7 @@ const SingleReview = () => {
 
     try {
       const response = await fetch(
-        `http://localhost:3000/api/comment/postComment`,
+        `${API_BASE_URL}/api/comment/postComment`,
         {
           method: "POST",
           headers: {
@@ -401,7 +405,7 @@ const SingleReview = () => {
   const handleCommentLike = async (commentID) => {
     try {
       const response = await fetch(
-        `http://localhost:3000/api/comment/likeComment`,
+        `${API_BASE_URL}/api/comment/likeComment`,
         {
           method: "POST",
           headers: {
@@ -446,7 +450,7 @@ const SingleReview = () => {
   const handleCommentDislike = async (commentID) => {
     try {
       const response = await fetch(
-        `http://localhost:3000/api/comment/dislikeComment`,
+        `${API_BASE_URL}/api/comment/dislikeComment`,
         {
           method: "POST",
           headers: {
@@ -495,7 +499,7 @@ const SingleReview = () => {
     }
     try {
       const response = await fetch(
-        `http://localhost:3000/api/comment/postReply`,
+        `${API_BASE_URL}/api/comment/postReply`,
         {
           method: "POST",
           headers: {
@@ -537,7 +541,7 @@ const SingleReview = () => {
   const fetchMoreComments = async () => {
     try {
       const response = await fetch(
-        `http://localhost:3000/api/comment/getCommentsByReviewId/${reviewID}?limit=${commentsToFetch}`,
+        `${API_BASE_URL}/api/comment/getCommentsByReviewId/${reviewID}?limit=${commentsToFetch}`,
         {
           method: "GET",
           headers: {
@@ -570,7 +574,7 @@ const SingleReview = () => {
   const deleteReview = async () => {
     try {
       const response = await fetch(
-        `http://localhost:3000/api/review/deleteReview/${reviewID}`,
+        `${API_BASE_URL}/api/review/deleteReview/${reviewID}`,
         {
           method: "DELETE",
           headers: {
@@ -715,7 +719,7 @@ const SingleReview = () => {
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
                 placeholder="Add a comment..."
-                className="w-full p-4 rounded-lg border text-gray-800 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300"
+                className="w-full p-4 rounded-lg border bg-gray-800 text-white border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300 placeholder-gray-400"
               />
               <button
                 onClick={handleCommentSubmit}
@@ -803,7 +807,7 @@ const SingleReview = () => {
                         }))
                       }
                       placeholder="Reply to this comment..."
-                      className="w-full p-3 rounded-lg border text-gray-800 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300"
+                      className="w-full p-3 rounded-lg border bg-gray-800 text-white border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300 placeholder-gray-400"
                     />
                     <button
                       onClick={() => handleReplySubmit(comment?._id)}
@@ -869,38 +873,44 @@ const SingleReview = () => {
         </div>
       </div>
       <Modal isOpen={showModal} toggleModal={handleEditReview}>
-        <h2 className="text-2xl font-bold mb-4 text-gray-800">
-          Write a Review
+        <h2 className="text-2xl font-bold mb-4 text-white">
+          Edit Review
         </h2>
         <div className="space-y-4">
           <div>
-            <label className="block text-gray-700 font-bold mb-2">
+            <label className="block text-gray-300 font-bold mb-2">
               Date Logged
             </label>
             <DatePicker
               selected={selectedDate}
               // onChange={handleDateChange}
               dateFormat="dd-MM-yyyy"
-              className="text-gray-900 p-2 border border-gray-300 rounded-lg w-full"
+              className="text-white bg-gray-800 p-2 border border-gray-600 rounded-lg w-full focus:ring-2 focus:ring-blue-500"
               maxDate={new Date()}
               todayButton="Today"
             />
           </div>
 
           <div>
-            <label className="block text-gray-700 font-bold mb-2">
+            <label className="block text-gray-300 font-bold mb-2">
               Your Review
             </label>
-            <ReactQuill
-              value={currentReview}
-              onChange={setCurrentReview}
-              theme="snow"
-              className="bg-gray-100 text-gray-900 p-2 rounded-lg"
-            />
+            <div className="bg-gray-800 border border-gray-600 rounded-lg">
+              <ReactQuill
+                value={currentReview}
+                onChange={setCurrentReview}
+                theme="snow"
+                className="text-white"
+                style={{ 
+                  backgroundColor: '#1f2937',
+                  color: 'white'
+                }}
+              />
+            </div>
           </div>
 
           <div className="flex items-center space-x-2">
-            <p className="font-bold text-gray-900">Add New Rating:</p>
+            <p className="font-bold text-white">Add New Rating:</p>
             <div className="flex items-center space-x-1">
               {[...Array(5)].map((star, index) => {
                 const ratingValue = index + 1;

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 
+const API_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
+
 function FollowedByList({ currentUser, profileUser, maxDisplayed = 3 }) {
   const [friendsThatFollow, setFriendsThatFollow] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -16,7 +18,7 @@ function FollowedByList({ currentUser, profileUser, maxDisplayed = 3 }) {
       try {
         setIsLoading(true);
         const response = await fetch(
-          `http://localhost:3000/api/auth/getFriendsThatFollow/${currentUser}/${profileUser}`
+          `${API_BASE_URL}/api/auth/getFriendsThatFollow/${currentUser}/${profileUser}`
         );
         if (!response.ok) {
           throw new Error("Failed to fetch mutual followers");

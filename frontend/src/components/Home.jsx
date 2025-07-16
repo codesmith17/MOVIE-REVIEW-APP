@@ -3,6 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
+const API_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
+
 const Home = () => {
   const [remember, setRemember] = useState(false);
   const [formData, setFormData] = useState({ email: "", password: "" });
@@ -24,7 +26,7 @@ const Home = () => {
     setRemember(savedBoxChecked);
 
     if (savedEmail && savedPassword) {
-      fetch("http://localhost:3000/api/auth/verify/login", {
+      fetch(`${API_BASE_URL}/api/auth/verify/login`, {
         method: "GET",
         credentials: "include",
       })
@@ -53,7 +55,7 @@ const Home = () => {
   const onSubmit = (e) => {
     e.preventDefault();
 
-    fetch("http://localhost:3000/api/auth/signin", {
+    fetch(`${API_BASE_URL}/api/auth/signin`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(formData),

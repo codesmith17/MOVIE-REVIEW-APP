@@ -17,6 +17,10 @@ import { useSelector } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-toastify";
 import FollowedByList from "./FollowedByList";
+import UserActivitySummary from "./UserActivitySummary";
+const TMDB_BEARER_TOKEN = import.meta.env.VITE_TMDB_BEARER_TOKEN;
+const API_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
+
 const UserPage = () => {
   const { username } = useParams();
   const [loading, setLoading] = useState(false);
@@ -38,7 +42,7 @@ const UserPage = () => {
   const fetchWatchlist = async () => {
     try {
       const response = await fetch(
-        `http://localhost:3000/api/list/getList/${username}/watchlist`,
+        `${API_BASE_URL}/api/list/getList/${username}/watchlist`,
         {
           method: "GET",
           headers: {
@@ -52,7 +56,7 @@ const UserPage = () => {
       }
 
       const data = await response.json();
-      // console.log(data);
+      console.log("[Watchlist Fetch] Data:", data);
       if (data.message === "NO SUCH LIST AVAILABLE") {
         toast.info("No watchlist available");
         return;
@@ -79,8 +83,7 @@ const UserPage = () => {
         {
           method: "GET",
           headers: {
-            Authorization:
-              "Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjNmU5MzM1Yjg5Y2E3NWE3MGJjY2UxYzcyYmZkMDQ4ZCIsInN1YiI6IjYzYmVkN2FiODU4Njc4MDBmMDhjZjI3NiIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.sQHes_rn51wewxY_7nZLxGssnd67J8ieiLOIo2Bg_FI",
+            Authorization: `Bearer ${TMDB_BEARER_TOKEN}`,
           },
         }
       );
@@ -99,7 +102,7 @@ const UserPage = () => {
   const handleAddToWatchlist = async (movie) => {
     try {
       const response = await fetch(
-        "http://localhost:3000/api/list/addToList/watchlist",
+        `${API_BASE_URL}/api/list/addToList/watchlist`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -129,7 +132,7 @@ const UserPage = () => {
 
     try {
       const response = await fetch(
-        `http://localhost:3000/api/auth/toggleFollow/${username}`,
+        `${API_BASE_URL}/api/auth/toggleFollow/${username}`,
         {
           method: "POST",
           headers: {
@@ -154,55 +157,53 @@ const UserPage = () => {
   };
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      setIsLoading(true);
-      try {
-        const response = await fetch(
-          `http://localhost:3000/api/auth/getOthersData/${username}`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            credentials: "include",
+    setIsLoading(true);
+    if (user?.data && user.data.username === username) {
+      setFetchedUserData(user.data);
+      setFollowersCount(user.data.followers);
+      setIsFollowing(false); // Can't follow yourself
+      setIsLoading(false);
+    } else {
+      const fetchUserData = async () => {
+        try {
+          const response = await fetch(
+            `${API_BASE_URL}/api/auth/getOthersData/${username}`,
+            {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              credentials: "include",
+            }
+          );
+          if (!response.ok) {
+            if (response.status === 404) {
+              setNotFound(true);
+            } else {
+              throw new Error("Failed to fetch user data");
+            }
+            setIsLoading(false);
+            return;
           }
-        );
-        if (!response.ok) {
-          if (response.status === 404) {
-            setNotFound(true);
-          } else {
-            throw new Error("Failed to fetch user data");
+          const data = await response.json();
+          if (!data || !data.data) {
+            throw new Error("User data not found");
           }
-          return;
+          setFetchedUserData(data.data);
+          setFollowersCount(data.data.followers);
+          setIsFollowing(
+            data.data.followers
+              ? data.data.followersList.includes(user?.data?.username)
+              : false
+          );
+        } catch (err) {
+          setNotFound(true);
+        } finally {
+          setIsLoading(false);
         }
-
-        const data = await response.json();
-        if (!data || !data.data) {
-          throw new Error("User data not found");
-        }
-        console.log(data);
-        setFetchedUserData(data.data);
-        setFollowersCount(data.data.followers);
-        setIsFollowing(
-          data.data.followers
-            ? data.data.followersList.includes(user?.data?.username)
-            : false
-        );
-        console.log(user);
-      } catch (err) {
-        console.error("Error fetching user data:", err);
-        setNotFound(true);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    // if (user?.data && user.data.username === username) {
-    //   setFetchedUserData(user.data);
-    //   setFollowersCount(user.data.followers);
-    // } else {
-    fetchUserData();
-    // }
+      };
+      fetchUserData();
+    }
   }, [username, user]);
 
   const handleFileChange = (event) => {
@@ -218,7 +219,7 @@ const UserPage = () => {
 
     try {
       const response = await fetch(
-        "http://localhost:3000/api/auth/upload-profile-picture",
+        `${API_BASE_URL}/api/auth/upload-profile-picture`,
         {
           method: "POST",
           body: formData,
@@ -409,6 +410,13 @@ const UserPage = () => {
               handleSearchMovie={handleSearchMovie}
               handleAddToWatchlist={handleAddToWatchlist}
             />
+            
+            {/* User Activity Summary */}
+            <UserActivitySummary 
+              username={username} 
+              isCurrentUser={user?.data?.username === username}
+            />
+            
             <div className="mt-12">
               <div className="flex justify-center mb-8">
                 <TabButton
@@ -502,7 +510,7 @@ const ReviewsTab = ({ username }) => {
     const fetchReviews = async () => {
       try {
         const response = await fetch(
-          `http://localhost:3000/api/review/getReviews/${username}`
+          `${API_BASE_URL}/api/review/getReviews/${username}`
         );
         const data = await response.json();
 
@@ -534,8 +542,7 @@ const ReviewsTab = ({ username }) => {
               method: "GET",
               headers: {
                 accept: "application/json",
-                Authorization:
-                  "bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjNmU5MzM1Yjg5Y2E3NWE3MGJjY2UxYzcyYmZkMDQ4ZCIsInN1YiI6IjYzYmVkN2FiODU4Njc4MDBmMDhjZjI3NiIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.sQHes_rn51wewxY_7nZLxGssnd67J8ieiLOIo2Bg_FI",
+                Authorization: `Bearer ${TMDB_BEARER_TOKEN}`,
               },
             }
           );
@@ -636,8 +643,11 @@ const WatchlistTab = ({ watchlist, setIsModalOpen }) => {
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"
         >
           {watchlist.content.map((movie) => (
-            <Link to>
-              <MovieCard key={movie.id} movie={movie} />
+            <Link
+              key={movie.id}
+              to={`/${movie.type === 'tv' ? 'tv' : 'movie'}/${movie.id}`}
+            >
+              <MovieCard movie={movie} />
             </Link>
           ))}
         </motion.div>
@@ -650,7 +660,7 @@ const WatchlistTab = ({ watchlist, setIsModalOpen }) => {
 };
 
 const MovieCard = ({ movie }) => (
-  <Link to={`/movie-page/${movie.id}${movie.type}`} className="group block">
+  <div className="group block">
     <motion.div
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
@@ -677,7 +687,7 @@ const MovieCard = ({ movie }) => (
         </div>
       </div>
     </motion.div>
-  </Link>
+  </div>
 );
 
 const EmptyWatchlist = () => (
@@ -727,7 +737,7 @@ const ListsTab = ({ username }) => {
     setListSearchLoading(true);
     try {
       const response = await fetch(
-        `http://localhost:3000/api/list/getList/${username}/normal`
+        `${API_BASE_URL}/api/list/getList/${username}/normal`
       );
       console.log("Fetch response:", response); // Debug log
       if (response.ok) {
@@ -767,10 +777,14 @@ const ListsTab = ({ username }) => {
       toast.error("Please enter a list name");
       return;
     }
+    if (newListName.trim().toLowerCase() === "watchlist") {
+      toast.error("Cannot create a list named 'watchlist'. This name is reserved.");
+      return;
+    }
 
     try {
       const response = await fetch(
-        "http://localhost:3000/api/list/addToList/normal",
+        `${API_BASE_URL}/api/list/addToList/normal`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -809,8 +823,7 @@ const ListsTab = ({ username }) => {
         {
           method: "GET",
           headers: {
-            Authorization:
-              "Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjNmU5MzM1Yjg5Y2E3NWE3MGJjY2UxYzcyYmZkMDQ4ZCIsInN1YiI6IjYzYmVkN2FiODU4Njc4MDBmMDhjZjI3NiIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.sQHes_rn51wewxY_7nZLxGssnd67J8ieiLOIo2Bg_FI",
+            Authorization: `Bearer ${TMDB_BEARER_TOKEN}`,
           },
         }
       );
@@ -835,7 +848,7 @@ const ListsTab = ({ username }) => {
   const handleAddToList = async (item) => {
     try {
       const response = await fetch(
-        "http://localhost:3000/api/list/addToList/normal",
+        `${API_BASE_URL}/api/list/addToList/normal`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -889,12 +902,13 @@ const ListsTab = ({ username }) => {
               className="bg-gray-100 p-4 rounded-lg cursor-pointer hover:bg-gray-200"
             >
               <h3 className="text-xl font-bold mb-2">{list.name}</h3>
+              <p className="text-gray-600 mb-1">{list.type ? list.type : 'Custom List'}</p>
               <p>{list.content.length} movies</p>
             </Link>
           ))}
         </div>
       ) : (
-        <p>No lists found. Create your first list!</p>
+        <p className="text-gray-500">No lists found. Create your first list!</p>
       )}
       <SearchModal
         isOpen={isModalOpen}

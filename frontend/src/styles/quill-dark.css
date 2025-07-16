@@ -1,0 +1,74 @@
+/* Dark mode styles for ReactQuill editor */
+.ql-editor {
+  background-color: #1f2937 !important;
+  color: white !important;
+  border: 1px solid #4b5563 !important;
+}
+
+.ql-toolbar {
+  background-color: #374151 !important;
+  border: 1px solid #4b5563 !important;
+  border-bottom: none !important;
+}
+
+.ql-toolbar .ql-stroke {
+  stroke: #d1d5db !important;
+}
+
+.ql-toolbar .ql-fill {
+  fill: #d1d5db !important;
+}
+
+.ql-toolbar .ql-picker-label {
+  color: #d1d5db !important;
+}
+
+.ql-toolbar .ql-picker-options {
+  background-color: #374151 !important;
+  border: 1px solid #4b5563 !important;
+}
+
+.ql-toolbar .ql-picker-item {
+  color: #d1d5db !important;
+}
+
+.ql-toolbar .ql-picker-item:hover {
+  background-color: #4b5563 !important;
+}
+
+.ql-editor.ql-blank::before {
+  color: #9ca3af !important;
+  font-style: italic;
+}
+
+.ql-container {
+  border: 1px solid #4b5563 !important;
+  border-top: none !important;
+}
+
+/* Active/selected states */
+.ql-toolbar button:hover {
+  background-color: #4b5563 !important;
+}
+
+.ql-toolbar button.ql-active {
+  background-color: #3b82f6 !important;
+}
+
+.ql-snow .ql-tooltip {
+  background-color: #374151 !important;
+  border: 1px solid #4b5563 !important;
+  color: #d1d5db !important;
+}
+
+.ql-snow .ql-tooltip input[type=text] {
+  background-color: #1f2937 !important;
+  border: 1px solid #4b5563 !important;
+  color: #d1d5db !important;
+}
+
+/* Focus states */
+.ql-editor:focus {
+  outline: 2px solid #3b82f6 !important;
+  outline-offset: 2px;
+} 

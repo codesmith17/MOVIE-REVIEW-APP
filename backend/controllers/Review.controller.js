@@ -51,13 +51,11 @@ const getPersonalReview = (req, res, next) => {
 };
 
 const getReviewById = (req, res, next) => {
-    const reviewID = req.params.reviewID;
     const imdbID = req.params.imdbID;
-
-    Review.findOne({ _id: reviewID, imdbID })
+    // Only use reviewID if you want to fetch a specific review by MongoDB ObjectId, otherwise just use imdbID
+    Review.findOne({ imdbID })
         .then(response => {
             if (response) {
-                console.log(response);
                 res.status(200).json({ message: "REVIEW AVAILABLE", review: response });
             } else {
                 res.status(204).json({ message: "NO REVIEW FOUND" });

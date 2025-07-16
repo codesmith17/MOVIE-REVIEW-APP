@@ -1,17 +1,23 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import ReactStars from "react-rating-stars-component";
 import { FaStar } from "react-icons/fa";
 import { FaStarHalf } from "react-icons/fa6";
-const StarRating = ({ initialRating, onRatingChange }) => {
-  const [rating, setRating] = useState(initialRating);
 
-  const handleRating = (value) => {
+const StarRating = ({ value, onRatingChange }) => {
+  const [rating, setRating] = useState(value);
+
+  useEffect(() => {
     setRating(value);
-    onRatingChange(value); // Call the provided onRatingChange function with the new rating
+  }, [value]);
+
+  const handleRating = (val) => {
+    setRating(val);
+    onRatingChange(val);
   };
 
   return (
     <ReactStars
+      key={rating}
       count={5}
       onChange={handleRating}
       size={49}

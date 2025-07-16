@@ -3,6 +3,9 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
+
+const API_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
+
 const Signup = () => {
   const [formData, setFormData] = useState({});
   const navigate = useNavigate();
@@ -22,7 +25,7 @@ const Signup = () => {
       termsCheckboxRef.current.focus();
       return;
     }
-    fetch("http://localhost:3000/api/auth/signup", {
+    fetch(`${API_BASE_URL}/api/auth/signup`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ form: formData, checked: termsChecked }),

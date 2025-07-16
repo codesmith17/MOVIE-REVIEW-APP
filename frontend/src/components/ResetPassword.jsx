@@ -4,6 +4,8 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import crypto from "crypto-js";
 
+const API_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
+
 const ResetPassword = () => {
   const { resetToken } = useParams();
   const navigate = useNavigate();
@@ -34,7 +36,7 @@ const ResetPassword = () => {
 
     // Replace with your actual API call to reset the password
     const response = await fetch(
-      `http://localhost:3000/api/auth/resetPassword`,
+      `${API_BASE_URL}/api/auth/resetPassword`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

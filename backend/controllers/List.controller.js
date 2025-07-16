@@ -37,6 +37,11 @@ const addToList = async(req, res, next) => {
         return res.status(400).json({ message: "WRONG TYPE ATTRIBUTE" });
     }
 
+    // Prevent creating a custom list named 'watchlist'
+    if (req.params.type === "normal" && listName && listName.toLowerCase() === "watchlist") {
+        return res.status(400).json({ message: "Cannot create a custom list named 'watchlist'. This name is reserved." });
+    }
+
     if (req.params.type === "normal" && !listName) {
         return res.status(400).json({ message: "LIST NAME SHOULD BE AVAILABLE" });
     }
@@ -45,7 +50,10 @@ const addToList = async(req, res, next) => {
         let list = await Lists.findOne({ name: listName, ownerUsername: username });
 
         if (!list) {
-            // If the list does not exist, create it
+            // Only backend can create the watchlist
+            if (listName === "watchlist" && req.params.type !== "watchlist") {
+                return res.status(400).json({ message: "Cannot create a custom list named 'watchlist'. This name is reserved." });
+            }
             list = new Lists({
                 name: listName,
                 type: req.params.type,
@@ -54,7 +62,7 @@ const addToList = async(req, res, next) => {
             });
         }
 
-        if (movieFetched.movie) {
+        if (movieFetched) {
             // Check if the movie already exists in the list based on id
             const movieExists = list.content.some(movie => movie.id == movieFetched.id);
             if (movieExists) {
@@ -64,7 +72,7 @@ const addToList = async(req, res, next) => {
             // Add the movie to the list
             list.content.push({
                 id: movieFetched.id,
-                posterLink: movieFetched.poster_path,
+                posterLink: movieFetched.posterLink || movieFetched.poster_path,
                 title: movieFetched.title
             });
         }

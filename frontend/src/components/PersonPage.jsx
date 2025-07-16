@@ -4,6 +4,8 @@ import { useParams, Link } from "react-router-dom";
 import MovieCard from "./MovieCard";
 // import ActorCard from "./ActorCard";
 
+const TMDB_BEARER_TOKEN = import.meta.env.VITE_TMDB_BEARER_TOKEN;
+
 const PersonPage = () => {
   const [personData, setPersonData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -16,8 +18,7 @@ const PersonPage = () => {
           `https://api.themoviedb.org/3/person/${id}?append_to_response=combined_credits&language=en-US`,
           {
             headers: {
-              Authorization:
-                "Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjNmU5MzM1Yjg5Y2E3NWE3MGJjY2UxYzcyYmZkMDQ4ZCIsInN1YiI6IjYzYmVkN2FiODU4Njc4MDBmMDhjZjI3NiIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.sQHes_rn51wewxY_7nZLxGssnd67J8ieiLOIo2Bg_FI",
+              Authorization: `Bearer ${TMDB_BEARER_TOKEN}`,
             },
           }
         );
@@ -161,6 +162,7 @@ const PersonPage = () => {
                       : "N/A"
                   }
                   type={item.media_type}
+                  mediaType={item.media_type}
                   image={`https://image.tmdb.org/t/p/w500${item.poster_path}`}
                   rating={item.vote_average}
                 />
