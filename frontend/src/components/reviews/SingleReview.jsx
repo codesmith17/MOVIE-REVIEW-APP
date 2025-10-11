@@ -8,14 +8,16 @@ import "../../styles/quill-dark.css";
 import "react-datepicker/dist/react-datepicker.css";
 import { AiFillLike } from "react-icons/ai";
 import { StarRating, ReadOnlyStarRating, Loading } from "../common";
-import { FaStar, FaStarHalfAlt, FaEdit } from "react-icons/fa";
+import { FaStar, FaStarHalfAlt, FaEdit, FaCalendarAlt, FaThumbsUp, FaReply } from "react-icons/fa";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useSelector } from "react-redux";
 import { MdDelete } from "react-icons/md";
 import { Modal } from "../modals";
+import { motion, AnimatePresence } from "framer-motion";
 
 const API_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
+const TMDB_BEARER_TOKEN = import.meta.env.VITE_TMDB_BEARER_TOKEN;
 
 const SingleReview = () => {
   const { imdbID, reviewID } = useParams();
@@ -40,6 +42,8 @@ const SingleReview = () => {
   const [showModal, setShowModal] = useState(false);
   const [starRatingTemp, setStarRatingTemp] = useState(0);
   const [replyLikes, setReplyLikes] = useState({});
+  const [totalComments, setTotalComments] = useState(0);
+  const [hasMoreComments, setHasMoreComments] = useState(true);
 
   // New function to handle reply likes
   const [isUpdatingRating, setIsUpdatingRating] = useState(false);
@@ -137,9 +141,13 @@ const SingleReview = () => {
   };
   const navigate = useNavigate();
   const handleEditReview = () => {
+    // Initialize the temp rating with current rating when opening modal
+    if (!showModal) {
+      setStarRatingTemp(rating);
+      setCurrentReview(personalReview.review);
+    }
     setShowModal(!showModal);
   };
-  console.log(starRatingTemp);
   const fetchUserData = async (username) => {
     // setIsLoading(true);
     // console.log(username);
@@ -184,6 +192,14 @@ const SingleReview = () => {
       handlePosterError();
     }
   }, [user]);
+
+  // Update rating when personalReview changes
+  useEffect(() => {
+    if (personalReview?.rating) {
+      setRating(personalReview.rating);
+      setStarRatingTemp(personalReview.rating);
+    }
+  }, [personalReview]);
 
   const fetchSingleReview = async () => {
     try {
@@ -248,10 +264,14 @@ const SingleReview = () => {
         // console.log(response);
         if (response.status === 204) {
           setComments([]);
+          setTotalComments(0);
+          setHasMoreComments(false);
           return;
         }
         const data = await response.json();
         setComments(data.data);
+        setTotalComments(data.total || data.data.length);
+        setHasMoreComments(data.data.length >= commentsToFetch);
 
         const likedComments = data.data
           .filter((comment) => comment?.likedBy.includes(user?.data.username))
@@ -310,23 +330,54 @@ const SingleReview = () => {
   };
 
   const handlePosterError = () => {
-    fetch(
-      `http://www.omdbapi.com/?i=${imdbID}&plot=full&apikey=${
-        import.meta.env.VITE_OMDB_API_KEY_2
-      }`
-    )
-      .then((response) => response.json())
-      .then((data) => {
-        if (data.Poster) {
-          setMoviePoster(data.Poster);
-          localStorage.setItem(imdbID, data.Poster);
-        } else {
-          console.error("Failed to fetch movie poster from OMDB API");
+    // Check if it's a TV show or movie from TMDB
+    if (imdbID.startsWith('tv-') || imdbID.startsWith('movie-')) {
+      const mediaType = imdbID.startsWith('tv-') ? 'tv' : 'movie';
+      const mediaId = imdbID.replace(/^(tv|movie)-/, '');
+      
+      fetch(
+        `https://api.themoviedb.org/3/${mediaType}/${mediaId}?language=en-US`,
+        {
+          method: "GET",
+          headers: {
+            accept: "application/json",
+            Authorization: `Bearer ${TMDB_BEARER_TOKEN}`,
+          },
         }
-      })
-      .catch((error) => {
-        console.error("Error fetching movie poster from OMDB API:", error);
-      });
+      )
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.poster_path) {
+            const posterUrl = `https://image.tmdb.org/t/p/w500${data.poster_path}`;
+            setMoviePoster(posterUrl);
+            localStorage.setItem(imdbID, posterUrl);
+          } else {
+            console.error("Failed to fetch poster from TMDB API");
+          }
+        })
+        .catch((error) => {
+          console.error("Error fetching poster from TMDB API:", error);
+        });
+    } else {
+      // Use OMDB for traditional IMDB IDs
+      fetch(
+        `http://www.omdbapi.com/?i=${imdbID}&plot=full&apikey=${
+          import.meta.env.VITE_OMDB_API_KEY_2
+        }`
+      )
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.Poster) {
+            setMoviePoster(data.Poster);
+            localStorage.setItem(imdbID, data.Poster);
+          } else {
+            console.error("Failed to fetch movie poster from OMDB API");
+          }
+        })
+        .catch((error) => {
+          console.error("Error fetching movie poster from OMDB API:", error);
+        });
+    }
   };
   const handleReviewEditSubmit = async () => {
     try {
@@ -341,7 +392,7 @@ const SingleReview = () => {
           body: JSON.stringify({
             review: currentReview,
             rating: starRatingTemp,
-            dateLogged: selectedDate, // Convert date to "YYYY-MM-DD" format
+            dateLogged: selectedDate,
           }),
         }
       );
@@ -349,8 +400,11 @@ const SingleReview = () => {
       if (response.ok) {
         const data = await response.json();
         setPersonalReview(data.updatedReview);
+        setRating(starRatingTemp); // Update the rating state
         setShowModal(false);
         toast.success("Review updated successfully!");
+        // Refresh to show updated content
+        window.location.reload();
       } else {
         toast.error("Failed to update review");
       }
@@ -536,8 +590,12 @@ const SingleReview = () => {
 
   const fetchMoreComments = async () => {
     try {
+      // Increment the limit first
+      const newLimit = commentsToFetch + 10;
+      setCommentsToFetch(newLimit);
+      
       const response = await fetch(
-        `${API_BASE_URL}/api/comment/getCommentsByReviewId/${reviewID}?limit=${commentsToFetch}`,
+        `${API_BASE_URL}/api/comment/getCommentsByReviewId/${reviewID}?limit=${newLimit}`,
         {
           method: "GET",
           headers: {
@@ -549,14 +607,127 @@ const SingleReview = () => {
 
       if (response.ok) {
         const data = await response.json();
-        setComments((prev) => [...prev, ...data.data]);
-        setCommentsToFetch((prev) => prev + 10);
+        // Replace comments with the full list (API returns all comments up to the limit)
+        setComments(data.data);
+        setTotalComments(data.total || data.data.length);
+        
+        // Check if there are more comments to load
+        setHasMoreComments(data.data.length < (data.total || data.data.length));
+        
+        // Update liked/disliked states
+        const likedComments = data.data
+          .filter((comment) => comment?.likedBy.includes(user?.data.username))
+          .map((comment) => comment?._id);
+        setCurrentLiked(likedComments);
+        
+        const dislikedComments = data?.data
+          .filter((comment) => comment?.dislikedBy.includes(user?.data.username))
+          .map((comment) => comment?._id);
+        setCurrentDisliked(dislikedComments);
       } else {
         console.error("Failed to fetch more comments");
       }
     } catch (error) {
       console.error("Error fetching more comments:", error);
     }
+  };
+
+  const handleDeleteComment = async (commentID) => {
+    if (!window.confirm("Are you sure you want to delete this comment? All replies will also be deleted.")) {
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/comment/deleteComment/${commentID}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            reviewOwner: personalReview.username,
+          }),
+        }
+      );
+
+      if (response.ok) {
+        // Update the comment to show as deleted instead of removing it
+        setComments((prev) =>
+          prev.map((comment) =>
+            comment._id === commentID
+              ? {
+                  ...comment,
+                  comment: "This comment was deleted by review owner or admin",
+                  deleted: true,
+                  replies: [],
+                }
+              : comment
+          )
+        );
+        toast.success("Comment deleted successfully");
+      } else {
+        const error = await response.json();
+        toast.error(error.message || "Failed to delete comment");
+      }
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      toast.error("Failed to delete comment");
+    }
+  };
+
+  const handleDeleteReply = async (commentID, replyIndex) => {
+    if (!window.confirm("Are you sure you want to delete this reply?")) {
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/comment/deleteReply`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            commentID,
+            replyIndex,
+            reviewOwner: personalReview.username,
+          }),
+        }
+      );
+
+      if (response.ok) {
+        // Remove the specific reply
+        setComments((prev) =>
+          prev.map((comment) =>
+            comment._id === commentID
+              ? {
+                  ...comment,
+                  replies: comment.replies.filter((_, index) => index !== replyIndex),
+                }
+              : comment
+          )
+        );
+        toast.success("Reply deleted successfully");
+      } else {
+        const error = await response.json();
+        toast.error(error.message || "Failed to delete reply");
+      }
+    } catch (error) {
+      console.error("Error deleting reply:", error);
+      toast.error("Failed to delete reply");
+    }
+  };
+
+  // Check if user can delete (is review owner or is "krishna")
+  const canDelete = (commentUsername) => {
+    return (
+      user?.data?.username === personalReview?.username ||
+      user?.data?.username === "krishna"
+    );
   };
   const handleDeleteReview = () => {
     const confirmDelete = window.confirm(
@@ -631,169 +802,293 @@ const SingleReview = () => {
     return <Loading loading={true}></Loading>;
   }
 
+  const MAX_CHARACTERS = 8000;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-blue-900 flex justify-center items-center py-8">
-      <div className="max-w-4xl w-full mx-auto bg-gray-900 my-9 text-gray-100 p-6 rounded-lg shadow-2xl">
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center">
-            {(profilePicture || fetchedUserData?.data.profilePicture) && (
-              <Link to={`/user/${user?.data.username}`}>
-                <img
-                  src={profilePicture || fetchedUserData?.data.profilePicture}
-                  alt="Profile"
-                  className="w-12 h-12 rounded-full mr-4 shadow-md cursor-pointer transition duration-300 hover:scale-110"
-                />
-              </Link>
-            )}
-            <h2 className="text-3xl font-bold">
-              {personalReview.username}'s Review
-            </h2>
-          </div>
-          {user?.data.username === personalReview.username && (
-            <div className="flex space-x-4">
-              <button
-                onClick={handleDeleteReview}
-                className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition duration-300 flex items-center"
-              >
-                <MdDelete className="mr-2" /> Delete
-              </button>
-              <button
-                onClick={handleEditReview}
-                className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded transition duration-300 flex items-center"
-              >
-                <FaEdit className="mr-2" /> Edit
-              </button>
-            </div>
-          )}
-        </div>
-        <div className="flex flex-col md:flex-row md:space-x-6">
-          <div className="md:w-2/3 border p-6 rounded-lg shadow-md bg-gray-800 text-white">
-            <div className="flex items-center mb-4">
-              {/* <p className="text-lg font-semibold mr-4">Rating: </p> */}
-              <div className="mb-6">
-                <h3 className="text-xl font-semibold mb-2">Your Rating</h3>
-                <StarRating
-                  initialRating={rating}
-                  onRatingChange={handleRatingChange}
-                />
+    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-slate-900 to-gray-950 py-4 sm:py-6 md:py-8 lg:py-12 px-3 sm:px-4">
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="max-w-6xl w-full mx-auto"
+      >
+        {/* Header Section */}
+        <div className="relative bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-2xl overflow-hidden border border-slate-700/50 mb-4 sm:mb-6 md:mb-8">
+          {/* Decorative Background */}
+          <div className="absolute inset-0 bg-gradient-to-br from-cyan-600/5 to-blue-600/5" />
+          <div className="absolute top-0 right-0 w-48 h-48 sm:w-64 sm:h-64 md:w-96 md:h-96 bg-cyan-500/10 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 left-0 w-48 h-48 sm:w-64 sm:h-64 md:w-96 md:h-96 bg-blue-500/10 rounded-full blur-3xl" />
+
+          <div className="relative p-4 sm:p-6 md:p-8">
+            <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 sm:gap-6">
+              {/* User Info */}
+              <div className="flex items-center gap-3 sm:gap-4">
+                {(profilePicture || fetchedUserData?.data.profilePicture) && (
+                  <Link to={`/user/${personalReview.username}`}>
+                    <motion.img
+                      whileHover={{ scale: 1.1 }}
+                      src={profilePicture || fetchedUserData?.data.profilePicture}
+                      alt="Profile"
+                      className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full ring-2 sm:ring-4 ring-cyan-500/20 shadow-xl cursor-pointer"
+                    />
+                  </Link>
+                )}
+                <div className="min-w-0">
+                  <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-slate-100 to-cyan-400 bg-clip-text text-transparent break-words">
+                    {personalReview.username}'s Review
+                  </h1>
+                  <div className="flex items-center gap-1.5 sm:gap-2 mt-1 sm:mt-2 text-gray-400 text-xs sm:text-sm">
+                    <FaCalendarAlt />
+                    <span className="break-words">{personalReview.dateLogged}</span>
+                  </div>
+                </div>
               </div>
+
+              {/* Action Buttons */}
+              {user?.data.username === personalReview.username && (
+                <div className="flex gap-2 sm:gap-3 w-full md:w-auto">
+                  <motion.button
+                    whileHover={{ scale: 1.05, y: -2 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleDeleteReview}
+                    className="flex-1 md:flex-initial bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold py-2 sm:py-2.5 md:py-3 px-3 sm:px-4 md:px-6 rounded-lg transition duration-300 flex items-center justify-center gap-1.5 sm:gap-2 shadow-lg text-sm sm:text-base"
+                  >
+                    <MdDelete className="text-base sm:text-lg md:text-xl" /> Delete
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.05, y: -2 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleEditReview}
+                    className="flex-1 md:flex-initial bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white font-semibold py-2 sm:py-2.5 md:py-3 px-3 sm:px-4 md:px-6 rounded-lg transition duration-300 flex items-center justify-center gap-1.5 sm:gap-2 shadow-lg text-sm sm:text-base"
+                  >
+                    <FaEdit className="text-base sm:text-lg md:text-xl" /> Edit
+                  </motion.button>
+                </div>
+              )}
             </div>
-            <p className="text-sm text-gray-400 mb-4">
-              Date Logged: {personalReview.dateLogged}
-            </p>
-            <div
-              className="text-base ql-editor prose prose-invert"
-              dangerouslySetInnerHTML={displayHtmlReview()}
-            />
-            <div className="flex items-center">
-              <AiFillLike
-                className={`text-2xl ${
-                  currentLiked.includes(personalReview._id)
-                    ? "text-blue-500"
-                    : "text-gray-500"
-                } mr-2 cursor-pointer transition duration-300 hover:scale-110`}
-                onClick={handleLike}
-              />
-              <span className="text-lg">{personalReview.likes}</span>
-            </div>
-          </div>
-          <div className="md:w-1/3 mt-6 md:mt-0">
-            <img
-              src={moviePoster}
-              alt="Movie Poster"
-              className="rounded-lg shadow-md w-full transition duration-300 hover:shadow-xl"
-              onError={handlePosterError}
-            />
           </div>
         </div>
 
-        <div className="mt-96">
-          <h3 className="text-2xl font-bold mb-6">Comments</h3>
+        {/* Review Content */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
+          {/* Main Review Section */}
+          <div className="lg:col-span-2">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
+              className="relative bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-2xl overflow-hidden border border-slate-700/50 p-4 sm:p-6 md:p-8"
+            >
+              {/* Rating Section */}
+              <div className="mb-6 sm:mb-8">
+                <h3 className="text-lg sm:text-xl md:text-2xl font-bold mb-3 sm:mb-4 text-slate-100">
+                  Rating
+                </h3>
+                <div className="bg-slate-700/30 rounded-xl p-4 sm:p-6 flex justify-center sm:justify-start">
+                  <StarRating
+                    value={rating}
+                    onRatingChange={handleRatingChange}
+                  />
+                </div>
+              </div>
+
+              {/* Review Text */}
+              <div className="mb-6 sm:mb-8">
+                <h3 className="text-lg sm:text-xl md:text-2xl font-bold mb-3 sm:mb-4 text-slate-100">
+                  Review
+                </h3>
+                <div
+                  className="text-gray-200 text-sm sm:text-base md:text-lg leading-relaxed bg-slate-700/30 rounded-xl p-4 sm:p-6 ql-editor prose prose-invert prose-sm sm:prose-base md:prose-lg max-w-none"
+                  dangerouslySetInnerHTML={displayHtmlReview()}
+                />
+              </div>
+
+              {/* Like Button */}
+              <motion.div 
+                whileHover={{ scale: 1.02 }}
+                className="flex items-center gap-2 sm:gap-4 bg-slate-700/30 rounded-xl p-3 sm:p-4 w-fit"
+              >
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={handleLike}
+                  className={`flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold transition-all duration-300 ${
+                    currentLiked.includes(personalReview._id)
+                      ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-lg"
+                      : "bg-slate-600 text-gray-300 hover:bg-slate-500"
+                  }`}
+                >
+                  <AiFillLike className="text-lg sm:text-xl md:text-2xl" />
+                  <span className="text-base sm:text-lg font-bold">{personalReview.likes}</span>
+                </motion.button>
+              </motion.div>
+            </motion.div>
+          </div>
+
+          {/* Movie Poster Sidebar */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.3 }}
+            className="lg:col-span-1"
+          >
+            <div className="lg:sticky lg:top-8 bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-2xl overflow-hidden border border-slate-700/50 p-3 sm:p-4">
+              <motion.img
+                whileHover={{ scale: 1.05 }}
+                transition={{ duration: 0.3 }}
+                src={moviePoster}
+                alt="Movie Poster"
+                className="rounded-lg sm:rounded-xl shadow-2xl w-full"
+                onError={handlePosterError}
+              />
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Comments Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="mt-6 sm:mt-8 md:mt-12 relative bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-2xl overflow-hidden border border-slate-700/50 p-4 sm:p-6 md:p-8"
+        >
+          <h3 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4 sm:mb-6 md:mb-8 text-slate-100">
+            Comments
+          </h3>
+
           {user ? (
-            <div className="mb-6">
+            <div className="mb-6 sm:mb-8">
               <textarea
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
-                placeholder="Add a comment..."
-                className="w-full p-4 rounded-lg border bg-gray-800 text-white border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300 placeholder-gray-400"
+                placeholder="Share your thoughts..."
+                rows="4"
+                className="w-full px-3 sm:px-4 md:px-5 py-3 sm:py-4 bg-slate-700/50 border border-slate-600/50 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all resize-none text-sm sm:text-base"
               />
-              <button
+              <motion.button
+                whileHover={{ scale: 1.02, y: -2 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={handleCommentSubmit}
-                className="mt-4 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded transition duration-300"
+                className="mt-3 sm:mt-4 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white font-semibold py-2 sm:py-2.5 md:py-3 px-4 sm:px-6 md:px-8 rounded-lg shadow-lg transition duration-300 text-sm sm:text-base w-full sm:w-auto"
               >
                 Post Comment
-              </button>
+              </motion.button>
             </div>
           ) : (
-            <h2 className="text-xl font-semibold mb-6">
-              Please login to post comments
-            </h2>
+            <div className="mb-6 sm:mb-8 text-center py-6 sm:py-8 bg-slate-700/30 rounded-xl">
+              <p className="text-base sm:text-lg md:text-xl text-gray-300 px-4">
+                Please <Link to="/login" className="text-cyan-400 hover:text-cyan-300 underline">login</Link> to post comments
+              </p>
+            </div>
           )}
 
           {comments && comments.length > 0 ? (
-            comments.map((comment) => (
-              <div
+            comments.map((comment, index) => (
+              <motion.div
                 key={comment?._id}
-                className="border p-6 rounded-lg shadow-md mb-6 bg-gray-800 text-white"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                className="bg-slate-700/50 backdrop-blur-sm rounded-xl p-4 sm:p-5 md:p-6 mb-4 sm:mb-5 md:mb-6 border border-slate-600/30 shadow-xl hover:shadow-2xl transition-all duration-300"
               >
-                <div className="flex justify-between items-center mb-4">
-                  <div className="flex items-center">
+                <div className="flex justify-between items-start mb-3 sm:mb-4">
+                  <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
                     <Link to={`/user/${comment?.username}`}>
-                      <img
+                      <motion.img
+                        whileHover={{ scale: 1.1 }}
                         src={comment?.profilePicture}
                         alt="Profile"
-                        className="w-10 h-10 rounded-full mr-3"
+                        className="w-10 h-10 sm:w-12 sm:h-12 rounded-full ring-2 ring-cyan-500/20 shadow-lg cursor-pointer flex-shrink-0"
                       />
                     </Link>
-                    <div>
-                      <p className="font-semibold text-lg">
-                        {comment?.username}
-                      </p>
+                    <div className="min-w-0 flex-1">
+                      <Link to={`/user/${comment?.username}`} className="hover:text-cyan-300 transition">
+                        <p className="font-bold text-sm sm:text-base md:text-lg text-white truncate">
+                          {comment?.username}
+                        </p>
+                      </Link>
                       <p className="text-xs text-gray-400">
                         {getTimeAgo(comment?.time)}
                       </p>
                     </div>
                   </div>
+                  
+                  {/* Delete Button - Only show if user can delete */}
+                  {canDelete() && !comment?.deleted && (
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => handleDeleteComment(comment?._id)}
+                      className="flex-shrink-0 bg-red-600/20 hover:bg-red-600/40 text-red-400 hover:text-red-300 p-2 rounded-lg transition-all duration-200 border border-red-500/30"
+                      title="Delete comment"
+                    >
+                      <MdDelete className="text-lg" />
+                    </motion.button>
+                  )}
                 </div>
-                <p className="mt-2 text-gray-200">{comment?.comment}</p>
-                <div className="flex items-center mt-4 space-x-4">
-                  <button
-                    onClick={() => handleCommentLike(comment?._id)}
-                    className={`flex items-center space-x-1 ${
-                      currentLiked.includes(comment?._id)
-                        ? "text-blue-500"
-                        : "text-gray-400"
-                    } hover:text-blue-500 transition duration-300`}
-                  >
-                    <AiFillLike className="text-xl" />
-                    <span>{comment?.likes || 0}</span>
-                  </button>
-                  <button
-                    onClick={() => handleCommentDislike(comment?._id)}
-                    className={`flex items-center space-x-1 ${
-                      currentDisliked.includes(comment?._id)
-                        ? "text-red-500"
-                        : "text-gray-400"
-                    } hover:text-red-500 transition duration-300`}
-                  >
-                    <AiFillDislike className="text-xl" />
-                    <span>{comment?.dislikes || 0}</span>
-                  </button>
-                  <button
-                    onClick={() =>
-                      setShowReplyInput((prev) => ({
-                        ...prev,
-                        [comment?._id]: !prev[comment?._id],
-                      }))
-                    }
-                    className="text-gray-400 hover:text-gray-200 transition duration-300"
-                  >
-                    {showReplyInput[comment?._id] ? "Cancel" : "Reply"}
-                  </button>
-                </div>
+                
+                <p className={`mt-2 sm:mt-3 text-sm sm:text-base leading-relaxed break-words ${
+                  comment?.deleted 
+                    ? 'text-gray-500 italic' 
+                    : 'text-gray-200'
+                }`}>
+                  {comment?.comment}
+                </p>
+                
+                {!comment?.deleted && (
+                  <div className="flex flex-wrap items-center mt-4 sm:mt-5 md:mt-6 gap-2 sm:gap-3 md:gap-4">
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => handleCommentLike(comment?._id)}
+                      className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-semibold transition-all text-xs sm:text-sm md:text-base ${
+                        currentLiked.includes(comment?._id)
+                          ? "bg-blue-600 text-white shadow-lg"
+                          : "bg-gray-600/50 text-gray-300 hover:bg-gray-600"
+                      }`}
+                    >
+                      <AiFillLike className="text-sm sm:text-base md:text-lg" />
+                      <span>{comment?.likes || 0}</span>
+                    </motion.button>
+                    
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => handleCommentDislike(comment?._id)}
+                      className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-semibold transition-all text-xs sm:text-sm md:text-base ${
+                        currentDisliked.includes(comment?._id)
+                          ? "bg-red-600 text-white shadow-lg"
+                          : "bg-gray-600/50 text-gray-300 hover:bg-gray-600"
+                      }`}
+                    >
+                      <AiFillDislike className="text-sm sm:text-base md:text-lg" />
+                      <span>{comment?.dislikes || 0}</span>
+                    </motion.button>
+                    
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() =>
+                        setShowReplyInput((prev) => ({
+                          ...prev,
+                          [comment?._id]: !prev[comment?._id],
+                        }))
+                      }
+                      className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-gray-600/50 text-gray-300 hover:bg-gray-600 font-semibold transition-all text-xs sm:text-sm md:text-base"
+                    >
+                      <FaReply />
+                      {showReplyInput[comment?._id] ? "Cancel" : "Reply"}
+                    </motion.button>
+                  </div>
+                )}
 
                 {showReplyInput[comment?._id] && (
-                  <div className="mt-4">
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="mt-6 bg-slate-600/30 rounded-xl p-4"
+                  >
                     <textarea
                       value={replyComment[comment?._id] || ""}
                       onChange={(e) =>
@@ -802,136 +1097,190 @@ const SingleReview = () => {
                           [comment?._id]: e.target.value,
                         }))
                       }
-                      placeholder="Reply to this comment..."
-                      className="w-full p-3 rounded-lg border bg-gray-800 text-white border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300 placeholder-gray-400"
+                      placeholder="Write your reply..."
+                      rows="3"
+                      className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600/50 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-all resize-none"
                     />
-                    <button
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
                       onClick={() => handleReplySubmit(comment?._id)}
-                      className="mt-2 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded transition duration-300"
+                      className="mt-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white font-semibold py-2 px-6 rounded-lg shadow-lg transition duration-300"
                     >
                       Post Reply
-                    </button>
-                  </div>
+                    </motion.button>
+                  </motion.div>
                 )}
 
                 {comment?.replies && comment?.replies.length > 0 && (
                   <div className="mt-6 space-y-4">
-                    <h4 className="font-semibold text-lg">Replies:</h4>
-                    {comment?.replies.map((reply, index) => (
-                      <div key={index} className="bg-gray-700 p-4 rounded-lg">
-                        <div className="flex items-center mb-2">
-                          <Link to={`/user/${reply?.username}`}>
-                            <img
-                              src={reply?.profilePicture}
-                              alt="Profile"
-                              className="w-8 h-8 rounded-full mr-2"
-                            />
-                          </Link>
-                          <div>
-                            <p className="font-semibold">{reply?.username}</p>
-                            <p className="text-xs text-gray-400">
-                              {getTimeAgo(reply?.time)}
-                            </p>
+                    <h4 className="font-bold text-lg text-cyan-300 mb-4">Replies ({comment.replies.length})</h4>
+                    {comment?.replies.map((reply, replyIndex) => (
+                      <motion.div
+                        key={replyIndex}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: replyIndex * 0.05 }}
+                        className="bg-slate-600/40 backdrop-blur-sm p-5 rounded-xl border border-slate-500/30 ml-6"
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <Link to={`/user/${reply?.username}`}>
+                              <motion.img
+                                whileHover={{ scale: 1.1 }}
+                                src={reply?.profilePicture}
+                                alt="Profile"
+                                className="w-10 h-10 rounded-full ring-2 ring-cyan-500/20 cursor-pointer"
+                              />
+                            </Link>
+                            <div>
+                              <Link to={`/user/${reply?.username}`} className="hover:text-cyan-300 transition">
+                                <p className="font-semibold text-white">{reply?.username}</p>
+                              </Link>
+                              <p className="text-xs text-gray-400">
+                                {getTimeAgo(reply?.time)}
+                              </p>
+                            </div>
                           </div>
+                          
+                          {/* Delete Reply Button */}
+                          {canDelete() && (
+                            <motion.button
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.9 }}
+                              onClick={() => handleDeleteReply(comment?._id, replyIndex)}
+                              className="flex-shrink-0 bg-red-600/20 hover:bg-red-600/40 text-red-400 hover:text-red-300 p-2 rounded-lg transition-all duration-200 border border-red-500/30"
+                              title="Delete reply"
+                            >
+                              <MdDelete className="text-base" />
+                            </motion.button>
+                          )}
                         </div>
-                        <p className="text-gray-200">{reply?.reply}</p>
-                        <div className="mt-2">
-                          <button
-                            onClick={() => handleReplyLike(comment?._id, index)}
-                            className={`flex items-center space-x-1 ${
-                              replyLikes[`${comment?._id}-${index}`]
-                                ? "text-blue-500"
-                                : "text-gray-400"
-                            } hover:text-blue-500 transition duration-300`}
-                          >
-                            <AiFillLike className="text-sm" />
-                            <span className="text-sm">{reply?.likes || 0}</span>
-                          </button>
-                        </div>
-                      </div>
+                        <p className="text-gray-200 mb-3">{reply?.reply}</p>
+                        <motion.button
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => handleReplyLike(comment?._id, replyIndex)}
+                          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-semibold text-sm transition-all ${
+                            replyLikes[`${comment?._id}-${replyIndex}`]
+                              ? "bg-blue-600 text-white"
+                              : "bg-gray-500/50 text-gray-300 hover:bg-gray-500"
+                          }`}
+                        >
+                          <AiFillLike />
+                          <span>{reply?.likes || 0}</span>
+                        </motion.button>
+                      </motion.div>
                     ))}
                   </div>
                 )}
-              </div>
+              </motion.div>
             ))
           ) : (
-            <p className="text-gray-400 text-lg">No comments yet</p>
+            <div className="text-center py-16">
+              <div className="text-6xl mb-4">💬</div>
+              <p className="text-xl text-gray-400">No comments yet. Be the first to share your thoughts!</p>
+            </div>
           )}
 
-          <div className="mt-8">
-            <button
-              onClick={fetchMoreComments}
-              className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded transition duration-300"
-            >
-              Load More Comments
-            </button>
-          </div>
-        </div>
-      </div>
+          {hasMoreComments && comments.length > 0 && (
+            <div className="mt-10 flex justify-center">
+              <motion.button
+                whileHover={{ scale: 1.05, y: -2 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={fetchMoreComments}
+                className="bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-600 hover:to-gray-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg transition duration-300 border border-gray-600/50"
+              >
+                Load More Comments
+              </motion.button>
+            </div>
+          )}
+          
+          {!hasMoreComments && comments.length > 0 && (
+            <div className="mt-10 text-center">
+              <p className="text-gray-500 text-sm">All comments loaded</p>
+            </div>
+          )}
+        </motion.div>
+      </motion.div>
       <Modal isOpen={showModal} toggleModal={handleEditReview}>
-        <h2 className="text-2xl font-bold mb-4 text-white">
-          Edit Review
-        </h2>
-        <div className="space-y-4">
-          <div>
-            <label className="block text-gray-300 font-bold mb-2">
-              Date Logged
-            </label>
-            <DatePicker
-              selected={selectedDate}
-              // onChange={handleDateChange}
-              dateFormat="dd-MM-yyyy"
-              className="text-white bg-gray-800 p-2 border border-gray-600 rounded-lg w-full focus:ring-2 focus:ring-blue-500"
-              maxDate={new Date()}
-              todayButton="Today"
-            />
-          </div>
-
-          <div>
-            <label className="block text-gray-300 font-bold mb-2">
-              Your Review
-            </label>
-            <div className="bg-gray-800 border border-gray-600 rounded-lg">
-              <ReactQuill
-                value={currentReview}
-                onChange={setCurrentReview}
-                theme="snow"
-                className="text-white"
-                style={{ 
-                  backgroundColor: '#1f2937',
-                  color: 'white'
-                }}
+        <div className="bg-slate-900 p-4 sm:p-6 rounded-xl max-h-[90vh] overflow-y-auto">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4 sm:mb-6 text-slate-100">
+            Edit Review
+          </h2>
+          <div className="space-y-4 sm:space-y-6">
+            <div>
+              <label className="block text-slate-300 font-semibold mb-2 sm:mb-3 text-sm sm:text-base">
+                Date Logged
+              </label>
+              <DatePicker
+                selected={selectedDate}
+                dateFormat="dd-MM-yyyy"
+                className="text-white bg-slate-800 p-2 sm:p-3 border border-slate-600 rounded-lg w-full focus:ring-2 focus:ring-cyan-500 text-sm sm:text-base"
+                maxDate={new Date()}
+                todayButton="Today"
               />
             </div>
-          </div>
 
-          <div className="flex items-center space-x-2">
-            <p className="font-bold text-white">Add New Rating:</p>
-            <div className="flex items-center space-x-1">
-              {[...Array(5)].map((star, index) => {
-                const ratingValue = index + 1;
-                return (
-                  <FaStar
-                    key={index}
-                    className="cursor-pointer"
-                    color={
-                      ratingValue <= starRatingTemp ? "#ffc107" : "#e4e5e9"
+            <div>
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-2 sm:mb-3 gap-2">
+                <label className="block text-slate-300 font-semibold text-sm sm:text-base">
+                  Your Review
+                </label>
+                <span className={`text-xs sm:text-sm ${
+                  currentReview?.length > MAX_CHARACTERS 
+                    ? 'text-red-400' 
+                    : 'text-gray-400'
+                }`}>
+                  {currentReview?.replace(/<[^>]*>/g, '').length || 0} / {MAX_CHARACTERS} characters
+                </span>
+              </div>
+              <div className="bg-slate-800 border border-slate-600 rounded-lg">
+                <ReactQuill
+                  value={currentReview}
+                  onChange={(value) => {
+                    const textLength = value.replace(/<[^>]*>/g, '').length;
+                    if (textLength <= MAX_CHARACTERS) {
+                      setCurrentReview(value);
+                    } else {
+                      toast.error(`Review cannot exceed ${MAX_CHARACTERS} characters`);
                     }
-                    size={25}
-                    onClick={() => setStarRatingTemp(ratingValue)}
-                  />
-                );
-              })}
+                  }}
+                  theme="snow"
+                  className="text-white text-sm sm:text-base"
+                  style={{ 
+                    backgroundColor: '#1e293b',
+                    color: 'white'
+                  }}
+                />
+              </div>
             </div>
-          </div>
 
-          <div className="flex justify-end">
-            <button
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-              onClick={handleReviewEditSubmit}
-            >
-              Submit Review
-            </button>
+            <div>
+              <label className="block text-slate-300 font-semibold mb-2 sm:mb-3 text-sm sm:text-base">Rating</label>
+              <div className="bg-slate-700/30 rounded-xl p-3 sm:p-4 inline-block">
+                <StarRating
+                  value={starRatingTemp}
+                  onRatingChange={setStarRatingTemp}
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 pt-4">
+              <button
+                className="bg-slate-700 hover:bg-slate-600 text-white font-semibold py-2 sm:py-2.5 md:py-3 px-4 sm:px-5 md:px-6 rounded-lg transition duration-300 text-sm sm:text-base w-full sm:w-auto"
+                onClick={handleEditReview}
+              >
+                Cancel
+              </button>
+              <button
+                className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white font-semibold py-2 sm:py-2.5 md:py-3 px-4 sm:px-5 md:px-6 rounded-lg shadow-lg transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base w-full sm:w-auto"
+                onClick={handleReviewEditSubmit}
+                disabled={currentReview?.replace(/<[^>]*>/g, '').length > MAX_CHARACTERS}
+              >
+                Save Changes
+              </button>
+            </div>
           </div>
         </div>
       </Modal>
