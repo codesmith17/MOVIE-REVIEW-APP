@@ -1,20 +1,58 @@
-// const { response } = require("express");
-const Lists = require("../models/List.model.js");
 const List = require("../models/List.model.js");
 const User = require("../models/User.model.js");
+
+// Helper function to check if movie exists in list
+const movieExistsInList = (list, movie) => {
+    return list.content.some(existingMovie => 
+        (movie.imdbID && existingMovie.imdbID === movie.imdbID) || 
+        existingMovie.id == movie.id
+    );
+};
+
+// Helper function to match and remove movie from list
+const matchAndRemoveMovie = (content, imdbID, tmdbId) => {
+    return content.filter(movie => {
+        // Match by tmdbId (most reliable)
+        if (tmdbId && movie.id?.toString() === tmdbId.toString()) {
+            console.log(`Matched by tmdbId: ${tmdbId}`);
+            return false;
+        }
+        
+        // Match by imdbID
+        if (imdbID && movie.imdbID === imdbID) {
+            console.log(`Matched by imdbID: ${imdbID}`);
+            return false;
+        }
+        
+        // Match by extracted ID from fallback format (tv-2734 or movie-1234)
+        if (imdbID && /^(tv|movie)-/.test(imdbID)) {
+            const extractedId = imdbID.split('-')[1];
+            if (movie.id?.toString() === extractedId) {
+                console.log(`Matched by extracted ID: ${extractedId}`);
+                return false;
+            }
+        }
+        
+        // Match by numeric ID string
+        if (imdbID && /^\d+$/.test(imdbID) && movie.id?.toString() === imdbID) {
+            console.log(`Matched by numeric imdbID: ${imdbID}`);
+            return false;
+        }
+        
+        return true; // Keep movie
+    });
+};
+
 const getList = async(req, res, next) => {
     const { username, type } = req.params;
     try {
-        const userCount = await User.find({ username }).countDocuments();
-        if (userCount === 0) {
+        // Check if user exists (optimized query)
+        const userExists = await User.exists({ username });
+        if (!userExists) {
             return res.status(404).json({ message: "No such user exists" });
         }
 
-        const list = await List.find({ ownerUsername: username, type });
-
-        if (!list) {
-            return res.status(404).json({ message: "Error finding list" });
-        }
+        const list = await List.find({ ownerUsername: username, type }).lean();
 
         if (list.length === 0) {
             return res.status(200).json({ message: "NO SUCH LIST AVAILABLE" });
@@ -28,51 +66,45 @@ const getList = async(req, res, next) => {
 };
 
 const addToList = async(req, res, next) => {
-    console.log(req.body);
     const movieFetched = req.body.movie;
     const { username } = req.user;
-    const listName = req.params.type === "watchlist" ? "watchlist" : movieFetched.listName;
+    const { type } = req.params;
+    const listName = type === "watchlist" ? "watchlist" : movieFetched?.listName;
 
-    if (req.params.type !== "watchlist" && req.params.type !== "normal") {
-        return res.status(400).json({ message: "WRONG TYPE ATTRIBUTE" });
+    // Validate type
+    if (type !== "watchlist" && type !== "normal") {
+        return res.status(400).json({ message: "Invalid type. Must be 'watchlist' or 'normal'" });
     }
 
-    // Prevent creating a custom list named 'watchlist'
-    if (req.params.type === "normal" && listName && listName.toLowerCase() === "watchlist") {
-        return res.status(400).json({ message: "Cannot create a custom list named 'watchlist'. This name is reserved." });
-    }
-
-    if (req.params.type === "normal" && !listName) {
-        return res.status(400).json({ message: "LIST NAME SHOULD BE AVAILABLE" });
+    // Validate list name for normal lists
+    if (type === "normal") {
+        if (!listName) {
+            return res.status(400).json({ message: "List name is required for custom lists" });
+        }
+        if (listName.toLowerCase() === "watchlist") {
+            return res.status(400).json({ message: "Cannot use reserved name 'watchlist'" });
+        }
     }
 
     try {
-        let list = await Lists.findOne({ name: listName, ownerUsername: username });
+        let list = await List.findOne({ name: listName, ownerUsername: username });
 
+        // Create new list if it doesn't exist
         if (!list) {
-            // Only backend can create the watchlist
-            if (listName === "watchlist" && req.params.type !== "watchlist") {
-                return res.status(400).json({ message: "Cannot create a custom list named 'watchlist'. This name is reserved." });
-            }
-            list = new Lists({
+            list = new List({
                 name: listName,
-                type: req.params.type,
+                type,
                 ownerUsername: username,
                 content: []
             });
         }
 
+        // Add movie to list if provided
         if (movieFetched) {
-            // Check if the movie already exists in the list based on imdbID or id
-            const movieExists = list.content.some(movie => 
-                (movieFetched.imdbID && movie.imdbID === movieFetched.imdbID) || 
-                movie.id == movieFetched.id
-            );
-            if (movieExists) {
+            if (movieExistsInList(list, movieFetched)) {
                 return res.status(200).json({ message: "Movie already in the list" });
             }
 
-            // Add the movie to the list
             list.content.push({
                 id: movieFetched.id,
                 posterLink: movieFetched.posterLink || movieFetched.poster_path,
@@ -83,10 +115,9 @@ const addToList = async(req, res, next) => {
 
         await list.save();
 
-        const message = movieFetched ?
-            "Movie added to the list successfully" :
-            "List created successfully";
-        return res.status(200).json({ message });
+        return res.status(200).json({ 
+            message: movieFetched ? "Movie added to the list successfully" : "List created successfully" 
+        });
 
     } catch (error) {
         console.error("Error in addToList:", error);
@@ -95,59 +126,24 @@ const addToList = async(req, res, next) => {
 };
 
 const removeFromList = async(req, res, next) => {
-    console.log("removeFromList called!");
-    console.log("Body:", req.body);
-    console.log("User:", req.user);
-    console.log("Params:", req.params);
-    
     const { imdbID, tmdbId } = req.body;
     const { username } = req.user;
     const { type } = req.params;
 
+    // Validate input
     if (!imdbID && !tmdbId) {
-        return res.status(400).json({ message: "imdbID or tmdbId is required" });
+        return res.status(400).json({ message: "Either imdbID or tmdbId is required" });
     }
 
     try {
-        const list = await Lists.findOne({ name: type, ownerUsername: username });
+        const list = await List.findOne({ name: type, ownerUsername: username });
 
         if (!list) {
             return res.status(404).json({ message: "List not found" });
         }
 
-        // Remove the movie from the list based on imdbID OR tmdbId (for backward compatibility)
         const initialLength = list.content.length;
-        
-        list.content = list.content.filter(movie => {
-            // 1. Try to match by tmdbId first (most reliable for backward compatibility)
-            if (tmdbId && movie.id && movie.id.toString() === tmdbId.toString()) {
-                console.log(`Matched by tmdbId: ${tmdbId}`);
-                return false; // Remove this movie
-            }
-            
-            // 2. Try to match by imdbID
-            if (imdbID && movie.imdbID && movie.imdbID === imdbID) {
-                console.log(`Matched by imdbID: ${imdbID}`);
-                return false; // Remove this movie
-            }
-            
-            // 3. For our fallback format (tv-2734 or movie-1234), extract and match
-            if (imdbID && (imdbID.startsWith('tv-') || imdbID.startsWith('movie-'))) {
-                const extractedId = imdbID.split('-')[1];
-                if (movie.id && movie.id.toString() === extractedId) {
-                    console.log(`Matched by extracted ID from ${imdbID}: ${extractedId}`);
-                    return false; // Remove this movie
-                }
-            }
-            
-            // 4. If imdbID is a pure TMDB ID (numeric string), try matching directly
-            if (imdbID && /^\d+$/.test(imdbID) && movie.id && movie.id.toString() === imdbID) {
-                console.log(`Matched by numeric imdbID: ${imdbID}`);
-                return false; // Remove this movie
-            }
-            
-            return true; // Keep this movie
-        });
+        list.content = matchAndRemoveMovie(list.content, imdbID, tmdbId);
 
         if (list.content.length === initialLength) {
             console.log("Movie not found. Searched for:", { imdbID, tmdbId });
@@ -155,7 +151,7 @@ const removeFromList = async(req, res, next) => {
             return res.status(404).json({ message: "Movie not found in the list" });
         }
 
-        console.log(`Movie removed successfully. Removed ${initialLength - list.content.length} item(s)`);
+        console.log(`Successfully removed ${initialLength - list.content.length} item(s)`);
         await list.save();
 
         return res.status(200).json({ message: "Movie removed from the list successfully" });

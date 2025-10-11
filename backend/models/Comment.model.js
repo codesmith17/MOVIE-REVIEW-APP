@@ -61,7 +61,11 @@ const commentSchema = new mongoose.Schema({
     }],
     dislikedBy: [{
         type: String
-    }]
+    }],
+    deleted: {
+        type: Boolean,
+        default: false
+    }
 
 });
 const Comments = mongoose.model("Comments", commentSchema);

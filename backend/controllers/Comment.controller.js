@@ -198,4 +198,68 @@ const postReply = async(req, res, next) => {
         res.status(500).json({ message: "Something went wrong" });
     }
 };
-module.exports = { postComment, getComments, postLikeComment, postDislikeComment, postReply, replyLike }
+
+const deleteComment = async (req, res, next) => {
+    const { commentID } = req.params;
+    const { reviewOwner } = req.body;
+    const currentUser = req.user.username; // Assuming user info is in req.user from auth middleware
+
+    try {
+        // Check if user is authorized (review owner or admin "krishna")
+        if (currentUser !== reviewOwner && currentUser !== "krishna") {
+            return res.status(403).json({ message: "Unauthorized to delete this comment" });
+        }
+
+        const comment = await Comment.findById(commentID);
+
+        if (!comment) {
+            return res.status(404).json({ message: "Comment not found" });
+        }
+
+        // Mark comment as deleted and remove all replies
+        comment.comment = "This comment was deleted by review owner or admin";
+        comment.deleted = true;
+        comment.replies = [];
+
+        await comment.save();
+
+        res.status(200).json({ message: "Comment deleted successfully", comment });
+    } catch (error) {
+        console.error("Error deleting comment:", error);
+        res.status(500).json({ message: "Something went wrong" });
+    }
+};
+
+const deleteReply = async (req, res, next) => {
+    const { commentID, replyIndex, reviewOwner } = req.body;
+    const currentUser = req.user.username; // Assuming user info is in req.user from auth middleware
+
+    try {
+        // Check if user is authorized (review owner or admin "krishna")
+        if (currentUser !== reviewOwner && currentUser !== "krishna") {
+            return res.status(403).json({ message: "Unauthorized to delete this reply" });
+        }
+
+        const comment = await Comment.findById(commentID);
+
+        if (!comment) {
+            return res.status(404).json({ message: "Comment not found" });
+        }
+
+        if (replyIndex >= comment.replies.length || replyIndex < 0) {
+            return res.status(404).json({ message: "Reply not found" });
+        }
+
+        // Remove the specific reply
+        comment.replies.splice(replyIndex, 1);
+
+        await comment.save();
+
+        res.status(200).json({ message: "Reply deleted successfully", comment });
+    } catch (error) {
+        console.error("Error deleting reply:", error);
+        res.status(500).json({ message: "Something went wrong" });
+    }
+};
+
+module.exports = { postComment, getComments, postLikeComment, postDislikeComment, postReply, replyLike, deleteComment, deleteReply }
