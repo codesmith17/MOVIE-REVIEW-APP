@@ -17,7 +17,8 @@ const TorrentSearchApi = require('torrent-search-api');
 app.use(express.json());
 app.use(cors({
     origin: 'http://localhost:5173', // Replace with your React app's URL
-    credentials: true
+    credentials: true, // Allow cookies to be sent with requests
+    optionsSuccessStatus: 200
 }));
 
 const port = process.env.PORT || 3000;

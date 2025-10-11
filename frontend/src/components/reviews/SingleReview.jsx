@@ -4,20 +4,16 @@ import { AiFillDislike } from "react-icons/ai";
 import DatePicker from "react-datepicker";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
-import "../styles/quill-dark.css";
-import ReadOnlyStarRating from "./ReadOnlyStarRating.jsx";
-import StarRating from "./StarRating.jsx";
+import "../../styles/quill-dark.css";
 import "react-datepicker/dist/react-datepicker.css";
 import { AiFillLike } from "react-icons/ai";
-import { FaStar, FaStarHalfAlt } from "react-icons/fa";
+import { StarRating, ReadOnlyStarRating, Loading } from "../common";
+import { FaStar, FaStarHalfAlt, FaEdit } from "react-icons/fa";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-// import { UserContext } from "./UserContext";
 import { useSelector } from "react-redux";
-import Loading from "./Loading";
 import { MdDelete } from "react-icons/md";
-import { FaEdit } from "react-icons/fa";
-import Modal from "./Modal";
+import { Modal } from "../modals";
 
 const API_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
 

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
-import MovieCard from "./MovieCard";
 import { Link, useLocation } from "react-router-dom";
-import Loading from "./Loading";
+import MovieCard from "./MovieCard";
+import { Loading } from "../common";
 
 // Use the Bearer token from .env
 const TMDB_BEARER_TOKEN = import.meta.env.VITE_TMDB_BEARER_TOKEN;

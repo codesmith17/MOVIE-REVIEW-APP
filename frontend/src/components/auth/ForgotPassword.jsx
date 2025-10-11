@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { setUser } from "./features/user/userSlice";
+import { setUser } from "../features/user/userSlice";
 
 const API_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
 

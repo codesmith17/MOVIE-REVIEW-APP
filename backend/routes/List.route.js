@@ -1,11 +1,12 @@
 const express = require("express");
 const router = express.Router();
 
-const { getList, addToList } = require("../controllers/List.controller.js");
+const { getList, addToList, removeFromList } = require("../controllers/List.controller.js");
 const { verifyUser } = require("../controllers/Auth.controller.js");
 
 router.get("/getList/:username/:type", getList);
 router.post("/addToList/:type", verifyUser, addToList);
+router.post("/removeFromList/:type", verifyUser, removeFromList);
 // router.post("/postComment", verifyUser, postComment);
 // router.get("/getCommentsByReviewId/:reviewID", getComments);
 // router.post("/likeComment", verifyUser, postLikeComment);

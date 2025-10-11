@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import SearchModal from "./SearchModal";
+import { SearchModal } from "../modals";
 import {
   FaSpinner,
   FaUpload,
@@ -16,8 +16,8 @@ import { Link, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-toastify";
-import FollowedByList from "./FollowedByList";
-import UserActivitySummary from "./UserActivitySummary";
+import FollowedByList from "../user/FollowedByList";
+import UserActivitySummary from "../user/UserActivitySummary";
 const TMDB_BEARER_TOKEN = import.meta.env.VITE_TMDB_BEARER_TOKEN;
 const API_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
 

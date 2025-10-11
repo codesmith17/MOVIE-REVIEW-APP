@@ -1,42 +1,29 @@
 const User = require("../models/User.model.js");
 const Review = require("../models/Review.model.js");
 const jwt = require("jsonwebtoken");
-const nodemailer = require("nodemailer")
+const nodemailer = require("nodemailer");
 const crypto = require("crypto-js");
 const { bucket } = require("../utils/firebaseAdmin");
-// const Graph = require("../utils/Graph.js");
 const { initializeGraph, getGraph } = require("../utils/GraphInstance.js");
 
 const basicGraphNetworkInitialisation = async (req, res, next) => {
   try {
-    initializeGraph(); // Initialize a new graph
-    const graph = getGraph();
     const { username } = req.user;
-    const user = await User.findOne({ username });
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
+    
+    if (!username) {
+      return res.status(400).json({ message: "Username is required" });
     }
 
-    const followingList = user.followingList || [];
-    const followersList = user.followersList || [];
-
-    graph.addVertex(user.username);
-
-    followingList.forEach(following => {
-      graph.addVertex(following);
-      graph.addEdge(user.username, following);
+    // Use the helper function to initialize graph
+    await initializeUserGraph(username);
+    
+    res.status(200).json({ 
+      message: "Graph created successfully",
+      username 
     });
-    // console.log(graph.adjacencyList);
-    followersList.forEach(follower => {
-      graph.addVertex(follower);
-      graph.addEdge(follower, user.username);
-    });
-
-    // console.log(graph);
-    res.status(200).json({ message: "GRAPH CREATED SUCCESSFULLY" });
   } catch (error) {
-    console.error("Error occurred while constructing graph:", error);
-    res.status(500).json({ message: "INTERNAL SERVER ERROR" });
+    console.error("Error constructing graph:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -83,17 +70,19 @@ const uploadProfilePicture = async (req, res, next) => {
 const toggleFollow = async (req, res, next) => {
   const usernameFollowing = req.user.username;
   const usernameBeingFollowed = req.params.username;
-  // console.log(usernameBeingFollowed, req.user);
+
   try {
+    // Check if target user exists
     const userToFollow = await User.findOne({ username: usernameBeingFollowed });
     if (!userToFollow) {
       return res.status(404).json({ message: "User not found" });
     }
 
+    // Check current follow status
     const isFollowing = userToFollow.followersList.includes(usernameFollowing);
 
-    let updateOperation, followingUpdateOperation;
-    let message;
+    // Prepare update operations
+    let updateOperation, followingUpdateOperation, message;
 
     if (isFollowing) {
       // Unfollow
@@ -106,8 +95,6 @@ const toggleFollow = async (req, res, next) => {
         $pull: { followingList: usernameBeingFollowed }
       };
       message = "Unfollowed successfully";
-      // Graph.adjacencyList[usernameFollowing] = Graph.adjacencyList[usernameFollowing].filter(friend => friend !== usernameBeingFollowed);
-
     } else {
       // Follow
       updateOperation = {
@@ -119,16 +106,15 @@ const toggleFollow = async (req, res, next) => {
         $push: { followingList: usernameBeingFollowed }
       };
       message = "Followed successfully";
-      // Graph.addEdge(usernameFollowing, usernameBeingFollowed);
     }
 
-    // Update the followed/unfollowed user
-    await User.updateOne({ username: usernameBeingFollowed }, updateOperation);
-    // console.log(updatedUser)
-    // Update the current user's following list
-    await User.updateOne({ username: usernameFollowing }, followingUpdateOperation);
+    // Update both users
+    await Promise.all([
+      User.updateOne({ username: usernameBeingFollowed }, updateOperation),
+      User.updateOne({ username: usernameFollowing }, followingUpdateOperation)
+    ]);
 
-
+    // Get updated follower count
     const updatedUser = await User.findOne({ username: usernameBeingFollowed });
 
     res.status(200).json({
@@ -144,115 +130,145 @@ const toggleFollow = async (req, res, next) => {
 };
 
 const verifyUser = (req, res, next) => {
-  // console.log("!", req.headers)
+  // Extract token from cookie
+  let token = req.headers?.cookie?.split("access_token=")[1] || null;
+  const source = req.params?.source;
 
-  let token = req.headers && req.headers.cookie ? req.headers.cookie.split("access_token=")[1] : null;
-  const likes = "likes";
-  // console.log("TOKEN:", req.headers.cookie);
-  const source = req.params ? req.params.source : null;
-  if (!token && source === likes) {
-    next();
-    return;
+  // Allow unauthenticated access for "likes" source
+  if (!token && source === "likes") {
+    return next();
   }
 
+  // Check if token exists
   if (!token) {
-    res.status(401).json({ message: "UNAUTHORIZED, LOGIN AGAIN WITH YOUR CREDENTIALS" });
-    return;
+    return res.status(401).json({ 
+      message: "Unauthorized, login again with your credentials" 
+    });
   }
-  if (token.includes(";"))
+
+  // Clean token (remove trailing semicolon if present)
+  if (token.includes(";")) {
     token = token.split(";")[0];
-  // console.log("kissss", token);
-  if (!token) {
-    return res.status(403).json({ message: "No token provided." });
   }
-  // console.log("123")
+
+  // Verify JWT token
   jwt.verify(token, "krishna170902", (err, decoded) => {
     if (err) {
-      console.error("Token verification error: ", err);
-      return res.status(500).json({ message: "Failed to authenticate token." });
+      console.error("Token verification error:", err);
+      return res.status(500).json({ 
+        message: "Failed to authenticate token." 
+      });
     }
-    console.log("user", decoded);
+
+    // Attach decoded user data to request
     req.user = decoded;
-    if (req.params.source === "login")
-      res.status(200).json({ message: "User verified.", data: req.user });
+
+    // If source is "login", send verification response
+    if (source === "login") {
+      return res.status(200).json({ 
+        message: "User verified.", 
+        data: decoded 
+      });
+    }
+
     next();
   });
 };
 
 
 
-const signin = (req, res, next) => {
+// Helper function to initialize user graph
+const initializeUserGraph = async (username) => {
+  try {
+    await initializeGraph();
+    const graph = getGraph();
+    
+    const user = await User.findOne({ username });
+    if (!user) {
+      throw new Error("User not found for graph initialization");
+    }
+
+    const followingList = user.followingList || [];
+    const followersList = user.followersList || [];
+
+    // Add user vertex
+    graph.addVertex(username);
+
+    // Add following connections
+    followingList.forEach(following => {
+      graph.addVertex(following);
+      graph.addEdge(username, following);
+    });
+
+    // Add follower connections
+    followersList.forEach(follower => {
+      graph.addVertex(follower);
+      graph.addEdge(follower, username);
+    });
+
+    console.log(`Graph initialized for user: ${username}`);
+    return graph;
+  } catch (error) {
+    console.error("Error initializing user graph:", error);
+    throw error;
+  }
+};
+
+const signin = async (req, res, next) => {
   const { email, password } = req.body;
 
+  // Validate input
   if (!email || !password || email.trim() === "" || password.trim() === "") {
     return res.status(400).json({ message: "Email and password are required." });
   }
 
-  User.findOne({ email })
-    .then(async (user) => {
-      if (!user) {
-        return res.status(404).json({ message: "User not found." });
-      }
+  try {
+    // Find user
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
 
-      if (password !== user.password) {
-        return res.status(401).json({ message: "Invalid credentials." });
-      }
+    // Validate password
+    if (password !== user.password) {
+      return res.status(401).json({ message: "Invalid credentials." });
+    }
 
-      const token = jwt.sign({ id: user._id, email: email, username: user.username }, "krishna170902", {
-        expiresIn: "24h",
-      });
+    // Generate JWT token
+    const token = jwt.sign(
+      { id: user._id, email: user.email, username: user.username }, 
+      "krishna170902", 
+      { expiresIn: "24h" }
+    );
 
-      // Initialize or reset the graph for the user
-      try {
-        await initializeGraph(); // Initialize a new graph instance
-        const graph = getGraph();
-        const { username } = user;
-        const foundUser = await User.findOne({ username });
-
-        if (!foundUser) {
-          return res.status(404).json({ message: "User not found" });
-        }
-
-        const followingList = foundUser.followingList || [];
-        const followersList = foundUser.followersList || [];
-
-        graph.addVertex(foundUser.username);
-
-        followingList.forEach(following => {
-          graph.addVertex(following);
-          graph.addEdge(foundUser.username, following);
-        });
-
-        followersList.forEach(follower => {
-          graph.addVertex(follower);
-          graph.addEdge(follower, foundUser.username);
-        });
-
-        console.log("Graph initialized for user:", foundUser.username);
-
-      } catch (error) {
-        console.error("Error initializing graph:", error);
-        return res.status(500).json({ message: "Internal server error." });
-      }
-
-      res.cookie("access_token", token, {
-        httpOnly: true, // Set httpOnly for security
-        maxAge: 24 * 60 * 60 * 1000, // 24 hours in milliseconds
-        path: '/', // Set the path to root
-      }).status(200).json({
-        message: "Authentication successful.",
-        user: {
-          access_token: token,
-          id: user._id,
-          email: user.email,
-          name: user.name,
-        },
-      });
-    })
-    .catch(err => {
-      console.error(err);
-      res.status(500).json({ message: "Server error. Please try again later." });
+    // Initialize user graph (non-blocking)
+    initializeUserGraph(user.username).catch(err => {
+      console.error("Non-critical: Failed to initialize graph:", err);
     });
+
+    // Prepare response
+    const responseData = {
+      message: "Authentication successful.",
+      user: {
+        access_token: token,
+        id: user._id,
+        email: user.email,
+        name: user.name,
+        username: user.username
+      },
+    };
+
+    // Set cookie and send response
+    res.cookie("access_token", token, {
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      path: '/',
+    }).status(200).json(responseData);
+
+  } catch (err) {
+    console.error("Signin error:", err);
+    res.status(500).json({ message: "Server error. Please try again later." });
+  }
 };
 
 
@@ -318,53 +334,62 @@ const getFriendsThatFollow = async (req, res, next) => {
 
   try {
     // Fetch both users from database
-    const myUser = await User.findOne({ username: myUsername }).lean();
-    const otherUser = await User.findOne({ username: otherUsername }).lean();
-    // console.log(myUser);
+    const [myUser, otherUser] = await Promise.all([
+      User.findOne({ username: myUsername }).lean(),
+      User.findOne({ username: otherUsername }).lean()
+    ]);
+
     if (!myUser || !otherUser) {
-      return res.status(404).json({ message: "User not found." });
+      return res.status(404).json({ message: "User not found" });
     }
 
-    // Function to perform BFS up to a specified depth
+    // BFS to find friends at a specific depth who follow the target user
     const bfs = async (startUser, endUser, depth) => {
-      if (startUser === endUser)
+      if (startUser.username === endUser.username) {
         return [];
-      const visited = new Set();
-      const queue = [{ user: startUser, distance: 0 }];
-      const friendThatFollow = [];
-      visited.add(startUser.username);
-      while (queue.length) {
-        const size = queue.length;
-        for (let i = 0; i < size; i++) {
-          const { user, distance } = queue.shift();
-          // console.log("!23123123", user);
+      }
 
-          // visited.add(user.username);
+      const visited = new Set([startUser.username]);
+      const queue = [{ user: startUser, distance: 0 }];
+      const friendsThatFollow = [];
+
+      while (queue.length > 0) {
+        const queueSize = queue.length;
+
+        for (let i = 0; i < queueSize; i++) {
+          const { user, distance } = queue.shift();
+
           if (distance < depth) {
-            // console.log("311", user);
-            for (let followedUsername of user.followingList) {
-              const followedUser = await User.findOne({ username: followedUsername }).lean();
-              if (followedUser && !visited.has(followedUser.username)) {
-                if (distance + 1 == depth && followedUsername === endUser.username) {
-                  friendThatFollow.push(user.username);
+            // Process all following connections
+            for (const followedUsername of user.followingList || []) {
+              if (!visited.has(followedUsername)) {
+                visited.add(followedUsername);
+
+                const followedUser = await User.findOne({ 
+                  username: followedUsername 
+                }).lean();
+
+                if (followedUser) {
+                  // Check if this is at target depth and follows end user
+                  if (distance + 1 === depth && followedUsername === endUser.username) {
+                    friendsThatFollow.push(user.username);
+                  }
+
+                  queue.push({ user: followedUser, distance: distance + 1 });
                 }
-                queue.push({ user: followedUser, distance: distance + 1 });
               }
             }
           }
-
         }
       }
 
-
-      return friendThatFollow;
+      return friendsThatFollow;
     };
 
-    // Perform BFS from both users up to 2 edges away
+    // Find friends at distance 2 who follow the other user
     const myFriends = await bfs(myUser, otherUser, 2);
+
     res.status(200).json({ myFriends });
-
-
 
   } catch (error) {
     console.error("Error fetching mutual friends:", error);
@@ -376,8 +401,9 @@ const getFriendsThatFollow = async (req, res, next) => {
 
 const getOthersData = async (req, res, next) => {
   try {
-    const username = req.params.username;
-    console.log(username);
+    const { username } = req.params;
+
+    // Aggregate user data with review count
     const result = await User.aggregate([
       { $match: { username } },
       {
@@ -399,33 +425,24 @@ const getOthersData = async (req, res, next) => {
           __v: 0,
           reviews: 0,
           _id: 0
-
         }
       }
-    ]).exec();
+    ]);
 
     if (result.length === 0) {
-      return res.status(404).json({ message: "User not found." });
+      return res.status(404).json({ message: "User not found" });
     }
 
-    const userData = result[0];
-    console.log(result);
     res.status(200).json({
-      message: "Data sent successfully.",
-      data: userData
+      message: "Data sent successfully",
+      data: result[0]
     });
 
   } catch (err) {
-    console.error('Error in getUserData:', err);
-    res.status(500).json({ message: "Internal Server Error" });
+    console.error('Error in getOthersData:', err);
+    res.status(500).json({ message: "Internal server error" });
   }
 }
-
-
-
-
-
-
 
 const forgotPassword = (req, res, next) => {
   const email = req.body.email;

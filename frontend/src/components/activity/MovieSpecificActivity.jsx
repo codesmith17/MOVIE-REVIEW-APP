@@ -4,10 +4,10 @@ import { FaStar, FaEdit, FaCalendarAlt, FaSpinner, FaArrowLeft, FaEye } from "re
 import { motion } from "framer-motion";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
-import Modal from "./Modal";
+import { Modal } from "../modals";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
-import "../styles/quill-dark.css";
+import "../../styles/quill-dark.css";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 

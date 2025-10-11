@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useSelector, useDispatch } from "react-redux";
-import { setUser } from "./features/user/userSlice"; // Adjust the path as needed
+import { setUser } from "../features/user/userSlice"; // Adjust the path as needed
 
 const API_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
 
@@ -29,27 +29,12 @@ const Home = () => {
     setBoxChecked(savedBoxChecked);
     setRemember(savedBoxChecked);
 
-    if (savedEmail && savedPassword) {
-      fetch(`${API_BASE_URL}/api/auth/verify/login`, {
-        method: "GET",
-        credentials: "include",
-      })
-        .then((res) => res.json())
-        .then((res) => {
-          console.log(res.message);
-
-          const currentTime = Math.floor(Date.now() / 1000);
-          if (res.message === "User verified." && res.data.exp > currentTime) {
-            dispatch(setUser(res.data));
-            toast.success("WELCOME!!!");
-            navigate("/upcoming");
-          }
-        })
-        .catch((err) => console.error("Error verifying user:", err));
-    } else {
-      console.log("No saved credentials found.");
+    // Check if user is already logged in (from App.jsx getUserData call)
+    if (user && user.data && user.data.username) {
+      // User is already authenticated, redirect to home
+      navigate("/upcoming");
     }
-  }, [navigate, dispatch]);
+  }, [navigate, user]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.id]: e.target.value.trim() });
@@ -61,21 +46,31 @@ const Home = () => {
     fetch(`${API_BASE_URL}/api/auth/signin`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include", // Important: allows cookies to be set by backend
       body: JSON.stringify(formData),
     })
       .then((res) => res.json())
       .then((response) => {
         console.log(response);
         if (response && response.message === "Authentication successful.") {
-          document.cookie = `access_token=${response.user.access_token}; path=/`;
-          dispatch(setUser(response.user));
+          // Cookie is already set by backend with httpOnly flag
+          // Wrap user data to match the structure from getUserData
+          dispatch(setUser({ data: response.user }));
 
           if (remember) {
             localStorage.setItem("email", formData.email);
             localStorage.setItem("password", formData.password);
             localStorage.setItem("boxChecked", remember);
           } else {
-            localStorage.removeItem("email");
+            if (localStorage.getItem("email") != null && localStorage.getItem("email") != "") {
+              localStorage.removeItem("email");
+            }
+            if (localStorage.getItem("password") != null  && localStorage.getItem("password") != "") {
+              localStorage.removeItem("password");
+            }
+            if (localStorage.getItem("boxChecked") != null && localStorage.getItem("boxChecked") != "") {
+              localStorage.removeItem("boxChecked");
+            }
             localStorage.removeItem("password");
             localStorage.removeItem("boxChecked");
           }

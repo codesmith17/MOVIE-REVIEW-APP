@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
-import MovieCard from "./MovieCard"; // Assuming MovieCard component is in the same directory
+import { MovieCard } from "../movie"; // Assuming MovieCard component is in the same directory
 
 const TMDB_BEARER_TOKEN = import.meta.env.VITE_TMDB_BEARER_TOKEN;
 
-const ListDetailsPage = () => {
+const ListDetailPage = () => {
   const location = useLocation();
   const list = location.state?.list;
   const [movies, setMovies] = useState([]);
@@ -76,4 +76,4 @@ const ListDetailsPage = () => {
   );
 };
 
-export default ListDetailsPage;
+export default ListDetailPage;

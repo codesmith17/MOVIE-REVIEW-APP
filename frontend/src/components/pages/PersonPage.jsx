@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 // import { FaStar } from "react-icons/fa";
-import MovieCard from "./MovieCard";
+import { MovieCard } from "../movie";
 // import ActorCard from "./ActorCard";
 
 const TMDB_BEARER_TOKEN = import.meta.env.VITE_TMDB_BEARER_TOKEN;
