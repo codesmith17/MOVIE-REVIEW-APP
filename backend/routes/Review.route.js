@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { postReview, updateRating, getPersonalReview, getReviewById, getOtherReviews, postReviewLikes, deleteReview, editReview, getReviews, upsertRating, getRating } = require("../controllers/Review.controller");
+const { postReview, updateRating, getPersonalReview, getReviewById, getOtherReviews, postReviewLikes, deleteReview, editReview, getReviews, upsertRating, getRating, getLikedReviews } = require("../controllers/Review.controller");
 const { verifyUser } = require("../controllers/Auth.controller");
 
 router.post("/postReview", verifyUser, postReview);
@@ -11,6 +11,7 @@ router.post("/postReviewLikes", verifyUser, postReviewLikes);
 router.delete("/deleteReview/:reviewID", verifyUser, deleteReview);
 router.put("/updateReview/:reviewID", verifyUser, editReview);
 router.get("/getReviews/:username", getReviews);
+router.get("/getLikedReviews/:username", getLikedReviews);
 router.put("/updateRating/:reviewID", verifyUser, updateRating);
 router.post("/upsertRating", verifyUser, upsertRating);
 router.get("/getRating", verifyUser, getRating);

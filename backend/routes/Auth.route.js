@@ -12,7 +12,9 @@ const {
     uploadProfilePicture,
     toggleFollow,
     basicGraphNetworkInitialisation,
-    getFriendsThatFollow
+    getFriendsThatFollow,
+    getFollowers,
+    getFollowing
 } = require("../controllers/Auth.controller.js");
 
 router.post("/signin", signin);
@@ -26,4 +28,6 @@ router.post('/upload-profile-picture', verifyUser, upload.single('profilePicture
 router.post("/toggleFollow/:username", verifyUser, toggleFollow);
 router.get('/initializeGraph', verifyUser, basicGraphNetworkInitialisation);
 router.get("/getFriendsThatFollow/:myUsername/:otherUsername", getFriendsThatFollow);
+router.get("/getFollowers/:username", getFollowers);
+router.get("/getFollowing/:username", getFollowing);
 module.exports = router;

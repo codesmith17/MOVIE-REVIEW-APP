@@ -45,6 +45,7 @@ const UserPage = () => {
   const [isFollowing, setIsFollowing] = useState(false);
   const [followersCount, setFollowersCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
+  const [likedReviewsCount, setLikedReviewsCount] = useState(0);
   const [activeTab, setActiveTab] = useState("reviews");
   const user = useSelector((state) => state.user.data);
   const fetchWatchlist = async () => {
@@ -77,9 +78,31 @@ const UserPage = () => {
     }
   };
 
+  const fetchLikedReviewsCount = async () => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/review/getLikedReviews/${username}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setLikedReviewsCount(data.count || 0);
+      }
+    } catch (error) {
+      console.error("Error fetching liked reviews:", error);
+    }
+  };
+
   useEffect(() => {
     if (fetchedUserData) {
       fetchWatchlist();
+      fetchLikedReviewsCount();
     }
   }, [fetchedUserData]);
 
@@ -375,18 +398,27 @@ const UserPage = () => {
                         label="Reviews"
                         value={fetchedUserData.reviewCount || 0}
                         color="from-yellow-400 to-orange-500"
+                        link={`/user/${username}/reviews`}
                       />
                       <ModernStatBox
                         icon={FaHeart}
                         label="Followers"
                         value={followersCount}
                         color="from-pink-400 to-rose-500"
+                        link={`/user/${username}/followers`}
                       />
                       <ModernStatBox
                         icon={FaUserPlus}
                         label="Following"
                         value={fetchedUserData.following}
                         color="from-blue-400 to-cyan-500"
+                        link={`/user/${username}/following`}
+                      />
+                      <ModernStatBox
+                        icon={FaHeart}
+                        label="Liked"
+                        value={likedReviewsCount}
+                        color="from-red-400 to-pink-500"
                       />
                     </motion.div>
 
@@ -600,12 +632,9 @@ const UserPage = () => {
   );
 };
 // Modern Stat Box Component with gradient and icon
-const ModernStatBox = ({ icon: Icon, label, value, color }) => (
-  <motion.div
-    whileHover={{ scale: 1.05, y: -5 }}
-    className="relative group"
-  >
-    <div className="bg-gradient-to-br from-gray-700/50 to-gray-800/50 backdrop-blur-sm rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-5 border border-gray-600/30 min-w-[100px] sm:min-w-[120px] md:min-w-[140px] shadow-xl">
+const ModernStatBox = ({ icon: Icon, label, value, color, link }) => {
+  const content = (
+    <div className="bg-gradient-to-br from-gray-700/50 to-gray-800/50 backdrop-blur-sm rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-5 border border-gray-600/30 min-w-[100px] sm:min-w-[120px] md:min-w-[140px] shadow-xl cursor-pointer">
       <div className={`inline-flex p-2 sm:p-2.5 md:p-3 rounded-lg sm:rounded-xl bg-gradient-to-r ${color} mb-2 sm:mb-3`}>
         <Icon className="text-white text-base sm:text-lg md:text-xl lg:text-2xl" />
       </div>
@@ -615,8 +644,23 @@ const ModernStatBox = ({ icon: Icon, label, value, color }) => (
       {/* Hover glow effect */}
       <div className={`absolute inset-0 rounded-xl sm:rounded-2xl bg-gradient-to-r ${color} opacity-0 group-hover:opacity-20 blur-xl transition-opacity duration-300 -z-10`} />
     </div>
-  </motion.div>
-);
+  );
+
+  return (
+    <motion.div
+      whileHover={{ scale: 1.05, y: -5 }}
+      className="relative group"
+    >
+      {link ? (
+        <Link to={link}>
+          {content}
+        </Link>
+      ) : (
+        content
+      )}
+    </motion.div>
+  );
+};
 
 // Modern Tab Button Component
 const ModernTabButton = ({ icon: Icon, label, tab, activeTab, setActiveTab }) => (

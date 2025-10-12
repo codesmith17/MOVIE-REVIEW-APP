@@ -297,4 +297,20 @@ const getRating = async(req, res, next) => {
 
 
 
-module.exports = { postReview, getPersonalReview, getReviewById, getOtherReviews, postReviewLikes, deleteReview, editReview, getReviews, updateRating, upsertRating, getRating };
+const getLikedReviews = async (req, res, next) => {
+  try {
+    const { username } = req.params;
+    
+    // Find all reviews where the user is in the likedBy array
+    const likedReviews = await Review.find({ 
+      'likedBy.username': username 
+    }).sort({ dateLogged: -1 });
+    
+    res.status(200).json({ reviews: likedReviews, count: likedReviews.length });
+  } catch (err) {
+    console.error('Error in getLikedReviews:', err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+module.exports = { postReview, getPersonalReview, getReviewById, getOtherReviews, postReviewLikes, deleteReview, editReview, getReviews, updateRating, upsertRating, getRating, getLikedReviews };

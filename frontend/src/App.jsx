@@ -12,7 +12,7 @@ import { Navbar } from "./components/layout";
 import { Login, Signup, ForgotPassword, ResetPassword } from "./components/auth";
 
 // Pages
-import { HomePage, UserPage, ActivityPage, PersonPage, ListDetailPage } from "./components/pages";
+import { HomePage, UserPage, ActivityPage, PersonPage, ListDetailPage, ReviewsListPage, FollowersListPage, FollowingListPage } from "./components/pages";
 
 // Movie
 import { MovieList, MoviePage, TorrentStream } from "./components/movie";
@@ -83,6 +83,9 @@ const App = () => {
             <Route path="/:mediaType/:id" element={<MoviePage />} />
             <Route path="/celebrity/:id" element={<PersonPage />} />
             <Route path="/user/:username" element={<UserPage />} />
+            <Route path="/user/:username/reviews" element={<ReviewsListPage />} />
+            <Route path="/user/:username/followers" element={<FollowersListPage />} />
+            <Route path="/user/:username/following" element={<FollowingListPage />} />
             <Route path="/activity/:username" element={<ActivityPage />} />
             <Route path="/movie-activity/:movieId/:username" element={<MovieSpecificActivity />} />
             <Route path="/list/:listId" element={<ListDetailPage />} />

@@ -548,4 +548,48 @@ const resetPassword = (req, res, next) => {
     })
 }
 
-module.exports = { signin, verifyUser, signup, getUserData, getOthersData, forgotPassword, resetPassword, uploadProfilePicture, toggleFollow, getFriendsThatFollow, basicGraphNetworkInitialisation };
+const getFollowers = async (req, res, next) => {
+  try {
+    const { username } = req.params;
+    
+    const user = await User.findOne({ username }).select('followersList');
+    
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    
+    // Get detailed information about followers
+    const followers = await User.find({ 
+      username: { $in: user.followersList } 
+    }).select('username name profilePicture followers following reviewCount followersList');
+    
+    res.status(200).json({ followers });
+  } catch (err) {
+    console.error('Error in getFollowers:', err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+const getFollowing = async (req, res, next) => {
+  try {
+    const { username } = req.params;
+    
+    const user = await User.findOne({ username }).select('followingList');
+    
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    
+    // Get detailed information about users being followed
+    const following = await User.find({ 
+      username: { $in: user.followingList } 
+    }).select('username name profilePicture followers following reviewCount followersList');
+    
+    res.status(200).json({ following });
+  } catch (err) {
+    console.error('Error in getFollowing:', err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+module.exports = { signin, verifyUser, signup, getUserData, getOthersData, forgotPassword, resetPassword, uploadProfilePicture, toggleFollow, getFriendsThatFollow, basicGraphNetworkInitialisation, getFollowers, getFollowing };

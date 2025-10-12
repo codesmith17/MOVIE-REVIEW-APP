@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { MovieSection } from "../movie";
 import { MovieLoader } from "../common";
-import { FaFire, FaStar, FaTv, FaFilm } from "react-icons/fa";
+import { FaFire, FaStar, FaTv, FaFilm, FaPlus, FaCheck, FaTimes } from "react-icons/fa";
+import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 const TMDB_BEARER_TOKEN = import.meta.env.VITE_TMDB_BEARER_TOKEN;
 
@@ -19,6 +22,12 @@ const HomePage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [heroMovie, setHeroMovie] = useState(null);
+  const [addingToWatchlist, setAddingToWatchlist] = useState(false);
+  const [isInWatchlist, setIsInWatchlist] = useState(false);
+  const [watchlist, setWatchlist] = useState(null);
+  
+  const user = useSelector((state) => state.user.data);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchMovies = async (url, setMovies) => {
@@ -109,6 +118,127 @@ const HomePage = () => {
       media_type: "tv"
     }));
 
+  // Fetch user's watchlist
+  const fetchWatchlist = async () => {
+    if (!user?.data?.username) return;
+    
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_BACKEND_BASE_URL}/api/list/getList/${user.data.username}/watchlist`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.data && data.data[0]) {
+          setWatchlist(data.data[0]);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching watchlist:", error);
+    }
+  };
+
+  // Check if hero movie is in watchlist
+  useEffect(() => {
+    if (heroMovie && watchlist) {
+      const isInList = watchlist.content.some(
+        (movie) => movie.id?.toString() === heroMovie.id?.toString()
+      );
+      setIsInWatchlist(isInList);
+    }
+  }, [heroMovie, watchlist]);
+
+  // Fetch watchlist when user is available
+  useEffect(() => {
+    if (user?.data) {
+      fetchWatchlist();
+    }
+  }, [user]);
+
+  // Toggle Watchlist Handler (Add or Remove)
+  const handleToggleWatchlist = async () => {
+    if (!user) {
+      toast.error('Please login to manage your watchlist');
+      navigate('/login');
+      return;
+    }
+
+    if (!heroMovie || addingToWatchlist) return;
+
+    setAddingToWatchlist(true);
+
+    try {
+      if (isInWatchlist) {
+        // Remove from watchlist
+        const response = await fetch(
+          `${import.meta.env.VITE_BACKEND_BASE_URL}/api/list/removeFromList/watchlist`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              imdbID: `movie-${heroMovie.id}`,
+              tmdbId: heroMovie.id,
+            }),
+            credentials: 'include',
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error('Failed to remove from watchlist');
+        }
+
+        toast.success('Removed from watchlist!');
+        setIsInWatchlist(false);
+        await fetchWatchlist(); // Refresh watchlist
+        
+      } else {
+        // Add to watchlist
+        const response = await fetch(
+          `${import.meta.env.VITE_BACKEND_BASE_URL}/api/list/addToList/watchlist`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              movie: {
+                id: heroMovie.id,
+                title: heroMovie.title,
+                posterLink: heroMovie.poster_path,
+                imdbID: `movie-${heroMovie.id}`,
+              },
+            }),
+            credentials: 'include',
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error('Failed to add to watchlist');
+        }
+
+        const data = await response.json();
+        toast.success(data.message || 'Added to watchlist!');
+        setIsInWatchlist(true);
+        await fetchWatchlist(); // Refresh watchlist
+      }
+      
+    } catch (error) {
+      console.error('Error toggling watchlist:', error);
+      toast.error(error.message || 'Failed to update watchlist. Please try again.');
+    } finally {
+      setAddingToWatchlist(false);
+    }
+  };
+
   // Show loader while initial data is loading
   if (loading && !heroMovie) {
     return <MovieLoader fullScreen />;
@@ -172,8 +302,31 @@ const HomePage = () => {
                     >
                       View Details
                     </a>
-                    <button className="btn-ghost px-5 py-2 text-sm font-semibold">
-                      Add to Watchlist
+                    <button 
+                      onClick={handleToggleWatchlist}
+                      disabled={addingToWatchlist}
+                      className={`px-5 py-2 text-sm font-semibold flex items-center gap-2 transition-all duration-300 rounded-lg ${
+                        isInWatchlist 
+                          ? 'bg-red-600 hover:bg-red-700 text-white' 
+                          : 'btn-ghost'
+                      } ${addingToWatchlist ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      {addingToWatchlist ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                          {isInWatchlist ? 'Removing...' : 'Adding...'}
+                        </>
+                      ) : isInWatchlist ? (
+                        <>
+                          <FaCheck />
+                          In Watchlist
+                        </>
+                      ) : (
+                        <>
+                          <FaPlus />
+                          Add to Watchlist
+                        </>
+                      )}
                     </button>
                   </div>
                 </div>
