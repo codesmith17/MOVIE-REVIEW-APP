@@ -1,14 +1,27 @@
 // import { GoogleGenerativeAI } from "@google/generative-ai";
 const { GoogleGenerativeAI } = require("@google/generative-ai")
-const GOOGLE_API_KEY =
-    process.env.VITE_GEMINI_API_KEY;
-const OMDB_API_KEY =
-    process.env.VITE_OMDB_API_KEY_2;
+const GOOGLE_API_KEY = process.env.VITE_GEMINI_API_KEY;
+const OMDB_API_KEY = process.env.VITE_OMDB_API_KEY_2;
 
-const genAI = new GoogleGenerativeAI(GOOGLE_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+let genAI = null;
+let model = null;
+
+if (GOOGLE_API_KEY) {
+    try {
+        genAI = new GoogleGenerativeAI(GOOGLE_API_KEY);
+        model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        console.log('Gemini AI initialized successfully');
+    } catch (error) {
+        console.error('Gemini AI initialization failed:', error.message);
+    }
+} else {
+    console.warn('Gemini API key not found. AI recommendations will be disabled.');
+}
 const fetchRecommendations = async(imdbID, title, year) => {
-
+    if (!model) {
+        console.warn('Gemini model not initialized. Returning empty recommendations.');
+        return [];
+    }
 
     const prompt = `Suggest similar 5-6 movies or shows to this movie: "${title}" (${year}), IMDb ID: ${imdbID}. In your response, just give names of the movies. You can suggest similar genre films, same franchise films, same language films, or popular films released in the same year. Provide the response as a simple comma-separated list of movie titles.`;
 
@@ -29,6 +42,11 @@ const fetchRecommendations = async(imdbID, title, year) => {
     }
 };
 const trendingMovies = async() => {
+    if (!model) {
+        console.warn('Gemini model not initialized. Returning empty trending movies.');
+        return [];
+    }
+
     const prompt = `Suggest currently 12 trending movies or even shows or movies. Give a mix of popular films and movies that are poular in theatres currently and justt released in the present current year. In your response, just give names of the movies. Provide the response as a simple comma-separated list of movie titles.`;
 
     try {
