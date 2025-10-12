@@ -34,41 +34,58 @@ async function connectToDatabase() {
     }
 
     try {
+        console.log('Attempting to connect to MongoDB...');
         const connection = await mongoose.connect(
             "mongodb+srv://krishna170902:44AueKgqHr2eDL8o@clusteracademind.ub2btq6.mongodb.net/movies-app?retryWrites=true&w=majority&appName=ClusterAcademind",
             {
                 family: 4,
-                serverSelectionTimeoutMS: 5000,
+                serverSelectionTimeoutMS: 10000, // Increased to 10 seconds for serverless cold starts
                 socketTimeoutMS: 45000,
             }
         );
-        console.log("MongoDB CONNECTED");
+        console.log("MongoDB CONNECTED successfully");
         cachedDb = connection;
         return connection;
     } catch (err) {
-        console.error("MongoDB connection error:", err);
+        console.error("MongoDB connection error:", err.message);
         throw err;
     }
 }
 
-// Middleware to ensure DB connection before handling requests
+app.use(bodyParser.urlencoded({ extended: false }));
+
+// Health check route (no DB required) - MUST be before DB middleware
+app.get("/health", (req, res) => {
+    res.json({ 
+        status: 'ok', 
+        message: 'Server is running',
+        timestamp: new Date().toISOString(),
+        node_env: process.env.NODE_ENV || 'development'
+    });
+});
+
+// Middleware to ensure DB connection before handling requests (after health check)
 app.use(async (req, res, next) => {
     try {
         await connectToDatabase();
         next();
     } catch (err) {
-        res.status(500).json({ error: 'Database connection failed' });
+        console.error('DB connection middleware error:', err.message);
+        res.status(500).json({ 
+            error: 'Database connection failed',
+            message: 'Unable to connect to database. Please try again.',
+            details: process.env.NODE_ENV === 'development' ? err.message : undefined
+        });
     }
 });
 
-app.use(bodyParser.urlencoded({ extended: false }));
-
-// Basic health check route
+// Basic root route (requires DB)
 app.get("/", (req, res) => {
     res.json({ 
         status: 'ok', 
         message: 'Movie Review API is running',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        database: 'connected'
     });
 });
 
