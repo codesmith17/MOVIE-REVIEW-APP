@@ -18,7 +18,13 @@ const {
 } = require("../controllers/Auth.controller.js");
 
 router.post("/signin", signin);
-router.get("/verify/:source?", verifyUser);
+router.get("/verify/:source?", verifyUser, (req, res) => {
+    // If verifyUser passes, send success response
+    res.status(200).json({ 
+        message: "User verified.", 
+        data: req.user 
+    });
+});
 router.post("/signup", signup);
 router.get("/getOthersData/:username", getOthersData);
 router.get("/getUserData", verifyUser, getUserData);
