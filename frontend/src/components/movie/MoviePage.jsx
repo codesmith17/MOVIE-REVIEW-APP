@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
-import { FaHeart, FaPlus, FaStar, FaCheck, FaMinus } from "react-icons/fa";
+import { FaHeart, FaPlus, FaStar, FaCheck, FaMinus, FaEdit, FaCalendarAlt, FaThumbsUp } from "react-icons/fa";
 import { useSelector } from "react-redux";
 import { OtherReviews } from "../reviews";
 import { StarRating, ReadOnlyStarRating, ActorCard, NotFound, MovieLoader } from "../common";
@@ -927,9 +927,60 @@ console.log('singleMovieData:', singleMovieData);
             <WatchProviders providers={watchProviders} />
           </div>
           
+          {/* Your Activity Section */}
+          {personalReview && (user?.username || user?.data?.username) && (
+          <div>
+            <h2 className="text-2xl font-bold text-white mb-6">Your Activity</h2>
+            <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-xl rounded-2xl p-6 border border-slate-700/50 shadow-2xl">
+              <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg">
+                    <FaThumbsUp className="text-white text-xl" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-white">Your Review</h3>
+                    <div className="flex items-center gap-3 mt-1">
+                      <div className="flex items-center gap-1">
+                        <FaStar className="text-yellow-400 text-sm" />
+                        <span className="text-gray-300 text-sm font-semibold">{personalReview.rating}/5</span>
+                      </div>
+                      <span className="text-gray-500">•</span>
+                      <div className="flex items-center gap-1">
+                        <FaCalendarAlt className="text-gray-400 text-xs" />
+                        <span className="text-gray-400 text-sm">{personalReview.dateLogged}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={toggleModal}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors text-sm font-medium"
+                  >
+                    <FaEdit />
+                    <span>Edit</span>
+                  </button>
+                  <Link
+                    to={`/movie-page/${imdbID}/${personalReview._id}`}
+                    className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors text-sm font-medium"
+                  >
+                    View Full Review
+                  </Link>
+                </div>
+              </div>
+              <div 
+                className="prose prose-invert max-w-none text-gray-300 line-clamp-3 ql-editor"
+                dangerouslySetInnerHTML={{ __html: personalReview.review }}
+              />
+            </div>
+          </div>
+          )}
+          
           {otherReviews && otherReviews.length > 0 && (
           <div>
-            <h2 className="text-2xl font-bold text-white mb-6">Reviews</h2>
+            <h2 className="text-2xl font-bold text-white mb-6">
+              {personalReview && (user?.username || user?.data?.username) ? "Reviews from Others" : "Reviews"}
+            </h2>
             <OtherReviews reviews={otherReviews} />
           </div>
           )}
