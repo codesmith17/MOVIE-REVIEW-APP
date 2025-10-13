@@ -526,9 +526,18 @@ console.log('singleMovieData:', singleMovieData);
             throw new Error("Failed to open Write Review modal");
           } else {
             if (!showModal) {
-              // Opening modal - set defaults
-              setDateLogged(new Date());
-              setIsEditorExpanded(false);
+              // Opening modal - populate with existing review data if available
+              if (personalReview) {
+                setReview(personalReview.review);
+                setStarRatingTemp(personalReview.rating);
+                // Parse the date from personalReview.dateLogged (format: DD/MM/YYYY)
+                const [day, month, year] = personalReview.dateLogged.split('/');
+                setDateLogged(new Date(year, month - 1, day));
+                setIsEditorExpanded(true); // Expand editor for editing
+              } else {
+                setDateLogged(new Date());
+                setIsEditorExpanded(false);
+              }
             }
             setShowModal(!showModal);
           }
@@ -557,8 +566,14 @@ console.log('singleMovieData:', singleMovieData);
       date.getMonth() + 1
     }/${date.getFullYear()}`;
 
-    fetch(`${API_BASE_URL}/api/review/postReview`, {
-      method: "POST",
+    const isEditing = personalReview && personalReview._id;
+    const url = isEditing 
+      ? `${API_BASE_URL}/api/review/updateReview/${personalReview._id}`
+      : `${API_BASE_URL}/api/review/postReview`;
+    const method = isEditing ? "PUT" : "POST";
+
+    fetch(url, {
+      method: method,
       headers: {
         "Content-Type": "application/json",
       },
@@ -568,30 +583,32 @@ console.log('singleMovieData:', singleMovieData);
         imdbID,
         username: username,
         rating: starRatingTemp,
-        likes: 0,
+        likes: personalReview?.likes || 0,
         dateLogged: formattedDate,
       }),
     })
       .then((res) => {
         if (!res.ok) {
-          throw new Error("Failed to post review.");
+          throw new Error(isEditing ? "Failed to update review." : "Failed to post review.");
         }
         return res.json();
       })
       .then((res) => {
-        if (res.message === "Review posted successfully.") {
-          toast.success("YOUR REVIEW HAS BEEN POSTED");
-          const newReview = {
-            ...res.review,
+        const successMessage = isEditing ? "Review updated successfully." : "Review posted successfully.";
+        if (res.message === successMessage || res.message === "Review posted successfully.") {
+          toast.success(isEditing ? "YOUR REVIEW HAS BEEN UPDATED" : "YOUR REVIEW HAS BEEN POSTED");
+          const updatedReview = {
+            ...res.review || res.updatedReview,
             review,
             rating: starRatingTemp,
             dateLogged: formattedDate,
           };
-          setPersonalReview(newReview);
+          setPersonalReview(updatedReview);
           setShowModal(false);
           // Navigate to the SingleReview page with imdbID and reviewID
-          if (res.review && res.review._id) {
-            navigate(`/movie-page/${imdbID}/${res.review._id}`);
+          const reviewId = (res.review && res.review._id) || (res.updatedReview && res.updatedReview._id) || personalReview._id;
+          if (reviewId) {
+            navigate(`/movie-page/${imdbID}/${reviewId}`);
           } else {
             // Fallback: just reload the current page
             window.location.reload();
@@ -601,8 +618,8 @@ console.log('singleMovieData:', singleMovieData);
         }
       })
       .catch((err) => {
-        console.error("Review post error:", err);
-        toast.error("Failed to post review.");
+        console.error("Review submit error:", err);
+        toast.error(isEditing ? "Failed to update review." : "Failed to post review.");
       });
   };
 
