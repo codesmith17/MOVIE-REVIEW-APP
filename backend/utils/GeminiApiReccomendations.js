@@ -1,7 +1,7 @@
 // import { GoogleGenerativeAI } from "@google/generative-ai";
 const { GoogleGenerativeAI } = require("@google/generative-ai")
-const GOOGLE_API_KEY = process.env.VITE_GEMINI_API_KEY;
-const OMDB_API_KEY = process.env.VITE_OMDB_API_KEY_2;
+const GOOGLE_API_KEY = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+const OMDB_API_KEY = process.env.OMDB_API_KEY || process.env.VITE_OMDB_API_KEY_2;
 
 let genAI = null;
 let model = null;

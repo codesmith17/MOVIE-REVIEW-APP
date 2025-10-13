@@ -7,11 +7,14 @@ const process = require("process");
 const path = require("path");
 require('dotenv').config();
 const fs = require('fs');
-const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+// Use native fetch in Node 18+ or fall back to node-fetch
+const fetch = globalThis.fetch || ((...args) => import('node-fetch').then(({default: fetch}) => fetch(...args)));
 
 app.use(express.json());
 app.use(cors({
-    origin: ['http://localhost:5173', 'https://your-frontend-domain.vercel.app'], // Update with your actual frontend URL
+    origin: process.env.NODE_ENV === 'production' 
+        ? ['https://cine-critique-alpha.vercel.app']
+        : ['http://localhost:5173', 'https://cine-critique-alpha.vercel.app'],
     credentials: true,
     optionsSuccessStatus: 200
 }));
@@ -22,7 +25,7 @@ const reviewRoutes = require("./routes/Review.route");
 const movieRoutes = require("./routes/Movie.route");
 const commentRoutes = require("./routes/Comment.route");
 const listRoutes = require("./routes/List.route");
-const subtitleRoutes = require('./routes/subtitleRoutes');
+// const subtitleRoutes = require('./routes/subtitleRoutes'); // Disabled for now
 
 // MongoDB connection with caching for serverless
 let cachedDb = null;
@@ -95,7 +98,7 @@ app.use("/api/review", reviewRoutes);
 app.use("/api/movie", movieRoutes);
 app.use("/api/comment", commentRoutes);
 app.use("/api/list", listRoutes);
-app.use('/api/subtitles', subtitleRoutes);
+// app.use('/api/subtitles', subtitleRoutes); // Disabled for now
 
 // YTS API configuration
 const YTS_API_BASE = 'https://yts.mx/api/v2';
