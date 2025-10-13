@@ -74,6 +74,7 @@ const getOtherReviews = (req, res, next) => {
     console.log(req.user);
 
     Review.find({ imdbID, _id: { $ne: reviewID } })
+        .sort({ _id: -1 }) // Sort by newest first
         .limit(2)
         .then(response => {
             if (response.length > 0) {
