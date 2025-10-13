@@ -175,6 +175,32 @@ const verifyUser = (req, res, next) => {
   });
 };
 
+// Optional authentication - allows requests with or without token
+const optionalAuth = (req, res, next) => {
+  // Extract token from cookie
+  let token = req.headers?.cookie?.split("access_token=")[1] || null;
+
+  // If no token, continue without user
+  if (!token) {
+    return next();
+  }
+
+  // Clean token (remove trailing semicolon if present)
+  if (token.includes(";")) {
+    token = token.split(";")[0];
+  }
+
+  // Verify JWT token
+  jwt.verify(token, "krishna170902", (err, decoded) => {
+    if (!err) {
+      // If token is valid, attach user data
+      req.user = decoded;
+    }
+    // Continue regardless of token validity
+    next();
+  });
+};
+
 
 
 // Helper function to initialize user graph
@@ -592,4 +618,4 @@ const getFollowing = async (req, res, next) => {
   }
 };
 
-module.exports = { signin, verifyUser, signup, getUserData, getOthersData, forgotPassword, resetPassword, uploadProfilePicture, toggleFollow, getFriendsThatFollow, basicGraphNetworkInitialisation, getFollowers, getFollowing };
+module.exports = { signin, verifyUser, optionalAuth, signup, getUserData, getOthersData, forgotPassword, resetPassword, uploadProfilePicture, toggleFollow, getFriendsThatFollow, basicGraphNetworkInitialisation, getFollowers, getFollowing };
