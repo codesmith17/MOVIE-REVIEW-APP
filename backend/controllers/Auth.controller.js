@@ -287,6 +287,8 @@ const signin = async (req, res, next) => {
     // Set cookie and send response
     res.cookie("access_token", token, {
       httpOnly: true,
+      secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Allow cross-site in production
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
       path: '/',
     }).status(200).json(responseData);
