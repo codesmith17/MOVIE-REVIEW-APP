@@ -61,6 +61,7 @@ const MoviePage = () => {
   const [personalReview, setPersonalReview] = useState(null);
   const [likes, setLikes] = useState(0);
   const [userHasLiked, setUserHasLiked] = useState(false);
+  const [likesLoading, setLikesLoading] = useState(false);
   const [otherReviews, setOtherReviews] = useState([]);
   const [currentReviewID, setCurrentReviewID] = useState("");
   const [imdbID, setImdbID] = useState("");
@@ -580,13 +581,21 @@ console.log('singleMovieData:', singleMovieData);
       .then((res) => {
         if (res.message === "Review posted successfully.") {
           toast.success("YOUR REVIEW HAS BEEN POSTED");
-          setPersonalReview({
+          const newReview = {
+            ...res.review,
             review,
             rating: starRatingTemp,
             dateLogged: formattedDate,
-          });
+          };
+          setPersonalReview(newReview);
           setShowModal(false);
-          navigate(`/movie-page/${imdbID}`);
+          // Navigate to the SingleReview page with imdbID and reviewID
+          if (res.review && res.review._id) {
+            navigate(`/movie-page/${imdbID}/${res.review._id}`);
+          } else {
+            // Fallback: just reload the current page
+            window.location.reload();
+          }
         } else {
           toast.error(res.message);
         }
@@ -603,6 +612,19 @@ console.log('singleMovieData:', singleMovieData);
       handleLoginRedirect();
       return;
     }
+    
+    // Prevent double-clicking while loading
+    if (likesLoading) return;
+    
+    // Optimistic UI update
+    setLikesLoading(true);
+    const previousLikes = likes;
+    const previousLiked = userHasLiked;
+    
+    // Update UI immediately for better UX
+    setUserHasLiked(!userHasLiked);
+    setLikes(userHasLiked ? likes - 1 : likes + 1);
+    
     try {
       const res = await fetch(`${API_BASE_URL}/api/movie/postLikes`, {
         method: "POST",
@@ -612,14 +634,22 @@ console.log('singleMovieData:', singleMovieData);
       });
       const data = await res.json();
       if (data.message === "UNAUTHORIZED, LOGIN AGAIN WITH YOUR CREDENTIALS") {
+        // Revert optimistic update
+        setUserHasLiked(previousLiked);
+        setLikes(previousLikes);
         toast.error("Please log in to like movies.");
         navigate("/login");
         return;
       }
-      // Always fetch the latest like state from backend
+      // Fetch actual state from backend to ensure consistency
       fetchLikes();
     } catch (err) {
+      // Revert optimistic update on error
+      setUserHasLiked(previousLiked);
+      setLikes(previousLikes);
       toast.error("Failed to like/unlike movie.");
+    } finally {
+      setLikesLoading(false);
     }
   };
 
@@ -729,13 +759,23 @@ console.log('singleMovieData:', singleMovieData);
                 {/* Like Button */}
                 <button
                   onClick={handleLikeClick}
-                  className="flex items-center gap-2 px-4 py-2 bg-gray-800/60 hover:bg-gray-800 rounded-lg transition-colors"
+                  disabled={likesLoading}
+                  className={`flex items-center gap-2 px-4 py-2 bg-gray-800/60 hover:bg-gray-800 rounded-lg transition-colors ${
+                    likesLoading ? "opacity-60 cursor-not-allowed" : ""
+                  }`}
                 >
-                  <FaHeart
-                    className={`transition-colors ${
-                      userHasLiked ? "text-pink-500" : "text-gray-400"
-                    }`}
-                  />
+                  {likesLoading ? (
+                    <svg className="animate-spin h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  ) : (
+                    <FaHeart
+                      className={`transition-colors ${
+                        userHasLiked ? "text-pink-500" : "text-gray-400"
+                      }`}
+                    />
+                  )}
                   <span className="text-sm text-gray-300">{likes}</span>
                 </button>
                 
