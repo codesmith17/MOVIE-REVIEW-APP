@@ -46,7 +46,7 @@ const SingleReview = () => {
   const [hasMoreComments, setHasMoreComments] = useState(true);
 
   // New function to handle reply likes
-  const [isUpdatingRating, setIsUpdatingRating] = useState(false);
+  const [_, setIsUpdatingRating] = useState(false);
 
   const handleRatingChange = async (newRating) => {
     setRating(newRating);
@@ -359,23 +359,31 @@ const SingleReview = () => {
           console.error("Error fetching poster from TMDB API:", error);
         });
     } else {
-      // Use OMDB for traditional IMDB IDs
+      // Use TMDB's find API for traditional IMDB IDs
       fetch(
-        `http://www.omdbapi.com/?i=${imdbID}&plot=full&apikey=${
-          import.meta.env.VITE_OMDB_API_KEY_2
-        }`
+        `https://api.themoviedb.org/3/find/${imdbID}?external_source=imdb_id&language=en-US`,
+        {
+          method: "GET",
+          headers: {
+            accept: "application/json",
+            Authorization: `Bearer ${TMDB_BEARER_TOKEN}`,
+          },
+        }
       )
         .then((response) => response.json())
         .then((data) => {
-          if (data.Poster) {
-            setMoviePoster(data.Poster);
-            localStorage.setItem(imdbID, data.Poster);
+          // Check both movie_results and tv_results
+          const result = data.movie_results?.[0] || data.tv_results?.[0];
+          if (result?.poster_path) {
+            const posterUrl = `https://image.tmdb.org/t/p/w500${result.poster_path}`;
+            setMoviePoster(posterUrl);
+            localStorage.setItem(imdbID, posterUrl);
           } else {
-            console.error("Failed to fetch movie poster from OMDB API");
+            console.error("Failed to fetch movie poster from TMDB API");
           }
         })
         .catch((error) => {
-          console.error("Error fetching movie poster from OMDB API:", error);
+          console.error("Error fetching poster from TMDB API:", error);
         });
     }
   };

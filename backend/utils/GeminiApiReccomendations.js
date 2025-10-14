@@ -1,7 +1,7 @@
 // import { GoogleGenerativeAI } from "@google/generative-ai";
 const { GoogleGenerativeAI } = require("@google/generative-ai")
 const GOOGLE_API_KEY = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
-const OMDB_API_KEY = process.env.OMDB_API_KEY || process.env.VITE_OMDB_API_KEY_2;
+const TMDB_BEARER_TOKEN = process.env.TMDB_BEARER_TOKEN || process.env.VITE_TMDB_BEARER_TOKEN;
 
 let genAI = null;
 let model = null;
@@ -67,16 +67,30 @@ const trendingMovies = async() => {
 }
 async function fetchMovieDetails(title) {
     try {
-        const response = await fetch(`http://www.omdbapi.com/?t=${encodeURIComponent(title)}&apikey=${OMDB_API_KEY}`);
+        // Use TMDB search API instead of OMDB
+        const response = await fetch(
+            `https://api.themoviedb.org/3/search/multi?query=${encodeURIComponent(title)}&language=en-US&page=1`,
+            {
+                method: "GET",
+                headers: {
+                    accept: "application/json",
+                    Authorization: `Bearer ${TMDB_BEARER_TOKEN}`,
+                },
+            }
+        );
         const data = await response.json();
 
-        if (data.Response === "True") {
+        if (data.results && data.results.length > 0) {
+            const item = data.results[0];
+            const isMovie = item.media_type === 'movie';
+            const isTV = item.media_type === 'tv';
+            
             return {
-                year: data.Year,
-                type: data.Type,
-                name: data.Title,
-                imdbID: data.imdbID,
-                poster: data.Poster !== "N/A" ? data.Poster : null
+                year: isMovie ? (item.release_date ? item.release_date.substring(0, 4) : null) : (item.first_air_date ? item.first_air_date.substring(0, 4) : null),
+                type: isMovie ? 'movie' : (isTV ? 'series' : item.media_type),
+                name: isMovie ? item.title : item.name,
+                imdbID: `${item.media_type}-${item.id}`, // Use TMDB ID format
+                poster: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null
             };
         } else {
             console.warn(`Movie not found: ${title}`);

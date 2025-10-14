@@ -2,8 +2,8 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const GOOGLE_API_KEY =
     import.meta.env.VITE_GEMINI_API_KEY;
-const OMDB_API_KEY =
-    import.meta.env.VITE_OMDB_API_KEY_2;
+const TMDB_BEARER_TOKEN =
+    import.meta.env.VITE_TMDB_BEARER_TOKEN;
 
 const genAI = new GoogleGenerativeAI(GOOGLE_API_KEY);
 
@@ -31,15 +31,27 @@ export const fetchRecommendations = async(imdbID, title, year) => {
 
 async function fetchMovieDetails(title) {
     try {
-        const response = await fetch(`http://www.omdbapi.com/?t=${encodeURIComponent(title)}&apikey=${OMDB_API_KEY}`);
+        // Use TMDB search API instead of OMDB
+        const response = await fetch(
+            `https://api.themoviedb.org/3/search/movie?query=${encodeURIComponent(title)}&language=en-US&page=1`,
+            {
+                method: "GET",
+                headers: {
+                    accept: "application/json",
+                    Authorization: `Bearer ${TMDB_BEARER_TOKEN}`,
+                },
+            }
+        );
         const data = await response.json();
 
-        if (data.Response === "True") {
+        if (data.results && data.results.length > 0) {
+            const movie = data.results[0];
             return {
-                ...data,
-                name: data.Title,
-                imdbID: data.imdbID,
-                poster: data.Poster !== "N/A" ? data.Poster : null
+                name: movie.title,
+                imdbID: `movie-${movie.id}`, // Use TMDB ID format
+                poster: movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : null,
+                Year: movie.release_date ? movie.release_date.substring(0, 4) : null,
+                Title: movie.title
             };
         } else {
             console.warn(`Movie not found: ${title}`);
