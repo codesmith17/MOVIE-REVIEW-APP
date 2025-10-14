@@ -9,17 +9,17 @@ const { initializeGraph, getGraph } = require("../utils/GraphInstance.js");
 const basicGraphNetworkInitialisation = async (req, res, next) => {
   try {
     const { username } = req.user;
-    
+
     if (!username) {
       return res.status(400).json({ message: "Username is required" });
     }
 
     // Use the helper function to initialize graph
     await initializeUserGraph(username);
-    
-    res.status(200).json({ 
+
+    res.status(200).json({
       message: "Graph created successfully",
-      username 
+      username,
     });
   } catch (error) {
     console.error("Error constructing graph:", error);
@@ -27,33 +27,31 @@ const basicGraphNetworkInitialisation = async (req, res, next) => {
   }
 };
 
-
-
-
-
 const uploadProfilePicture = async (req, res, next) => {
   const file = req.file;
 
   if (!file) {
-    return next(createError(400, 'No file uploaded'));
+    return next(createError(400, "No file uploaded"));
   }
 
   try {
-    const filename = new Date().getTime() + '-' + file.originalname;
-    const fileRef = bucket.file('profile-pictures/' + filename);
+    const filename = new Date().getTime() + "-" + file.originalname;
+    const fileRef = bucket.file("profile-pictures/" + filename);
     await fileRef.save(file.buffer, {
       metadata: { contentType: file.mimetype },
     });
     const imageURL = await fileRef.getSignedUrl({
-      action: 'read',
-      expires: '03-01-2500',
+      action: "read",
+      expires: "03-01-2500",
     });
 
     const userId = req.user.id; // Ensure you have the user ID from the Firebase token
 
     // Update the user's profile picture URL in the database
     const updatedUser = await User.findByIdAndUpdate(
-      userId, { profilePicture: imageURL[0] }, { new: true }
+      userId,
+      { profilePicture: imageURL[0] },
+      { new: true },
     );
 
     if (!updatedUser) {
@@ -73,7 +71,9 @@ const toggleFollow = async (req, res, next) => {
 
   try {
     // Check if target user exists
-    const userToFollow = await User.findOne({ username: usernameBeingFollowed });
+    const userToFollow = await User.findOne({
+      username: usernameBeingFollowed,
+    });
     if (!userToFollow) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -88,22 +88,22 @@ const toggleFollow = async (req, res, next) => {
       // Unfollow
       updateOperation = {
         $inc: { followers: -1 },
-        $pull: { followersList: usernameFollowing }
+        $pull: { followersList: usernameFollowing },
       };
       followingUpdateOperation = {
         $inc: { following: -1 },
-        $pull: { followingList: usernameBeingFollowed }
+        $pull: { followingList: usernameBeingFollowed },
       };
       message = "Unfollowed successfully";
     } else {
       // Follow
       updateOperation = {
         $inc: { followers: 1 },
-        $push: { followersList: usernameFollowing }
+        $push: { followersList: usernameFollowing },
       };
       followingUpdateOperation = {
         $inc: { following: 1 },
-        $push: { followingList: usernameBeingFollowed }
+        $push: { followingList: usernameBeingFollowed },
       };
       message = "Followed successfully";
     }
@@ -111,7 +111,7 @@ const toggleFollow = async (req, res, next) => {
     // Update both users
     await Promise.all([
       User.updateOne({ username: usernameBeingFollowed }, updateOperation),
-      User.updateOne({ username: usernameFollowing }, followingUpdateOperation)
+      User.updateOne({ username: usernameFollowing }, followingUpdateOperation),
     ]);
 
     // Get updated follower count
@@ -120,9 +120,8 @@ const toggleFollow = async (req, res, next) => {
     res.status(200).json({
       message,
       isFollowing: !isFollowing,
-      followersCount: updatedUser.followers
+      followersCount: updatedUser.followers,
     });
-
   } catch (error) {
     console.error("Error in toggleFollow:", error);
     res.status(500).json({ message: "Internal server error" });
@@ -141,8 +140,8 @@ const verifyUser = (req, res, next) => {
 
   // Check if token exists
   if (!token) {
-    return res.status(401).json({ 
-      message: "Unauthorized, login again with your credentials" 
+    return res.status(401).json({
+      message: "Unauthorized, login again with your credentials",
     });
   }
 
@@ -155,8 +154,8 @@ const verifyUser = (req, res, next) => {
   jwt.verify(token, "krishna170902", (err, decoded) => {
     if (err) {
       console.error("Token verification error:", err);
-      return res.status(500).json({ 
-        message: "Failed to authenticate token." 
+      return res.status(500).json({
+        message: "Failed to authenticate token.",
       });
     }
 
@@ -165,9 +164,9 @@ const verifyUser = (req, res, next) => {
 
     // If source is "login", send verification response
     if (source === "login") {
-      return res.status(200).json({ 
-        message: "User verified.", 
-        data: decoded 
+      return res.status(200).json({
+        message: "User verified.",
+        data: decoded,
       });
     }
 
@@ -201,14 +200,12 @@ const optionalAuth = (req, res, next) => {
   });
 };
 
-
-
 // Helper function to initialize user graph
 const initializeUserGraph = async (username) => {
   try {
     await initializeGraph();
     const graph = getGraph();
-    
+
     const user = await User.findOne({ username });
     if (!user) {
       throw new Error("User not found for graph initialization");
@@ -221,13 +218,13 @@ const initializeUserGraph = async (username) => {
     graph.addVertex(username);
 
     // Add following connections
-    followingList.forEach(following => {
+    followingList.forEach((following) => {
       graph.addVertex(following);
       graph.addEdge(username, following);
     });
 
     // Add follower connections
-    followersList.forEach(follower => {
+    followersList.forEach((follower) => {
       graph.addVertex(follower);
       graph.addEdge(follower, username);
     });
@@ -245,7 +242,9 @@ const signin = async (req, res, next) => {
 
   // Validate input
   if (!email || !password || email.trim() === "" || password.trim() === "") {
-    return res.status(400).json({ message: "Email and password are required." });
+    return res
+      .status(400)
+      .json({ message: "Email and password are required." });
   }
 
   try {
@@ -262,13 +261,13 @@ const signin = async (req, res, next) => {
 
     // Generate JWT token
     const token = jwt.sign(
-      { id: user._id, email: user.email, username: user.username }, 
-      "krishna170902", 
-      { expiresIn: "24h" }
+      { id: user._id, email: user.email, username: user.username },
+      "krishna170902",
+      { expiresIn: "24h" },
     );
 
     // Initialize user graph (non-blocking)
-    initializeUserGraph(user.username).catch(err => {
+    initializeUserGraph(user.username).catch((err) => {
       console.error("Non-critical: Failed to initialize graph:", err);
     });
 
@@ -280,82 +279,108 @@ const signin = async (req, res, next) => {
         id: user._id,
         email: user.email,
         name: user.name,
-        username: user.username
+        username: user.username,
       },
     };
 
     // Set cookie and send response
-    res.cookie("access_token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', // HTTPS only in production
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Allow cross-site in production
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      path: '/',
-    }).status(200).json(responseData);
-
+    res
+      .cookie("access_token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production", // HTTPS only in production
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // Allow cross-site in production
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        path: "/",
+      })
+      .status(200)
+      .json(responseData);
   } catch (err) {
     console.error("Signin error:", err);
     res.status(500).json({ message: "Server error. Please try again later." });
   }
 };
 
-
-
 const signup = (req, res) => {
   const { name, email, password, confirmPassword, username } = req.body.form;
   const checked = req.body.checked;
   if (checked === false) {
-    return res.status(401).json({ message: "YOU HAVE TO AGREE OUR TERMS AND CONDITIONS" });
+    return res
+      .status(401)
+      .json({ message: "YOU HAVE TO AGREE OUR TERMS AND CONDITIONS" });
   }
   // Check for missing fields
-  if (!name || !email || !password || !confirmPassword || name.trim() === "" || email.trim() === "" || password.trim() === "" || confirmPassword.trim() === "" || !username || username.trim() === "") {
+  if (
+    !name ||
+    !email ||
+    !password ||
+    !confirmPassword ||
+    name.trim() === "" ||
+    email.trim() === "" ||
+    password.trim() === "" ||
+    confirmPassword.trim() === "" ||
+    !username ||
+    username.trim() === ""
+  ) {
     return res.status(400).json({ message: "All fields are required." });
   }
 
   User.findOne({
-    $or: [
-      { email },
-      { username }
-    ]
+    $or: [{ email }, { username }],
   })
-    .then(user => {
+    .then((user) => {
       if (user) {
-        return res.status(401).json({ message: "This user already exists. Try with another email ID or username." });
+        return res
+          .status(401)
+          .json({
+            message:
+              "This user already exists. Try with another email ID or username.",
+          });
       }
 
       if (password !== confirmPassword) {
-        return res.status(401).json({ message: "Password and confirm password do not match." });
+        return res
+          .status(401)
+          .json({ message: "Password and confirm password do not match." });
       }
 
-      return User.create({ name, email, password, username })
-        .then(newUser => {
-          res.status(201).json({ message: "User registered.", user: { name: newUser.name, email: newUser.email } });
-        });
+      return User.create({ name, email, password, username }).then(
+        (newUser) => {
+          res
+            .status(201)
+            .json({
+              message: "User registered.",
+              user: { name: newUser.name, email: newUser.email },
+            });
+        },
+      );
     })
-    .catch(err => {
+    .catch((err) => {
       console.error(err);
-      res.status(500).json({ message: "Server error. Please try again later." });
+      res
+        .status(500)
+        .json({ message: "Server error. Please try again later." });
     });
 };
 
 const getUserData = (req, res, next) => {
   const email = req.user.email;
   User.findOne({ email })
-    .then(user => {
+    .then((user) => {
       if (user) {
         const { password, __v, ...rest } = user.toObject();
 
-        res.status(200).json({ message: "DATA SENT SUCCESSFULLY.", data: rest });
+        res
+          .status(200)
+          .json({ message: "DATA SENT SUCCESSFULLY.", data: rest });
       } else {
         res.status(404).json({ message: "User not found." });
       }
     })
-    .catch(err => {
+    .catch((err) => {
       console.error(err);
       res.status(500).json({ message: "Internal Server Error" });
     });
 };
-
 
 const getFriendsThatFollow = async (req, res, next) => {
   const { myUsername, otherUsername } = req.params;
@@ -364,7 +389,7 @@ const getFriendsThatFollow = async (req, res, next) => {
     // Fetch both users from database
     const [myUser, otherUser] = await Promise.all([
       User.findOne({ username: myUsername }).lean(),
-      User.findOne({ username: otherUsername }).lean()
+      User.findOne({ username: otherUsername }).lean(),
     ]);
 
     if (!myUser || !otherUser) {
@@ -393,13 +418,16 @@ const getFriendsThatFollow = async (req, res, next) => {
               if (!visited.has(followedUsername)) {
                 visited.add(followedUsername);
 
-                const followedUser = await User.findOne({ 
-                  username: followedUsername 
+                const followedUser = await User.findOne({
+                  username: followedUsername,
                 }).lean();
 
                 if (followedUser) {
                   // Check if this is at target depth and follows end user
-                  if (distance + 1 === depth && followedUsername === endUser.username) {
+                  if (
+                    distance + 1 === depth &&
+                    followedUsername === endUser.username
+                  ) {
                     friendsThatFollow.push(user.username);
                   }
 
@@ -418,14 +446,11 @@ const getFriendsThatFollow = async (req, res, next) => {
     const myFriends = await bfs(myUser, otherUser, 2);
 
     res.status(200).json({ myFriends });
-
   } catch (error) {
     console.error("Error fetching mutual friends:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
-
-
 
 const getOthersData = async (req, res, next) => {
   try {
@@ -436,25 +461,25 @@ const getOthersData = async (req, res, next) => {
       { $match: { username } },
       {
         $lookup: {
-          from: 'reviews',
+          from: "reviews",
           localField: "username",
           foreignField: "username",
-          as: 'reviews'
-        }
+          as: "reviews",
+        },
       },
       {
         $addFields: {
-          reviewCount: { $size: '$reviews' }
-        }
+          reviewCount: { $size: "$reviews" },
+        },
       },
       {
         $project: {
           password: 0,
           __v: 0,
           reviews: 0,
-          _id: 0
-        }
-      }
+          _id: 0,
+        },
+      },
     ]);
 
     if (result.length === 0) {
@@ -463,53 +488,58 @@ const getOthersData = async (req, res, next) => {
 
     res.status(200).json({
       message: "Data sent successfully",
-      data: result[0]
+      data: result[0],
     });
-
   } catch (err) {
-    console.error('Error in getOthersData:', err);
+    console.error("Error in getOthersData:", err);
     res.status(500).json({ message: "Internal server error" });
   }
-}
+};
 
 const forgotPassword = (req, res, next) => {
   const email = req.body.email;
 
   User.findOne({ email })
-    .then(response => {
+    .then((response) => {
       if (!response) {
         return res.status(404).json({ message: "User not found" });
       }
 
       const username = response.username;
       const secretKey = "krishna170902"; // Replace with your actual secret key
-      const encryptedUsername = crypto.AES.encrypt(username, secretKey).toString();
+      const encryptedUsername = crypto.AES.encrypt(
+        username,
+        secretKey,
+      ).toString();
       const link = `https://movie-review-app-inky.vercel.app/reset-password/${encodeURIComponent(encryptedUsername)}`;
 
       response.resetToken = encryptedUsername;
-      response.save()
+      response
+        .save()
         .then(() => {
           nodemailer.createTestAccount((err, account) => {
             if (err) {
-              console.error('Failed to create a testing account. ' + err.message);
+              console.error(
+                "Failed to create a testing account. " + err.message,
+              );
               return res.status(500).send("Internal Server Error");
             }
 
             const transporter = nodemailer.createTransport({
-              service: 'gmail',
-              host: 'smtp.gmail.com',
+              service: "gmail",
+              host: "smtp.gmail.com",
               port: 587,
               secure: false,
               auth: {
-                user: 'kanchanlatakrishna@gmail.com',
-                pass: 'nlme fgnu tfmd irwc'
-              }
+                user: "kanchanlatakrishna@gmail.com",
+                pass: "nlme fgnu tfmd irwc",
+              },
             });
 
             const message = {
-              from: 'KRISHNA <test.zboncak58@ethereal.email>',
+              from: "KRISHNA <test.zboncak58@ethereal.email>",
               to: email,
-              subject: 'RESET PASSWORD!',
+              subject: "RESET PASSWORD!",
               text: `FORGOT PASSWORD FOR MOVIE REVIEW WEBSITE`,
               html: `
                                         <p style="font-family: Arial, sans-serif; font-size: 16px;">
@@ -526,74 +556,79 @@ const forgotPassword = (req, res, next) => {
 
             transporter.sendMail(message, (err, info) => {
               if (err) {
-                console.error('Error occurred while sending email. ' + err.message);
+                console.error(
+                  "Error occurred while sending email. " + err.message,
+                );
                 return res.status(500).send("Internal Server Error");
               }
-              console.log('Message sent: %s', info.messageId);
-              console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info));
+              console.log("Message sent: %s", info.messageId);
+              console.log(
+                "Preview URL: %s",
+                nodemailer.getTestMessageUrl(info),
+              );
               res.status(200).json({ message: "Reset email sent!" });
             });
           });
         })
-        .catch(err => {
-          console.error('Error saving user. ' + err.message);
+        .catch((err) => {
+          console.error("Error saving user. " + err.message);
           res.status(500).send("Internal Server Error");
         });
-
     })
-    .catch(err => {
-      console.error('Error finding user. ' + err.message);
+    .catch((err) => {
+      console.error("Error finding user. " + err.message);
       res.status(500).send("Internal Server Error");
     });
 };
 const resetPassword = (req, res, next) => {
   const { password, username, resetToken } = req.body;
-  User.findOne({ username })
-    .then(response => {
-      if (!response) {
-        res.status(401).json({ message: "YOU ARE UNAUTHORIZED" });
-        return;
-      }
-      if (response.resetToken !== resetToken) {
-        res.status(401).json({ message: "YOU ARE UNAUTHORIZED" });
-        return;
-      }
-      if (response.password === password) {
-        res.status(400).json({ message: "TRY TO USE SOME NEW PASSWORD" });
-        return;
-      }
-      response.password = password;
-      response.resetToken = null;
-      response.save()
-        .then(() => {
-          res.status(200).json({ message: "Password reset successfully!" });
-        })
-        .catch(err => {
-          console.error('Error saving user. ' + err.message);
-          res.status(500).json({ message: "Internal Server Error" });
-        });
-
-    })
-}
+  User.findOne({ username }).then((response) => {
+    if (!response) {
+      res.status(401).json({ message: "YOU ARE UNAUTHORIZED" });
+      return;
+    }
+    if (response.resetToken !== resetToken) {
+      res.status(401).json({ message: "YOU ARE UNAUTHORIZED" });
+      return;
+    }
+    if (response.password === password) {
+      res.status(400).json({ message: "TRY TO USE SOME NEW PASSWORD" });
+      return;
+    }
+    response.password = password;
+    response.resetToken = null;
+    response
+      .save()
+      .then(() => {
+        res.status(200).json({ message: "Password reset successfully!" });
+      })
+      .catch((err) => {
+        console.error("Error saving user. " + err.message);
+        res.status(500).json({ message: "Internal Server Error" });
+      });
+  });
+};
 
 const getFollowers = async (req, res, next) => {
   try {
     const { username } = req.params;
-    
-    const user = await User.findOne({ username }).select('followersList');
-    
+
+    const user = await User.findOne({ username }).select("followersList");
+
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    
+
     // Get detailed information about followers
-    const followers = await User.find({ 
-      username: { $in: user.followersList } 
-    }).select('username name profilePicture followers following reviewCount followersList');
-    
+    const followers = await User.find({
+      username: { $in: user.followersList },
+    }).select(
+      "username name profilePicture followers following reviewCount followersList",
+    );
+
     res.status(200).json({ followers });
   } catch (err) {
-    console.error('Error in getFollowers:', err);
+    console.error("Error in getFollowers:", err);
     res.status(500).json({ message: "Internal server error" });
   }
 };
@@ -601,23 +636,40 @@ const getFollowers = async (req, res, next) => {
 const getFollowing = async (req, res, next) => {
   try {
     const { username } = req.params;
-    
-    const user = await User.findOne({ username }).select('followingList');
-    
+
+    const user = await User.findOne({ username }).select("followingList");
+
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    
+
     // Get detailed information about users being followed
-    const following = await User.find({ 
-      username: { $in: user.followingList } 
-    }).select('username name profilePicture followers following reviewCount followersList');
-    
+    const following = await User.find({
+      username: { $in: user.followingList },
+    }).select(
+      "username name profilePicture followers following reviewCount followersList",
+    );
+
     res.status(200).json({ following });
   } catch (err) {
-    console.error('Error in getFollowing:', err);
+    console.error("Error in getFollowing:", err);
     res.status(500).json({ message: "Internal server error" });
   }
 };
 
-module.exports = { signin, verifyUser, optionalAuth, signup, getUserData, getOthersData, forgotPassword, resetPassword, uploadProfilePicture, toggleFollow, getFriendsThatFollow, basicGraphNetworkInitialisation, getFollowers, getFollowing };
+module.exports = {
+  signin,
+  verifyUser,
+  optionalAuth,
+  signup,
+  getUserData,
+  getOthersData,
+  forgotPassword,
+  resetPassword,
+  uploadProfilePicture,
+  toggleFollow,
+  getFriendsThatFollow,
+  basicGraphNetworkInitialisation,
+  getFollowers,
+  getFollowing,
+};

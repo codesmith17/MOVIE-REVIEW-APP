@@ -22,10 +22,10 @@ const MovieVideos = ({ videos }) => {
     if (!scrollContainerRef.current) return;
 
     const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
-    
+
     // Show left blur if scrolled from start
     setShowLeftBlur(scrollLeft > 10);
-    
+
     // Show right blur if not at end
     setShowRightBlur(scrollLeft < scrollWidth - clientWidth - 10);
   };
@@ -35,21 +35,21 @@ const MovieVideos = ({ videos }) => {
     if (container) {
       // Initial check
       handleScroll();
-      
+
       // Add scroll listener
-      container.addEventListener('scroll', handleScroll);
-      
-      return () => container.removeEventListener('scroll', handleScroll);
+      container.addEventListener("scroll", handleScroll);
+
+      return () => container.removeEventListener("scroll", handleScroll);
     }
   }, [videos]);
 
   // Sort videos with proper priority logic
   const sortedVideos = useMemo(() => {
     return [...videos].sort((a, b) => {
-      const aIsTrailer = a.name.includes('Trailer') || a.type === 'Trailer';
-      const aIsTeaser = a.name.includes('Teaser') || a.type === 'Teaser';
-      const bIsTrailer = b.name.includes('Trailer') || b.type === 'Trailer';
-      const bIsTeaser = b.name.includes('Teaser') || b.type === 'Teaser';
+      const aIsTrailer = a.name.includes("Trailer") || a.type === "Trailer";
+      const aIsTeaser = a.name.includes("Teaser") || a.type === "Teaser";
+      const bIsTrailer = b.name.includes("Trailer") || b.type === "Trailer";
+      const bIsTeaser = b.name.includes("Teaser") || b.type === "Teaser";
 
       // Both are trailers - maintain order
       if (aIsTrailer && bIsTrailer) {
@@ -112,7 +112,9 @@ const MovieVideos = ({ videos }) => {
                 className="w-full h-full border-0"
               ></iframe>
             </div>
-            <h3 className="text-xl font-bold text-white mt-4 mb-2">{selectedVideo.name}</h3>
+            <h3 className="text-xl font-bold text-white mt-4 mb-2">
+              {selectedVideo.name}
+            </h3>
             <p className="text-gray-400 text-sm">{selectedVideo.type}</p>
           </div>
         </div>
@@ -120,12 +122,12 @@ const MovieVideos = ({ videos }) => {
 
       {/* Video thumbnails - Horizontal Scroll */}
       <div className="relative">
-        <div 
+        <div
           ref={scrollContainerRef}
           className="flex gap-6 overflow-x-scroll pb-4 scroll-smooth"
-          style={{ 
-            scrollbarWidth: 'auto',
-            scrollbarColor: '#3b82f6 #1f2937'
+          style={{
+            scrollbarWidth: "auto",
+            scrollbarColor: "#3b82f6 #1f2937",
           }}
         >
           {sortedVideos.map((video) => (
@@ -146,7 +148,9 @@ const MovieVideos = ({ videos }) => {
                 </div>
               </div>
               <div className="mt-2">
-                <p className="text-sm text-white font-medium line-clamp-2">{video.name}</p>
+                <p className="text-sm text-white font-medium line-clamp-2">
+                  {video.name}
+                </p>
                 <p className="text-xs text-gray-400 mt-1">{video.type}</p>
               </div>
             </div>

@@ -20,7 +20,7 @@ const PersonPage = () => {
             headers: {
               Authorization: `Bearer ${TMDB_BEARER_TOKEN}`,
             },
-          }
+          },
         );
         if (!response.ok) {
           throw new Error("Network response was not ok");
@@ -158,8 +158,8 @@ const PersonPage = () => {
                     item.release_date
                       ? item.release_date.split("-")[0]
                       : item.first_air_date
-                      ? item.first_air_date.split("-")[0]
-                      : "N/A"
+                        ? item.first_air_date.split("-")[0]
+                        : "N/A"
                   }
                   type={item.media_type}
                   mediaType={item.media_type}

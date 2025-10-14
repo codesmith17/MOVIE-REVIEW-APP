@@ -34,7 +34,7 @@ const Signup = () => {
       .then((res) => {
         if (res.message === "User registered.") {
           toast.success(
-            "USER HAS BEEN REGISTERED SIGN-IN USING YOUR CREDENTIALS"
+            "USER HAS BEEN REGISTERED SIGN-IN USING YOUR CREDENTIALS",
           );
           navigate("/");
         } else {

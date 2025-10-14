@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { FaStar, FaEdit, FaCalendarAlt, FaSpinner, FaArrowLeft } from "react-icons/fa";
+import {
+  FaStar,
+  FaEdit,
+  FaCalendarAlt,
+  FaSpinner,
+  FaArrowLeft,
+} from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
@@ -18,7 +24,7 @@ const ActivityPage = () => {
   const { username } = useParams();
   const navigate = useNavigate();
   const user = useSelector((state) => state.user.data);
-  
+
   const [activities, setActivities] = useState([]);
   const [movieDetails, setMovieDetails] = useState({});
   const [loading, setLoading] = useState(true);
@@ -27,7 +33,7 @@ const ActivityPage = () => {
   const [editForm, setEditForm] = useState({
     review: "",
     rating: 0,
-    dateLogged: null
+    dateLogged: null,
   });
 
   const isCurrentUser = user?.data?.username === username;
@@ -39,23 +45,23 @@ const ActivityPage = () => {
   const fetchUserActivities = async () => {
     try {
       setLoading(true);
-      
+
       // Fetch user reviews
       const reviewsResponse = await fetch(
-        `${API_BASE_URL}/api/review/getReviews/${username}`
+        `${API_BASE_URL}/api/review/getReviews/${username}`,
       );
-      
+
       if (reviewsResponse.ok) {
         const reviewsData = await reviewsResponse.json();
         const reviews = reviewsData.reviews || [];
-        
+
         // Sort by date (most recent first)
-        const sortedReviews = reviews.sort((a, b) => 
-          new Date(b.dateLogged) - new Date(a.dateLogged)
+        const sortedReviews = reviews.sort(
+          (a, b) => new Date(b.dateLogged) - new Date(a.dateLogged),
         );
-        
+
         setActivities(sortedReviews);
-        
+
         // Fetch movie details for each review
         fetchMovieDetails(sortedReviews);
       }
@@ -69,7 +75,7 @@ const ActivityPage = () => {
 
   const fetchMovieDetails = async (reviews) => {
     const details = {};
-    
+
     await Promise.all(
       reviews.map(async (review) => {
         try {
@@ -81,9 +87,9 @@ const ActivityPage = () => {
                 accept: "application/json",
                 Authorization: `Bearer ${TMDB_BEARER_TOKEN}`,
               },
-            }
+            },
           );
-          
+
           if (response.ok) {
             const movieData = await response.json();
             details[review.imdbID] = movieData;
@@ -91,9 +97,9 @@ const ActivityPage = () => {
         } catch (error) {
           console.error(`Error fetching movie ${review.imdbID}:`, error);
         }
-      })
+      }),
     );
-    
+
     setMovieDetails(details);
   };
 
@@ -102,14 +108,16 @@ const ActivityPage = () => {
     setEditForm({
       review: activity.review || "",
       rating: activity.rating || 0,
-      dateLogged: activity.dateLogged ? new Date(activity.dateLogged.split("/").reverse().join("-")) : null
+      dateLogged: activity.dateLogged
+        ? new Date(activity.dateLogged.split("/").reverse().join("-"))
+        : null,
     });
     setShowEditModal(true);
   };
 
   const handleSaveEdit = async () => {
     try {
-      const formattedDate = editForm.dateLogged 
+      const formattedDate = editForm.dateLogged
         ? `${editForm.dateLogged.getDate()}/${editForm.dateLogged.getMonth() + 1}/${editForm.dateLogged.getFullYear()}`
         : editingReview.dateLogged;
 
@@ -126,7 +134,7 @@ const ActivityPage = () => {
             rating: editForm.rating,
             dateLogged: formattedDate,
           }),
-        }
+        },
       );
 
       if (response.ok) {
@@ -159,7 +167,8 @@ const ActivityPage = () => {
             className="w-24 h-36 object-cover rounded-lg hover:scale-105 transition-transform"
             onError={(e) => {
               e.target.onerror = null;
-              e.target.src = "https://via.placeholder.com/200x300?text=No+Image";
+              e.target.src =
+                "https://via.placeholder.com/200x300?text=No+Image";
             }}
           />
         </Link>
@@ -168,18 +177,18 @@ const ActivityPage = () => {
         <div className="flex-1 min-w-0">
           <div className="flex justify-between items-start mb-3">
             <div>
-              <Link 
+              <Link
                 to={`/movie/${activity.imdbID}`}
                 className="text-xl font-bold text-white hover:text-blue-400 transition-colors"
               >
                 {movieData?.title || "Unknown Title"}
               </Link>
               <p className="text-gray-400 text-sm">
-                {movieData?.release_date?.split("-")[0] || "N/A"} • 
+                {movieData?.release_date?.split("-")[0] || "N/A"} •
                 {movieData?.genres?.[0]?.name || "Movie"}
               </p>
             </div>
-            
+
             {isCurrentUser && (
               <button
                 onClick={() => handleEditClick(activity)}
@@ -198,13 +207,17 @@ const ActivityPage = () => {
                 <FaStar
                   key={index}
                   className={`text-lg ${
-                    index < activity.rating ? 'text-yellow-400' : 'text-gray-600'
+                    index < activity.rating
+                      ? "text-yellow-400"
+                      : "text-gray-600"
                   }`}
                 />
               ))}
-              <span className="text-white font-bold ml-2">{activity.rating}/5</span>
+              <span className="text-white font-bold ml-2">
+                {activity.rating}/5
+              </span>
             </div>
-            
+
             <div className="flex items-center text-gray-400 text-sm">
               <FaCalendarAlt className="mr-1" />
               <span>Logged on {activity.dateLogged}</span>
@@ -213,12 +226,13 @@ const ActivityPage = () => {
 
           {/* Review Text */}
           {activity.review && (
-            <div 
+            <div
               className="text-gray-300 text-sm line-clamp-3"
-              dangerouslySetInnerHTML={{ 
-                __html: activity.review.length > 200 
-                  ? activity.review.substring(0, 200) + "..." 
-                  : activity.review 
+              dangerouslySetInnerHTML={{
+                __html:
+                  activity.review.length > 200
+                    ? activity.review.substring(0, 200) + "..."
+                    : activity.review,
               }}
             />
           )}
@@ -263,7 +277,8 @@ const ActivityPage = () => {
               {isCurrentUser ? "Your Activity" : `${username}'s Activity`}
             </h1>
             <p className="text-gray-400 mt-1">
-              {activities.length} review{activities.length !== 1 ? 's' : ''} found
+              {activities.length} review{activities.length !== 1 ? "s" : ""}{" "}
+              found
             </p>
           </div>
         </div>
@@ -286,10 +301,9 @@ const ActivityPage = () => {
                 className="text-center py-16"
               >
                 <p className="text-gray-400 text-xl">
-                  {isCurrentUser 
-                    ? "You haven't reviewed any movies yet." 
-                    : `${username} hasn't reviewed any movies yet.`
-                  }
+                  {isCurrentUser
+                    ? "You haven't reviewed any movies yet."
+                    : `${username} hasn't reviewed any movies yet.`}
                 </p>
                 {isCurrentUser && (
                   <Link
@@ -305,15 +319,22 @@ const ActivityPage = () => {
         </div>
 
         {/* Edit Modal */}
-        <Modal isOpen={showEditModal} toggleModal={() => setShowEditModal(false)}>
+        <Modal
+          isOpen={showEditModal}
+          toggleModal={() => setShowEditModal(false)}
+        >
           <h2 className="text-2xl font-bold mb-4 text-white">Edit Review</h2>
           <div className="space-y-4">
             {/* Date */}
             <div>
-              <label className="block text-gray-300 font-bold mb-2">Date Logged</label>
+              <label className="block text-gray-300 font-bold mb-2">
+                Date Logged
+              </label>
               <DatePicker
                 selected={editForm.dateLogged}
-                onChange={(date) => setEditForm(prev => ({ ...prev, dateLogged: date }))}
+                onChange={(date) =>
+                  setEditForm((prev) => ({ ...prev, dateLogged: date }))
+                }
                 dateFormat="dd/MM/yyyy"
                 className="text-white bg-gray-800 p-2 border border-gray-600 rounded-lg w-full focus:ring-2 focus:ring-blue-500"
                 maxDate={new Date()}
@@ -322,15 +343,21 @@ const ActivityPage = () => {
 
             {/* Rating */}
             <div>
-              <label className="block text-gray-300 font-bold mb-2">Rating</label>
+              <label className="block text-gray-300 font-bold mb-2">
+                Rating
+              </label>
               <div className="flex items-center space-x-1">
                 {[...Array(5)].map((_, index) => (
                   <FaStar
                     key={index}
                     className={`text-2xl cursor-pointer ${
-                      index < editForm.rating ? 'text-yellow-400' : 'text-gray-600'
+                      index < editForm.rating
+                        ? "text-yellow-400"
+                        : "text-gray-600"
                     }`}
-                    onClick={() => setEditForm(prev => ({ ...prev, rating: index + 1 }))}
+                    onClick={() =>
+                      setEditForm((prev) => ({ ...prev, rating: index + 1 }))
+                    }
                   />
                 ))}
               </div>
@@ -338,16 +365,20 @@ const ActivityPage = () => {
 
             {/* Review */}
             <div>
-              <label className="block text-gray-300 font-bold mb-2">Review</label>
+              <label className="block text-gray-300 font-bold mb-2">
+                Review
+              </label>
               <div className="bg-gray-800 border border-gray-600 rounded-lg">
                 <ReactQuill
                   value={editForm.review}
-                  onChange={(value) => setEditForm(prev => ({ ...prev, review: value }))}
+                  onChange={(value) =>
+                    setEditForm((prev) => ({ ...prev, review: value }))
+                  }
                   theme="snow"
                   className="text-white"
-                  style={{ 
-                    backgroundColor: '#1f2937',
-                    color: 'white'
+                  style={{
+                    backgroundColor: "#1f2937",
+                    color: "white",
                   }}
                 />
               </div>
@@ -375,4 +406,4 @@ const ActivityPage = () => {
   );
 };
 
-export default ActivityPage; 
+export default ActivityPage;

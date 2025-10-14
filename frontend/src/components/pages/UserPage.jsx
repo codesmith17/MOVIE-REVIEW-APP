@@ -57,7 +57,7 @@ const UserPage = () => {
           headers: {
             "Content-Type": "application/json",
           },
-        }
+        },
       );
 
       if (!response.ok) {
@@ -87,7 +87,7 @@ const UserPage = () => {
           headers: {
             "Content-Type": "application/json",
           },
-        }
+        },
       );
 
       if (response.ok) {
@@ -116,7 +116,7 @@ const UserPage = () => {
           headers: {
             Authorization: `Bearer ${TMDB_BEARER_TOKEN}`,
           },
-        }
+        },
       );
 
       if (!response.ok) throw new Error("Failed to search movies");
@@ -144,7 +144,7 @@ const UserPage = () => {
             },
           }),
           credentials: "include",
-        }
+        },
       );
       if (!response.ok) throw new Error("Failed to add movie to watchlist");
       await fetchWatchlist();
@@ -170,7 +170,7 @@ const UserPage = () => {
             "Content-Type": "application/json",
           },
           credentials: "include",
-        }
+        },
       );
 
       if (!response.ok) {
@@ -205,7 +205,7 @@ const UserPage = () => {
                 "Content-Type": "application/json",
               },
               credentials: "include",
-            }
+            },
           );
           if (!response.ok) {
             if (response.status === 404) {
@@ -225,7 +225,7 @@ const UserPage = () => {
           setIsFollowing(
             data.data.followers
               ? data.data.followersList.includes(user?.data?.username)
-              : false
+              : false,
           );
         } catch (err) {
           setNotFound(true);
@@ -258,7 +258,7 @@ const UserPage = () => {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
           credentials: "include",
-        }
+        },
       );
 
       if (!response.ok) {
@@ -285,7 +285,11 @@ const UserPage = () => {
         return <ReviewsTab username={username} />;
       case "watchlist":
         return (
-          <WatchlistTab watchlist={watchlist} setIsModalOpen={setIsModalOpen} fetchWatchlist={fetchWatchlist} />
+          <WatchlistTab
+            watchlist={watchlist}
+            setIsModalOpen={setIsModalOpen}
+            fetchWatchlist={fetchWatchlist}
+          />
         );
       case "lists":
         return <ListsTab username={username} />;
@@ -490,10 +494,14 @@ const UserPage = () => {
                           </motion.div>
                           <div className="text-left">
                             <p className="text-cyan-300 font-medium text-sm sm:text-base break-words">
-                              {selectedFile ? selectedFile.name : "Choose a file"}
+                              {selectedFile
+                                ? selectedFile.name
+                                : "Choose a file"}
                             </p>
                             <p className="text-xs sm:text-sm text-gray-400">
-                              {selectedFile ? "Click to change" : "PNG, JPG up to 10MB"}
+                              {selectedFile
+                                ? "Click to change"
+                                : "PNG, JPG up to 10MB"}
                             </p>
                           </div>
                         </div>
@@ -621,7 +629,9 @@ const UserPage = () => {
             className="max-w-lg mx-auto mt-16 bg-gradient-to-br from-gray-800/90 to-gray-900/90 backdrop-blur-xl p-12 rounded-3xl shadow-2xl text-center border border-gray-700/50"
           >
             <div className="text-6xl mb-6">😕</div>
-            <h2 className="text-3xl font-bold text-red-400 mb-3">User Not Found</h2>
+            <h2 className="text-3xl font-bold text-red-400 mb-3">
+              User Not Found
+            </h2>
             <p className="text-gray-400 text-lg">
               The user you're looking for doesn't exist.
             </p>
@@ -635,35 +645,40 @@ const UserPage = () => {
 const ModernStatBox = ({ icon: Icon, label, value, color, link }) => {
   const content = (
     <div className="bg-gradient-to-br from-gray-700/50 to-gray-800/50 backdrop-blur-sm rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-5 border border-gray-600/30 min-w-[100px] sm:min-w-[120px] md:min-w-[140px] shadow-xl cursor-pointer">
-      <div className={`inline-flex p-2 sm:p-2.5 md:p-3 rounded-lg sm:rounded-xl bg-gradient-to-r ${color} mb-2 sm:mb-3`}>
+      <div
+        className={`inline-flex p-2 sm:p-2.5 md:p-3 rounded-lg sm:rounded-xl bg-gradient-to-r ${color} mb-2 sm:mb-3`}
+      >
         <Icon className="text-white text-base sm:text-lg md:text-xl lg:text-2xl" />
       </div>
-      <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-0.5 sm:mb-1">{value}</div>
-      <div className="text-xs sm:text-sm text-gray-400 font-medium">{label}</div>
-      
+      <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-0.5 sm:mb-1">
+        {value}
+      </div>
+      <div className="text-xs sm:text-sm text-gray-400 font-medium">
+        {label}
+      </div>
+
       {/* Hover glow effect */}
-      <div className={`absolute inset-0 rounded-xl sm:rounded-2xl bg-gradient-to-r ${color} opacity-0 group-hover:opacity-20 blur-xl transition-opacity duration-300 -z-10`} />
+      <div
+        className={`absolute inset-0 rounded-xl sm:rounded-2xl bg-gradient-to-r ${color} opacity-0 group-hover:opacity-20 blur-xl transition-opacity duration-300 -z-10`}
+      />
     </div>
   );
 
   return (
-    <motion.div
-      whileHover={{ scale: 1.05, y: -5 }}
-      className="relative group"
-    >
-      {link ? (
-        <Link to={link}>
-          {content}
-        </Link>
-      ) : (
-        content
-      )}
+    <motion.div whileHover={{ scale: 1.05, y: -5 }} className="relative group">
+      {link ? <Link to={link}>{content}</Link> : content}
     </motion.div>
   );
 };
 
 // Modern Tab Button Component
-const ModernTabButton = ({ icon: Icon, label, tab, activeTab, setActiveTab }) => (
+const ModernTabButton = ({
+  icon: Icon,
+  label,
+  tab,
+  activeTab,
+  setActiveTab,
+}) => (
   <motion.button
     whileHover={{ scale: 1.05, y: -2 }}
     whileTap={{ scale: 0.95 }}
@@ -676,7 +691,7 @@ const ModernTabButton = ({ icon: Icon, label, tab, activeTab, setActiveTab }) =>
   >
     <Icon className="text-sm sm:text-base md:text-lg lg:text-xl" />
     <span className="whitespace-nowrap">{label}</span>
-    
+
     {/* Active indicator */}
     {activeTab === tab && (
       <motion.div
@@ -711,7 +726,7 @@ const ReviewsTab = ({ username }) => {
     const fetchReviews = async () => {
       try {
         const response = await fetch(
-          `${API_BASE_URL}/api/review/getReviews/${username}`
+          `${API_BASE_URL}/api/review/getReviews/${username}`,
         );
         const data = await response.json();
 
@@ -737,17 +752,17 @@ const ReviewsTab = ({ username }) => {
       const details = {};
       const fetchPromises = reviews.map(async (review) => {
         try {
-          let mediaType = 'movie';
+          let mediaType = "movie";
           let mediaId = review.imdbID;
 
           // Check if the ID has a type prefix (tv- or movie-)
-          if (typeof review.imdbID === 'string') {
-            if (review.imdbID.startsWith('tv-')) {
-              mediaType = 'tv';
-              mediaId = review.imdbID.replace('tv-', '');
-            } else if (review.imdbID.startsWith('movie-')) {
-              mediaType = 'movie';
-              mediaId = review.imdbID.replace('movie-', '');
+          if (typeof review.imdbID === "string") {
+            if (review.imdbID.startsWith("tv-")) {
+              mediaType = "tv";
+              mediaId = review.imdbID.replace("tv-", "");
+            } else if (review.imdbID.startsWith("movie-")) {
+              mediaType = "movie";
+              mediaId = review.imdbID.replace("movie-", "");
             }
           }
 
@@ -759,7 +774,7 @@ const ReviewsTab = ({ username }) => {
                 accept: "application/json",
                 Authorization: `Bearer ${TMDB_BEARER_TOKEN}`,
               },
-            }
+            },
           );
 
           if (response.ok) {
@@ -801,14 +816,19 @@ const ReviewsTab = ({ username }) => {
           {reviews.map((review) => {
             const mediaData = movieDetails[review.imdbID];
             if (!mediaData) return null; // Skip if data hasn't loaded yet
-            
-            const isTV = mediaData.mediaType === 'tv';
+
+            const isTV = mediaData.mediaType === "tv";
             const title = isTV ? mediaData.name : mediaData.title;
-            const releaseDate = isTV ? mediaData.first_air_date : mediaData.release_date;
-            const mediaTypeLabel = isTV ? 'TV Show' : 'Movie';
-            
+            const releaseDate = isTV
+              ? mediaData.first_air_date
+              : mediaData.release_date;
+            const mediaTypeLabel = isTV ? "TV Show" : "Movie";
+
             return (
-              <Link key={review._id} to={`/movie-page/${review.imdbID}/${review._id}`}>
+              <Link
+                key={review._id}
+                to={`/movie-page/${review.imdbID}/${review._id}`}
+              >
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -846,7 +866,9 @@ const ReviewsTab = ({ username }) => {
                       <div className="flex items-center mb-2 sm:mb-3 gap-1.5 sm:gap-2 flex-wrap">
                         <div className="flex items-center bg-yellow-500/20 px-2 sm:px-3 py-0.5 sm:py-1 rounded-lg">
                           <FaStar className="text-yellow-400 mr-1 sm:mr-1.5 text-xs sm:text-sm" />
-                          <span className="font-bold text-white text-xs sm:text-sm">{review.rating}</span>
+                          <span className="font-bold text-white text-xs sm:text-sm">
+                            {review.rating}
+                          </span>
                         </div>
                         <span className="text-xs sm:text-sm text-gray-400 truncate">
                           by {review.username}
@@ -887,7 +909,7 @@ const WatchlistTab = ({ watchlist, setIsModalOpen, fetchWatchlist }) => {
   const handleRemoveFromWatchlist = async (movie, e) => {
     e.preventDefault(); // Prevent navigation when clicking remove button
     e.stopPropagation();
-    
+
     try {
       const response = await fetch(
         `${API_BASE_URL}/api/list/removeFromList/watchlist`,
@@ -899,11 +921,11 @@ const WatchlistTab = ({ watchlist, setIsModalOpen, fetchWatchlist }) => {
             tmdbId: movie.id,
           }),
           credentials: "include",
-        }
+        },
       );
-      
+
       if (!response.ok) throw new Error("Failed to remove from watchlist");
-      
+
       await fetchWatchlist();
       toast.success(`${movie.title} removed from watchlist`);
     } catch (error) {
@@ -922,9 +944,9 @@ const WatchlistTab = ({ watchlist, setIsModalOpen, fetchWatchlist }) => {
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6"
         >
           {watchlist.content.map((movie) => (
-            <MovieCard 
-              key={movie.id} 
-              movie={movie} 
+            <MovieCard
+              key={movie.id}
+              movie={movie}
               onRemove={handleRemoveFromWatchlist}
             />
           ))}
@@ -947,7 +969,7 @@ const MovieCard = ({ movie, onRemove }) => (
     className="group relative"
   >
     <Link
-      to={`/${movie.type === 'tv' ? 'tv' : 'movie'}/${movie.id}`}
+      to={`/${movie.type === "tv" ? "tv" : "movie"}/${movie.id}`}
       className="block"
     >
       <div className="relative bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-xl rounded-xl sm:rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-300 border border-slate-700/50">
@@ -958,16 +980,18 @@ const MovieCard = ({ movie, onRemove }) => (
             alt={movie.title}
             className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700"
           />
-          
+
           {/* Gradient Overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent" />
-          
+
           {/* Hover Overlay with Info */}
           <div className="absolute inset-0 bg-gradient-to-t from-cyan-900/90 via-blue-900/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
             <div className="absolute bottom-0 left-0 right-0 p-4 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
               <div className="flex items-center gap-2 mb-2">
                 <FaEye className="text-cyan-300" />
-                <span className="text-cyan-100 text-sm font-medium">Click to view details</span>
+                <span className="text-cyan-100 text-sm font-medium">
+                  Click to view details
+                </span>
               </div>
             </div>
           </div>
@@ -976,7 +1000,7 @@ const MovieCard = ({ movie, onRemove }) => (
           <div className="absolute top-3 left-3">
             <div className="bg-slate-900/90 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-cyan-500/30">
               <span className="text-cyan-300 text-xs font-semibold uppercase tracking-wider">
-                {movie.type === 'tv' ? 'TV Show' : 'Movie'}
+                {movie.type === "tv" ? "TV Show" : "Movie"}
               </span>
             </div>
           </div>
@@ -998,16 +1022,18 @@ const MovieCard = ({ movie, onRemove }) => (
           <h4 className="font-bold text-base sm:text-lg text-white mb-2 line-clamp-2 group-hover:text-cyan-300 transition-colors">
             {movie.title}
           </h4>
-          
+
           <div className="flex items-center justify-between text-sm">
             <div className="flex items-center gap-2 text-gray-400">
               <FaCalendarAlt className="text-cyan-400" />
               <span>{movie.year}</span>
             </div>
-            
+
             <div className="flex items-center gap-1.5 bg-cyan-600/20 px-2.5 py-1 rounded-lg border border-cyan-500/30">
               <FaClock className="text-cyan-400 text-xs" />
-              <span className="text-cyan-300 text-xs font-medium">Watchlist</span>
+              <span className="text-cyan-300 text-xs font-medium">
+                Watchlist
+              </span>
             </div>
           </div>
         </div>
@@ -1016,7 +1042,7 @@ const MovieCard = ({ movie, onRemove }) => (
         <div className="h-1 bg-gradient-to-r from-cyan-600 via-blue-600 to-cyan-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
       </div>
     </Link>
-    
+
     {/* Glow effect on hover */}
     <div className="absolute inset-0 rounded-xl sm:rounded-2xl bg-gradient-to-r from-cyan-600 to-blue-600 opacity-0 group-hover:opacity-20 blur-2xl transition-opacity duration-300 -z-10" />
   </motion.div>
@@ -1031,14 +1057,14 @@ const EmptyWatchlist = () => (
       className="max-w-md mx-auto"
     >
       <motion.div
-        animate={{ 
+        animate={{
           rotate: [0, 10, -10, 10, 0],
-          scale: [1, 1.1, 1]
+          scale: [1, 1.1, 1],
         }}
-        transition={{ 
+        transition={{
           duration: 2,
           repeat: Infinity,
-          repeatDelay: 3
+          repeatDelay: 3,
         }}
         className="text-8xl mb-6"
       >
@@ -1048,7 +1074,8 @@ const EmptyWatchlist = () => (
         Your watchlist is empty
       </h3>
       <p className="text-gray-400 text-lg">
-        Start adding movies and shows to keep track of what you want to watch next!
+        Start adding movies and shows to keep track of what you want to watch
+        next!
       </p>
     </motion.div>
   </div>
@@ -1082,7 +1109,7 @@ const ListsTab = ({ username }) => {
     setListSearchLoading(true);
     try {
       const response = await fetch(
-        `${API_BASE_URL}/api/list/getList/${username}/normal`
+        `${API_BASE_URL}/api/list/getList/${username}/normal`,
       );
       console.log("Fetch response:", response); // Debug log
       if (response.ok) {
@@ -1099,7 +1126,7 @@ const ListsTab = ({ username }) => {
         console.error(
           "Failed to fetch lists:",
           response.status,
-          response.statusText
+          response.statusText,
         );
         toast.error("Failed to fetch lists");
         setLists([]); // Set to empty array on error
@@ -1123,7 +1150,9 @@ const ListsTab = ({ username }) => {
       return;
     }
     if (newListName.trim().toLowerCase() === "watchlist") {
-      toast.error("Cannot create a list named 'watchlist'. This name is reserved.");
+      toast.error(
+        "Cannot create a list named 'watchlist'. This name is reserved.",
+      );
       return;
     }
 
@@ -1140,14 +1169,14 @@ const ListsTab = ({ username }) => {
             },
           }),
           credentials: "include",
-        }
+        },
       );
 
       if (response.ok) {
         toast.success(
           movie
             ? "List created with selected movie"
-            : "Empty list created successfully"
+            : "Empty list created successfully",
         );
         setNewListName("");
         fetchLists();
@@ -1170,7 +1199,7 @@ const ListsTab = ({ username }) => {
           headers: {
             Authorization: `Bearer ${TMDB_BEARER_TOKEN}`,
           },
-        }
+        },
       );
 
       if (!response.ok) throw new Error("Failed to search movies and shows");
@@ -1204,7 +1233,7 @@ const ListsTab = ({ username }) => {
             },
           }),
           credentials: "include",
-        }
+        },
       );
       if (!response.ok) throw new Error("Failed to add item to list");
       toast.success("Item added to list");
@@ -1251,11 +1280,7 @@ const ListsTab = ({ username }) => {
       ) : lists.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {lists.map((list) => (
-            <Link
-              key={list._id}
-              to={`/list/${list._id}`}
-              state={{ list }}
-            >
+            <Link key={list._id} to={`/list/${list._id}`} state={{ list }}>
               <motion.div
                 whileHover={{ scale: 1.05, y: -5 }}
                 whileTap={{ scale: 0.95 }}
@@ -1263,7 +1288,7 @@ const ListsTab = ({ username }) => {
               >
                 {/* Background gradient effect */}
                 <div className="absolute inset-0 bg-gradient-to-br from-cyan-600/10 to-blue-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                
+
                 <div className="relative z-10">
                   <div className="flex items-start justify-between mb-4">
                     <FaList className="text-3xl text-cyan-400" />
@@ -1277,10 +1302,11 @@ const ListsTab = ({ username }) => {
                     {list.name}
                   </h3>
                   <p className="text-gray-400 text-sm mb-1">
-                    {list.type === 'normal' ? 'Custom List' : list.type}
+                    {list.type === "normal" ? "Custom List" : list.type}
                   </p>
                   <p className="text-gray-500 text-sm">
-                    {list.content.length} {list.content.length === 1 ? 'item' : 'items'}
+                    {list.content.length}{" "}
+                    {list.content.length === 1 ? "item" : "items"}
                   </p>
                 </div>
               </motion.div>
@@ -1358,21 +1384,19 @@ const LikesTab = () => (
         className="max-w-md mx-auto"
       >
         <motion.div
-          animate={{ 
+          animate={{
             scale: [1, 1.2, 1],
           }}
-          transition={{ 
+          transition={{
             duration: 1.5,
             repeat: Infinity,
-            repeatDelay: 2
+            repeatDelay: 2,
           }}
           className="text-8xl mb-6"
         >
           ❤️
         </motion.div>
-        <h3 className="text-3xl font-bold text-gray-200 mb-3">
-          Coming Soon
-        </h3>
+        <h3 className="text-3xl font-bold text-gray-200 mb-3">Coming Soon</h3>
         <p className="text-gray-400 text-lg">
           Liked reviews and content will be displayed here.
         </p>

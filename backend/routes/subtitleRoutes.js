@@ -1,11 +1,11 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const subtitleController = require('../controllers/subtitleController');
+const subtitleController = require("../controllers/subtitleController");
 
 // Search subtitles
-router.get('/search', subtitleController.searchSubtitles);
+router.get("/search", subtitleController.searchSubtitles);
 
 // Download subtitle
-router.get('/download', subtitleController.downloadSubtitle);
+router.get("/download", subtitleController.downloadSubtitle);
 
-module.exports = router; 
+module.exports = router;

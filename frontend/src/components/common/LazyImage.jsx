@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from "react";
 
 /**
  * LazyImage - Optimized image component with lazy loading and skeleton state
@@ -7,12 +7,12 @@ import React, { useState, useEffect, useRef } from 'react';
 const LazyImage = ({
   src,
   alt,
-  className = '',
-  skeletonClassName = '',
+  className = "",
+  skeletonClassName = "",
   width,
   height,
-  objectFit = 'cover',
-  fallbackSrc = '/placeholder-movie.png',
+  objectFit = "cover",
+  fallbackSrc = "/placeholder-movie.png",
   onLoad,
   onError,
   priority = false, // Set to true for above-the-fold images
@@ -33,7 +33,7 @@ const LazyImage = ({
     // Set up Intersection Observer for lazy loading
     const options = {
       root: null,
-      rootMargin: '50px', // Start loading 50px before image is visible
+      rootMargin: "50px", // Start loading 50px before image is visible
       threshold: 0.01,
     };
 
@@ -90,33 +90,34 @@ const LazyImage = ({
         <div
           className={`absolute inset-0 skeleton ${skeletonClassName}`}
           style={{
-            background: 'linear-gradient(90deg, #1e293b 0%, #2d3748 50%, #1e293b 100%)',
-            backgroundSize: '200% 100%',
-            animation: 'shimmer 2s infinite',
+            background:
+              "linear-gradient(90deg, #1e293b 0%, #2d3748 50%, #1e293b 100%)",
+            backgroundSize: "200% 100%",
+            animation: "shimmer 2s infinite",
           }}
         />
       )}
-      
+
       {/* Actual image */}
       {currentSrc && (
         <img
           src={currentSrc}
           alt={alt}
           className={`
-            ${isLoading ? 'opacity-0' : 'opacity-100'}
+            ${isLoading ? "opacity-0" : "opacity-100"}
             transition-opacity duration-300 ease-in-out
-            ${objectFit === 'cover' ? 'object-cover' : ''}
-            ${objectFit === 'contain' ? 'object-contain' : ''}
+            ${objectFit === "cover" ? "object-cover" : ""}
+            ${objectFit === "contain" ? "object-contain" : ""}
             w-full h-full
           `}
           onLoad={handleLoad}
           onError={handleError}
-          loading={priority ? 'eager' : 'lazy'}
+          loading={priority ? "eager" : "lazy"}
           decoding="async"
           {...rest}
         />
       )}
-      
+
       {/* Error state */}
       {hasError && !fallbackSrc && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-800 text-gray-400 text-sm">
@@ -143,4 +144,3 @@ const LazyImage = ({
 };
 
 export default LazyImage;
-

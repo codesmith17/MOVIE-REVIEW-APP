@@ -1,7 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { FaStar, FaCalendarAlt, FaFilm, FaSpinner, FaSearch, FaFilter, FaArrowLeft, FaSortAmountDown } from "react-icons/fa";
+import {
+  FaStar,
+  FaCalendarAlt,
+  FaFilm,
+  FaSpinner,
+  FaSearch,
+  FaFilter,
+  FaArrowLeft,
+  FaSortAmountDown,
+} from "react-icons/fa";
 import { toast } from "react-toastify";
 
 const API_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
@@ -27,7 +36,7 @@ const ReviewsListPage = () => {
   const fetchReviews = async () => {
     try {
       const response = await fetch(
-        `${API_BASE_URL}/api/review/getReviews/${username}`
+        `${API_BASE_URL}/api/review/getReviews/${username}`,
       );
       const data = await response.json();
 
@@ -50,16 +59,16 @@ const ReviewsListPage = () => {
       const details = {};
       const fetchPromises = reviews.map(async (review) => {
         try {
-          let mediaType = 'movie';
+          let mediaType = "movie";
           let mediaId = review.imdbID;
 
-          if (typeof review.imdbID === 'string') {
-            if (review.imdbID.startsWith('tv-')) {
-              mediaType = 'tv';
-              mediaId = review.imdbID.replace('tv-', '');
-            } else if (review.imdbID.startsWith('movie-')) {
-              mediaType = 'movie';
-              mediaId = review.imdbID.replace('movie-', '');
+          if (typeof review.imdbID === "string") {
+            if (review.imdbID.startsWith("tv-")) {
+              mediaType = "tv";
+              mediaId = review.imdbID.replace("tv-", "");
+            } else if (review.imdbID.startsWith("movie-")) {
+              mediaType = "movie";
+              mediaId = review.imdbID.replace("movie-", "");
             }
           }
 
@@ -71,7 +80,7 @@ const ReviewsListPage = () => {
                 accept: "application/json",
                 Authorization: `Bearer ${TMDB_BEARER_TOKEN}`,
               },
-            }
+            },
           );
 
           if (response.ok) {
@@ -103,9 +112,12 @@ const ReviewsListPage = () => {
     if (searchQuery) {
       result = result.filter((review) => {
         const mediaData = movieDetails[review.imdbID];
-        const title = mediaData?.mediaType === 'tv' ? mediaData.name : mediaData?.title;
-        return title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-               review.review?.toLowerCase().includes(searchQuery.toLowerCase());
+        const title =
+          mediaData?.mediaType === "tv" ? mediaData.name : mediaData?.title;
+        return (
+          title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          review.review?.toLowerCase().includes(searchQuery.toLowerCase())
+        );
       });
     }
 
@@ -145,7 +157,7 @@ const ReviewsListPage = () => {
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   if (loading) {
@@ -176,12 +188,13 @@ const ReviewsListPage = () => {
           >
             <FaArrowLeft /> Back to Profile
           </button>
-          
+
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent mb-2">
             {username}'s Reviews
           </h1>
           <p className="text-gray-400 text-lg">
-            {filteredReviews.length} {filteredReviews.length === 1 ? 'review' : 'reviews'} found
+            {filteredReviews.length}{" "}
+            {filteredReviews.length === 1 ? "review" : "reviews"} found
           </p>
         </motion.div>
 
@@ -245,10 +258,12 @@ const ReviewsListPage = () => {
                   const mediaData = movieDetails[review.imdbID];
                   if (!mediaData) return null;
 
-                  const isTV = mediaData.mediaType === 'tv';
+                  const isTV = mediaData.mediaType === "tv";
                   const title = isTV ? mediaData.name : mediaData.title;
-                  const releaseDate = isTV ? mediaData.first_air_date : mediaData.release_date;
-                  const mediaTypeLabel = isTV ? 'TV Show' : 'Movie';
+                  const releaseDate = isTV
+                    ? mediaData.first_air_date
+                    : mediaData.release_date;
+                  const mediaTypeLabel = isTV ? "TV Show" : "Movie";
 
                   return (
                     <motion.div
@@ -294,7 +309,9 @@ const ReviewsListPage = () => {
                               <div className="flex items-center mb-3 gap-2 flex-wrap">
                                 <div className="flex items-center bg-yellow-500/20 px-3 py-1 rounded-lg">
                                   <FaStar className="text-yellow-400 mr-1.5 text-sm" />
-                                  <span className="font-bold text-white text-sm">{review.rating}</span>
+                                  <span className="font-bold text-white text-sm">
+                                    {review.rating}
+                                  </span>
                                 </div>
                               </div>
                             </div>
@@ -310,7 +327,9 @@ const ReviewsListPage = () => {
                             <div className="flex items-center mt-3 text-xs text-gray-500">
                               <FaCalendarAlt className="mr-2" />
                               <span>
-                                {new Date(review.dateLogged).toLocaleDateString()}
+                                {new Date(
+                                  review.dateLogged,
+                                ).toLocaleDateString()}
                               </span>
                             </div>
                           </div>
@@ -362,7 +381,11 @@ const ReviewsListPage = () => {
                     page === currentPage - 2 ||
                     page === currentPage + 2
                   ) {
-                    return <span key={page} className="text-gray-500">...</span>;
+                    return (
+                      <span key={page} className="text-gray-500">
+                        ...
+                      </span>
+                    );
                   }
                   return null;
                 })}
@@ -400,4 +423,3 @@ const ReviewsListPage = () => {
 };
 
 export default ReviewsListPage;
-

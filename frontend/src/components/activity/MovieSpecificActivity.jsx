@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { FaStar, FaEdit, FaCalendarAlt, FaSpinner, FaArrowLeft, FaEye } from "react-icons/fa";
+import {
+  FaStar,
+  FaEdit,
+  FaCalendarAlt,
+  FaSpinner,
+  FaArrowLeft,
+  FaEye,
+} from "react-icons/fa";
 import { motion } from "framer-motion";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
@@ -18,7 +25,7 @@ const MovieSpecificActivity = () => {
   const { movieId, username } = useParams();
   const navigate = useNavigate();
   const user = useSelector((state) => state.user.data);
-  
+
   const [movieData, setMovieData] = useState(null);
   const [userActivity, setUserActivity] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -26,7 +33,7 @@ const MovieSpecificActivity = () => {
   const [editForm, setEditForm] = useState({
     review: "",
     rating: 0,
-    dateLogged: null
+    dateLogged: null,
   });
   const [imdbID, setImdbID] = useState("");
 
@@ -39,7 +46,7 @@ const MovieSpecificActivity = () => {
   const fetchMovieAndActivity = async () => {
     try {
       setLoading(true);
-      
+
       // Fetch movie details
       const movieResponse = await fetch(
         `https://api.themoviedb.org/3/movie/${movieId}?language=en-US`,
@@ -49,9 +56,9 @@ const MovieSpecificActivity = () => {
             accept: "application/json",
             Authorization: `Bearer ${TMDB_BEARER_TOKEN}`,
           },
-        }
+        },
       );
-      
+
       let imdb_id = "";
       if (movieResponse.ok) {
         const movieData = await movieResponse.json();
@@ -74,7 +81,7 @@ const MovieSpecificActivity = () => {
             "Content-Type": "application/json",
           },
           credentials: "include",
-        }
+        },
       );
 
       if (reviewResponse.ok && reviewResponse.status !== 204) {
@@ -93,18 +100,20 @@ const MovieSpecificActivity = () => {
 
   const handleEditClick = () => {
     if (!userActivity) return;
-    
+
     setEditForm({
       review: userActivity.review || "",
       rating: userActivity.rating || 0,
-      dateLogged: userActivity.dateLogged ? new Date(userActivity.dateLogged.split("/").reverse().join("-")) : null
+      dateLogged: userActivity.dateLogged
+        ? new Date(userActivity.dateLogged.split("/").reverse().join("-"))
+        : null,
     });
     setShowEditModal(true);
   };
 
   const handleSaveEdit = async () => {
     try {
-      const formattedDate = editForm.dateLogged 
+      const formattedDate = editForm.dateLogged
         ? `${editForm.dateLogged.getDate()}/${editForm.dateLogged.getMonth() + 1}/${editForm.dateLogged.getFullYear()}`
         : userActivity.dateLogged;
 
@@ -121,7 +130,7 @@ const MovieSpecificActivity = () => {
             rating: editForm.rating,
             dateLogged: formattedDate,
           }),
-        }
+        },
       );
 
       if (response.ok) {
@@ -143,14 +152,14 @@ const MovieSpecificActivity = () => {
         icon: FaEye,
         label: "Reviewed",
         color: "bg-green-600",
-        textColor: "text-green-400"
+        textColor: "text-green-400",
       };
     } else {
       return {
         icon: FaEye,
         label: "Not Watched",
         color: "bg-gray-600",
-        textColor: "text-gray-400"
+        textColor: "text-gray-400",
       };
     }
   };
@@ -202,23 +211,25 @@ const MovieSpecificActivity = () => {
                 className="w-32 h-48 object-cover rounded-lg hover:scale-105 transition-transform"
                 onError={(e) => {
                   e.target.onerror = null;
-                  e.target.src = "https://via.placeholder.com/300x450?text=No+Image";
+                  e.target.src =
+                    "https://via.placeholder.com/300x450?text=No+Image";
                 }}
               />
             </Link>
 
             {/* Movie Details */}
             <div className="flex-1">
-              <Link 
+              <Link
                 to={`/movie/${movieId}`}
                 className="text-2xl font-bold text-white hover:text-blue-400 transition-colors"
               >
                 {movieData?.title}
               </Link>
               <p className="text-gray-400 mb-4">
-                {movieData?.release_date?.split("-")[0]} • {movieData?.genres?.[0]?.name || "Movie"}
+                {movieData?.release_date?.split("-")[0]} •{" "}
+                {movieData?.genres?.[0]?.name || "Movie"}
               </p>
-              
+
               <p className="text-gray-300 text-sm mb-4">
                 {movieData?.overview}
               </p>
@@ -227,10 +238,14 @@ const MovieSpecificActivity = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Watch Status */}
                 <div className="bg-gray-900 rounded-xl p-4 text-center">
-                  <div className={`mx-auto w-12 h-12 rounded-full flex items-center justify-center mb-3 ${statusInfo.color}`}>
+                  <div
+                    className={`mx-auto w-12 h-12 rounded-full flex items-center justify-center mb-3 ${statusInfo.color}`}
+                  >
                     <StatusIcon className="text-xl text-white" />
                   </div>
-                  <div className={`text-lg font-semibold ${statusInfo.textColor}`}>
+                  <div
+                    className={`text-lg font-semibold ${statusInfo.textColor}`}
+                  >
                     {statusInfo.label}
                   </div>
                 </div>
@@ -241,7 +256,9 @@ const MovieSpecificActivity = () => {
                     <FaStar className="text-xl text-white" />
                   </div>
                   <div className="text-lg font-semibold text-yellow-400">
-                    {userActivity?.rating > 0 ? `${userActivity.rating}/5` : "Not Rated"}
+                    {userActivity?.rating > 0
+                      ? `${userActivity.rating}/5`
+                      : "Not Rated"}
                   </div>
                 </div>
 
@@ -287,19 +304,25 @@ const MovieSpecificActivity = () => {
                   <FaStar
                     key={index}
                     className={`text-2xl ${
-                      index < userActivity.rating ? 'text-yellow-400' : 'text-gray-600'
+                      index < userActivity.rating
+                        ? "text-yellow-400"
+                        : "text-gray-600"
                     }`}
                   />
                 ))}
-                <span className="text-white font-bold text-xl ml-3">{userActivity.rating}/5</span>
+                <span className="text-white font-bold text-xl ml-3">
+                  {userActivity.rating}/5
+                </span>
               </div>
             </div>
 
             {/* Review Text */}
             {userActivity.review && (
               <div className="mb-6">
-                <h4 className="text-lg font-semibold text-white mb-2">Review</h4>
-                <div 
+                <h4 className="text-lg font-semibold text-white mb-2">
+                  Review
+                </h4>
+                <div
                   className="text-gray-300 bg-gray-900 rounded-lg p-4"
                   dangerouslySetInnerHTML={{ __html: userActivity.review }}
                 />
@@ -308,7 +331,9 @@ const MovieSpecificActivity = () => {
 
             {/* Date Logged */}
             <div>
-              <h4 className="text-lg font-semibold text-white mb-2">Date Logged</h4>
+              <h4 className="text-lg font-semibold text-white mb-2">
+                Date Logged
+              </h4>
               <p className="text-gray-300">{userActivity.dateLogged}</p>
             </div>
           </motion.div>
@@ -319,10 +344,9 @@ const MovieSpecificActivity = () => {
             className="bg-gray-800 rounded-2xl p-8 text-center"
           >
             <p className="text-gray-400 text-xl mb-4">
-              {isCurrentUser 
-                ? "You haven't reviewed this movie yet." 
-                : `${username} hasn't reviewed this movie yet.`
-              }
+              {isCurrentUser
+                ? "You haven't reviewed this movie yet."
+                : `${username} hasn't reviewed this movie yet.`}
             </p>
             <Link
               to={`/movie/${movieId}`}
@@ -344,15 +368,22 @@ const MovieSpecificActivity = () => {
         </div>
 
         {/* Edit Modal */}
-        <Modal isOpen={showEditModal} toggleModal={() => setShowEditModal(false)}>
+        <Modal
+          isOpen={showEditModal}
+          toggleModal={() => setShowEditModal(false)}
+        >
           <h2 className="text-2xl font-bold mb-4 text-white">Edit Review</h2>
           <div className="space-y-4">
             {/* Date */}
             <div>
-              <label className="block text-gray-300 font-bold mb-2">Date Logged</label>
+              <label className="block text-gray-300 font-bold mb-2">
+                Date Logged
+              </label>
               <DatePicker
                 selected={editForm.dateLogged}
-                onChange={(date) => setEditForm(prev => ({ ...prev, dateLogged: date }))}
+                onChange={(date) =>
+                  setEditForm((prev) => ({ ...prev, dateLogged: date }))
+                }
                 dateFormat="dd/MM/yyyy"
                 className="text-white bg-gray-800 p-2 border border-gray-600 rounded-lg w-full focus:ring-2 focus:ring-blue-500"
                 maxDate={new Date()}
@@ -361,15 +392,21 @@ const MovieSpecificActivity = () => {
 
             {/* Rating */}
             <div>
-              <label className="block text-gray-300 font-bold mb-2">Rating</label>
+              <label className="block text-gray-300 font-bold mb-2">
+                Rating
+              </label>
               <div className="flex items-center space-x-1">
                 {[...Array(5)].map((_, index) => (
                   <FaStar
                     key={index}
                     className={`text-2xl cursor-pointer ${
-                      index < editForm.rating ? 'text-yellow-400' : 'text-gray-600'
+                      index < editForm.rating
+                        ? "text-yellow-400"
+                        : "text-gray-600"
                     }`}
-                    onClick={() => setEditForm(prev => ({ ...prev, rating: index + 1 }))}
+                    onClick={() =>
+                      setEditForm((prev) => ({ ...prev, rating: index + 1 }))
+                    }
                   />
                 ))}
               </div>
@@ -377,16 +414,20 @@ const MovieSpecificActivity = () => {
 
             {/* Review */}
             <div>
-              <label className="block text-gray-300 font-bold mb-2">Review</label>
+              <label className="block text-gray-300 font-bold mb-2">
+                Review
+              </label>
               <div className="bg-gray-800 border border-gray-600 rounded-lg">
                 <ReactQuill
                   value={editForm.review}
-                  onChange={(value) => setEditForm(prev => ({ ...prev, review: value }))}
+                  onChange={(value) =>
+                    setEditForm((prev) => ({ ...prev, review: value }))
+                  }
                   theme="snow"
                   className="text-white"
-                  style={{ 
-                    backgroundColor: '#1f2937',
-                    color: 'white'
+                  style={{
+                    backgroundColor: "#1f2937",
+                    color: "white",
                   }}
                 />
               </div>
@@ -414,4 +455,4 @@ const MovieSpecificActivity = () => {
   );
 };
 
-export default MovieSpecificActivity; 
+export default MovieSpecificActivity;

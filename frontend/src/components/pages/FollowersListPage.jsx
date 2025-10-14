@@ -1,7 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { FaUser, FaStar, FaUserPlus, FaUserMinus, FaSpinner, FaSearch, FaArrowLeft, FaHeart } from "react-icons/fa";
+import {
+  FaUser,
+  FaStar,
+  FaUserPlus,
+  FaUserMinus,
+  FaSpinner,
+  FaSearch,
+  FaArrowLeft,
+  FaHeart,
+} from "react-icons/fa";
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
 
@@ -12,7 +21,7 @@ const FollowersListPage = () => {
   const { username } = useParams();
   const navigate = useNavigate();
   const user = useSelector((state) => state.user.data);
-  
+
   const [followers, setFollowers] = useState([]);
   const [filteredFollowers, setFilteredFollowers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -34,19 +43,21 @@ const FollowersListPage = () => {
             "Content-Type": "application/json",
           },
           credentials: "include",
-        }
+        },
       );
 
       if (response.ok) {
         const data = await response.json();
         setFollowers(data.followers || []);
         setFilteredFollowers(data.followers || []);
-        
+
         // Check following status for each follower
         if (user?.data) {
           const statusMap = {};
           data.followers?.forEach((follower) => {
-            statusMap[follower.username] = follower.followersList?.includes(user.data.username);
+            statusMap[follower.username] = follower.followersList?.includes(
+              user.data.username,
+            );
           });
           setFollowingStatus(statusMap);
         }
@@ -64,9 +75,12 @@ const FollowersListPage = () => {
   // Apply search filter
   useEffect(() => {
     if (searchQuery) {
-      const filtered = followers.filter((follower) =>
-        follower.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        follower.name?.toLowerCase().includes(searchQuery.toLowerCase())
+      const filtered = followers.filter(
+        (follower) =>
+          follower.username
+            ?.toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
+          follower.name?.toLowerCase().includes(searchQuery.toLowerCase()),
       );
       setFilteredFollowers(filtered);
     } else {
@@ -91,14 +105,14 @@ const FollowersListPage = () => {
             "Content-Type": "application/json",
           },
           credentials: "include",
-        }
+        },
       );
 
       if (response.ok) {
         const data = await response.json();
-        setFollowingStatus(prev => ({
+        setFollowingStatus((prev) => ({
           ...prev,
-          [followerUsername]: data.isFollowing
+          [followerUsername]: data.isFollowing,
         }));
         toast.success(data.message);
       } else {
@@ -118,7 +132,7 @@ const FollowersListPage = () => {
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   if (loading) {
@@ -149,13 +163,14 @@ const FollowersListPage = () => {
           >
             <FaArrowLeft /> Back to Profile
           </button>
-          
+
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-pink-400 to-rose-400 bg-clip-text text-transparent mb-2">
             {username}'s Followers
           </h1>
           <p className="text-gray-400 text-lg flex items-center gap-2">
             <FaHeart className="text-pink-400" />
-            {filteredFollowers.length} {filteredFollowers.length === 1 ? 'follower' : 'followers'}
+            {filteredFollowers.length}{" "}
+            {filteredFollowers.length === 1 ? "follower" : "followers"}
           </p>
         </motion.div>
 
@@ -212,7 +227,9 @@ const FollowersListPage = () => {
                             <h3 className="font-bold text-lg text-white truncate hover:text-cyan-300 transition-colors">
                               {follower.username}
                             </h3>
-                            <p className="text-gray-400 text-sm truncate">{follower.name}</p>
+                            <p className="text-gray-400 text-sm truncate">
+                              {follower.name}
+                            </p>
                           </div>
                         </div>
                       </Link>
@@ -229,26 +246,30 @@ const FollowersListPage = () => {
                           </div>
                         </div>
 
-                        {user?.data && user.data.username !== follower.username && (
-                          <button
-                            onClick={() => handleFollowToggle(follower.username)}
-                            className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
-                              followingStatus[follower.username]
-                                ? "bg-red-600 hover:bg-red-700 text-white"
-                                : "bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white"
-                            }`}
-                          >
-                            {followingStatus[follower.username] ? (
-                              <>
-                                <FaUserMinus className="inline mr-1" /> Unfollow
-                              </>
-                            ) : (
-                              <>
-                                <FaUserPlus className="inline mr-1" /> Follow
-                              </>
-                            )}
-                          </button>
-                        )}
+                        {user?.data &&
+                          user.data.username !== follower.username && (
+                            <button
+                              onClick={() =>
+                                handleFollowToggle(follower.username)
+                              }
+                              className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                                followingStatus[follower.username]
+                                  ? "bg-red-600 hover:bg-red-700 text-white"
+                                  : "bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white"
+                              }`}
+                            >
+                              {followingStatus[follower.username] ? (
+                                <>
+                                  <FaUserMinus className="inline mr-1" />{" "}
+                                  Unfollow
+                                </>
+                              ) : (
+                                <>
+                                  <FaUserPlus className="inline mr-1" /> Follow
+                                </>
+                              )}
+                            </button>
+                          )}
                       </div>
                     </motion.div>
                   </motion.div>
@@ -291,8 +312,15 @@ const FollowersListPage = () => {
                         {page}
                       </button>
                     );
-                  } else if (page === currentPage - 2 || page === currentPage + 2) {
-                    return <span key={page} className="text-gray-500">...</span>;
+                  } else if (
+                    page === currentPage - 2 ||
+                    page === currentPage + 2
+                  ) {
+                    return (
+                      <span key={page} className="text-gray-500">
+                        ...
+                      </span>
+                    );
                   }
                   return null;
                 })}
@@ -330,4 +358,3 @@ const FollowersListPage = () => {
 };
 
 export default FollowersListPage;
-

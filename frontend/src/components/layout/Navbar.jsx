@@ -18,8 +18,8 @@ const Navbar = () => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
     };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   const searchHandler = (e) => {
@@ -32,16 +32,21 @@ const Navbar = () => {
   };
 
   const handleLogout = () => {
-    document.cookie = "access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie =
+      "access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     dispatch(logout());
     navigate("/login");
     setIsMenuOpen(false);
   };
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-      isScrolled ? 'bg-[#0a0e27]/98 backdrop-blur-xl border-b border-gray-800/50 shadow-xl' : 'bg-[#0a0e27]/80 backdrop-blur-md'
-    }`}>
+    <nav
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        isScrolled
+          ? "bg-[#0a0e27]/98 backdrop-blur-xl border-b border-gray-800/50 shadow-xl"
+          : "bg-[#0a0e27]/80 backdrop-blur-md"
+      }`}
+    >
       <div className="max-w-7xl mx-auto px-6">
         <div className="flex items-center justify-between h-16">
           {/* Left: Logo + Nav Links */}
@@ -101,7 +106,7 @@ const Navbar = () => {
                     to={`/user/${user?.username || user?.data?.username}`}
                     className="flex items-center gap-2 hover:opacity-80 transition-opacity"
                   >
-                    {(user?.profilePicture || user?.data?.profilePicture) ? (
+                    {user?.profilePicture || user?.data?.profilePicture ? (
                       <img
                         src={user?.profilePicture || user?.data?.profilePicture}
                         alt={user?.username || user?.data?.username}
@@ -112,9 +117,11 @@ const Navbar = () => {
                         <FaUser className="text-white text-xs" />
                       </div>
                     )}
-                    <span className="text-sm text-gray-300 font-medium">{user?.username || user?.data?.username}</span>
+                    <span className="text-sm text-gray-300 font-medium">
+                      {user?.username || user?.data?.username}
+                    </span>
                   </Link>
-                  
+
                   <button
                     onClick={handleLogout}
                     className="text-xs text-gray-500 hover:text-red-400 transition-colors font-medium"
@@ -122,10 +129,13 @@ const Navbar = () => {
                     Sign out
                   </button>
                 </div>
-                
+
                 {/* Mobile User Avatar */}
-                <Link to={`/user/${user?.username || user?.data?.username}`} className="md:hidden">
-                  {(user?.profilePicture || user?.data?.profilePicture) ? (
+                <Link
+                  to={`/user/${user?.username || user?.data?.username}`}
+                  className="md:hidden"
+                >
+                  {user?.profilePicture || user?.data?.profilePicture ? (
                     <img
                       src={user?.profilePicture || user?.data?.profilePicture}
                       alt={user?.username || user?.data?.username}
@@ -152,7 +162,11 @@ const Navbar = () => {
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="md:hidden p-2 text-gray-400 hover:text-white transition-colors"
             >
-              {isMenuOpen ? <FaTimes className="text-lg" /> : <FaBars className="text-lg" />}
+              {isMenuOpen ? (
+                <FaTimes className="text-lg" />
+              ) : (
+                <FaBars className="text-lg" />
+              )}
             </button>
           </div>
         </div>
@@ -183,7 +197,7 @@ const Navbar = () => {
               >
                 Home
               </Link>
-              
+
               <Link
                 to="/about"
                 onClick={() => setIsMenuOpen(false)}
@@ -208,7 +222,7 @@ const Navbar = () => {
                     <FaUser className="text-xs" />
                     Profile
                   </Link>
-                  
+
                   <button
                     onClick={handleLogout}
                     className="px-4 py-2.5 text-red-400 hover:text-white hover:bg-red-500/20 rounded-lg transition-all text-sm font-medium text-left"

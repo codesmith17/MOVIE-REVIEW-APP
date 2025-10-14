@@ -61,7 +61,7 @@
   color: #d1d5db !important;
 }
 
-.ql-snow .ql-tooltip input[type=text] {
+.ql-snow .ql-tooltip input[type="text"] {
   background-color: #1f2937 !important;
   border: 1px solid #4b5563 !important;
   color: #d1d5db !important;
@@ -71,4 +71,4 @@
 .ql-editor:focus {
   outline: 2px solid #3b82f6 !important;
   outline-offset: 2px;
-} 
+}

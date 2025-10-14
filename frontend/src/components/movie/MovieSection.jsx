@@ -2,7 +2,8 @@ import React, { useRef, useState, useEffect } from "react";
 import MovieCard from "./MovieCard";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 
-const defaultImage = "https://www.reelviews.net/resources/img/default_poster.jpg";
+const defaultImage =
+  "https://www.reelviews.net/resources/img/default_poster.jpg";
 
 const MovieCardSkeleton = () => (
   <div className="skeleton w-full max-w-[140px] sm:max-w-[160px] md:max-w-[180px] lg:max-w-[200px] mx-auto min-h-[240px] sm:min-h-[280px] md:min-h-[320px] lg:min-h-[360px] rounded-xl"></div>
@@ -21,17 +22,18 @@ const MovieSection = ({ title, movies, loading, error }) => {
     const checkScroll = () => {
       setCanScrollLeft(container.scrollLeft > 0);
       setCanScrollRight(
-        container.scrollLeft < container.scrollWidth - container.clientWidth - 10
+        container.scrollLeft <
+          container.scrollWidth - container.clientWidth - 10,
       );
     };
 
     checkScroll();
-    container.addEventListener('scroll', checkScroll);
-    window.addEventListener('resize', checkScroll);
+    container.addEventListener("scroll", checkScroll);
+    window.addEventListener("resize", checkScroll);
 
     return () => {
-      container.removeEventListener('scroll', checkScroll);
-      window.removeEventListener('resize', checkScroll);
+      container.removeEventListener("scroll", checkScroll);
+      window.removeEventListener("resize", checkScroll);
     };
   }, [movies, loading]);
 
@@ -40,8 +42,8 @@ const MovieSection = ({ title, movies, loading, error }) => {
       const isMobile = window.innerWidth < 640;
       const scrollAmount = isMobile ? 200 : 400;
       scrollContainerRef.current.scrollBy({
-        left: direction === 'left' ? -scrollAmount : scrollAmount,
-        behavior: 'smooth'
+        left: direction === "left" ? -scrollAmount : scrollAmount,
+        behavior: "smooth",
       });
     }
   };
@@ -50,31 +52,29 @@ const MovieSection = ({ title, movies, loading, error }) => {
     <section className="fade-in">
       {/* Section Header */}
       <div className="flex items-center justify-between mb-8">
-        <h2 className="text-2xl font-bold gradient-text">
-          {title}
-        </h2>
-        
+        <h2 className="text-2xl font-bold gradient-text">{title}</h2>
+
         {/* Desktop Scroll Buttons */}
         {!loading && movies?.length > 4 && (
           <div className="hidden md:flex gap-2">
             <button
-              onClick={() => scroll('left')}
+              onClick={() => scroll("left")}
               disabled={!canScrollLeft}
               className={`glass p-2 rounded-lg transition-all ${
-                canScrollLeft 
-                  ? 'hover:bg-white/20 text-white' 
-                  : 'opacity-30 cursor-not-allowed text-gray-500'
+                canScrollLeft
+                  ? "hover:bg-white/20 text-white"
+                  : "opacity-30 cursor-not-allowed text-gray-500"
               }`}
             >
               <FaChevronLeft className="text-lg" />
             </button>
             <button
-              onClick={() => scroll('right')}
+              onClick={() => scroll("right")}
               disabled={!canScrollRight}
               className={`glass p-2 rounded-lg transition-all ${
-                canScrollRight 
-                  ? 'hover:bg-white/20 text-white' 
-                  : 'opacity-30 cursor-not-allowed text-gray-500'
+                canScrollRight
+                  ? "hover:bg-white/20 text-white"
+                  : "opacity-30 cursor-not-allowed text-gray-500"
               }`}
             >
               <FaChevronRight className="text-lg" />
@@ -97,7 +97,7 @@ const MovieSection = ({ title, movies, loading, error }) => {
         <div
           ref={scrollContainerRef}
           className="flex gap-3 sm:gap-4 md:gap-5 overflow-x-auto custom-scrollbar pb-4 scroll-smooth"
-          style={{ scrollbarWidth: 'thin' }}
+          style={{ scrollbarWidth: "thin" }}
         >
           {loading ? (
             // Loading Skeletons
@@ -111,7 +111,9 @@ const MovieSection = ({ title, movies, loading, error }) => {
             <div className="w-full flex items-center justify-center py-12">
               <div className="card-modern p-6 max-w-md text-center">
                 <div className="text-red-400 text-4xl mb-3">⚠️</div>
-                <h3 className="text-lg font-bold text-white mb-2">Error Loading Content</h3>
+                <h3 className="text-lg font-bold text-white mb-2">
+                  Error Loading Content
+                </h3>
                 <p className="text-gray-400 text-sm">{error}</p>
               </div>
             </div>
@@ -122,7 +124,11 @@ const MovieSection = ({ title, movies, loading, error }) => {
                 <MovieCard
                   id={movie.id}
                   title={movie.title}
-                  year={movie.release_date ? new Date(movie.release_date).getFullYear() : 'N/A'}
+                  year={
+                    movie.release_date
+                      ? new Date(movie.release_date).getFullYear()
+                      : "N/A"
+                  }
                   type={movie.media_type || "movie"}
                   mediaType={movie.media_type || "movie"}
                   image={

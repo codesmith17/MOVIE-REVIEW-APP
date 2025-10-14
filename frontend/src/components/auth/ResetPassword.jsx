@@ -15,7 +15,7 @@ const ResetPassword = () => {
   const secretKey = "krishna170902";
   const decryptedUsername = crypto.AES.decrypt(
     decodeURIComponent(resetToken),
-    secretKey
+    secretKey,
   ).toString(crypto.enc.Utf8);
   //   console.log(decryptedUsername);
   const handleChangePassword = (e) => {
@@ -35,18 +35,15 @@ const ResetPassword = () => {
     }
 
     // Replace with your actual API call to reset the password
-    const response = await fetch(
-      `${API_BASE_URL}/api/auth/resetPassword`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          password,
-          username: decryptedUsername,
-          resetToken,
-        }),
-      }
-    );
+    const response = await fetch(`${API_BASE_URL}/api/auth/resetPassword`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        password,
+        username: decryptedUsername,
+        resetToken,
+      }),
+    });
 
     const data = await response.json();
     if (data && data.message === "TRY TO USE SOME NEW PASSWORD") {

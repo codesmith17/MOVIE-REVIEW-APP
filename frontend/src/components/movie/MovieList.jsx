@@ -18,7 +18,7 @@ const MovieList = () => {
   const observer = useRef();
 
   const handleImageError = (itemId) => {
-    setImageErrors(prev => new Set(prev).add(itemId));
+    setImageErrors((prev) => new Set(prev).add(itemId));
   };
 
   const renderFallbackImage = (item) => (
@@ -45,24 +45,28 @@ const MovieList = () => {
             accept: "application/json",
             Authorization: `Bearer ${TMDB_BEARER_TOKEN}`,
           },
-        }
+        },
       );
       const data = await response.json();
       if (data.status_code === 7) {
-        setError("Invalid API key. Please contact support or check your API key.");
+        setError(
+          "Invalid API key. Please contact support or check your API key.",
+        );
         setMovieData([]);
         setHasMore(false);
         return;
       }
       if (data.success === false) {
-        setError(data.status_message || "An error occurred while fetching movies.");
+        setError(
+          data.status_message || "An error occurred while fetching movies.",
+        );
         setMovieData([]);
         setHasMore(false);
         return;
       }
       if (data.results) {
         const filteredResults = data.results.filter(
-          (item) => item.media_type === "movie" || item.media_type === "tv"
+          (item) => item.media_type === "movie" || item.media_type === "tv",
         );
         setMovieData((prevData) => [...prevData, ...filteredResults]);
         setHasMore(data.page < data.total_pages);
@@ -102,7 +106,7 @@ const MovieList = () => {
       });
       if (node) observer.current.observe(node);
     },
-    [loading, hasMore]
+    [loading, hasMore],
   );
 
   useEffect(() => {
@@ -117,9 +121,7 @@ const MovieList = () => {
     <div className="bg-gradient-to-br from-gray-900 to-blue-900 text-gray-100 min-h-screen">
       <div className="max-w-3xl mx-auto px-4 py-6">
         {loading && <Loading />}
-        {error && (
-          <div className="text-red-400 text-center my-4">{error}</div>
-        )}
+        {error && <div className="text-red-400 text-center my-4">{error}</div>}
         {!loading && !error && movieData.length === 0 && (
           <p className="text-gray-300 text-center">
             No movies or TV shows found
@@ -128,7 +130,7 @@ const MovieList = () => {
         <div className="flex flex-col gap-6">
           {movieData.map((item, index) => (
             <Link
-              key={item.media_type + '-' + item.id}
+              key={item.media_type + "-" + item.id}
               to={`/${item.media_type}/${item.id}`}
               className="flex flex-col sm:flex-row bg-gray-900 rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-shadow"
               ref={index === movieData.length - 1 ? lastMovieElementRef : null}
@@ -149,11 +151,14 @@ const MovieList = () => {
                   <h3 className="text-xl font-bold text-white">
                     {item.media_type === "movie" ? item.title : item.name}{" "}
                     <span className="text-gray-400 font-normal">
-                      {item.release_date?.slice(0, 4) || item.first_air_date?.slice(0, 4)}
+                      {item.release_date?.slice(0, 4) ||
+                        item.first_air_date?.slice(0, 4)}
                     </span>
                   </h3>
                   {item.overview && (
-                    <p className="text-gray-300 mt-2 line-clamp-2">{item.overview}</p>
+                    <p className="text-gray-300 mt-2 line-clamp-2">
+                      {item.overview}
+                    </p>
                   )}
                 </div>
                 <div className="flex flex-wrap gap-2 mt-2">
@@ -162,8 +167,11 @@ const MovieList = () => {
                       ⭐ {item.vote_average.toFixed(1)}
                     </span>
                   )}
-                  <span className={`px-2 py-0.5 rounded text-xs font-semibold ${item.media_type === "movie" ? "bg-blue-600" : "bg-green-600"} text-white`}>
-                    {item.media_type.charAt(0).toUpperCase() + item.media_type.slice(1)}
+                  <span
+                    className={`px-2 py-0.5 rounded text-xs font-semibold ${item.media_type === "movie" ? "bg-blue-600" : "bg-green-600"} text-white`}
+                  >
+                    {item.media_type.charAt(0).toUpperCase() +
+                      item.media_type.slice(1)}
                   </span>
                 </div>
               </div>

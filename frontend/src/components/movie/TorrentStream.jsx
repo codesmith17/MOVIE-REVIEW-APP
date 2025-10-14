@@ -1,6 +1,16 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
-import { FaPlay, FaPause, FaVolumeUp, FaVolumeMute, FaExpand, FaCompress, FaSpinner, FaClosedCaptioning, FaUpload } from "react-icons/fa";
-import ReactPlayer from 'react-player';
+import {
+  FaPlay,
+  FaPause,
+  FaVolumeUp,
+  FaVolumeMute,
+  FaExpand,
+  FaCompress,
+  FaSpinner,
+  FaClosedCaptioning,
+  FaUpload,
+} from "react-icons/fa";
+import ReactPlayer from "react-player";
 
 const TorrentStream = () => {
   const [magnet, setMagnet] = useState("");
@@ -26,8 +36,8 @@ const TorrentStream = () => {
   const [uploadedSubtitles, setUploadedSubtitles] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
-  const [selectedSite, setSelectedSite] = useState('yts');
-  const [torrentSearch, setTorrentSearch] = useState('');
+  const [selectedSite, setSelectedSite] = useState("yts");
+  const [torrentSearch, setTorrentSearch] = useState("");
   const [torrentResults, setTorrentResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState("");
@@ -51,15 +61,17 @@ const TorrentStream = () => {
     try {
       await fetchTorrentFiles(magnet.trim());
     } catch (error) {
-      console.error('Error fetching files:', error);
-      setError('Failed to fetch files. Please try again.');
+      console.error("Error fetching files:", error);
+      setError("Failed to fetch files. Please try again.");
     } finally {
       setIsLoading(false);
     }
   };
 
   const fetchTrendingTorrents = async (limit = 10) => {
-    const res = await fetch(`https://torrent-api-py-nx0x.onrender.com/api/v1/all/trending?limit=${limit}`);
+    const res = await fetch(
+      `https://torrent-api-py-nx0x.onrender.com/api/v1/all/trending?limit=${limit}`,
+    );
     const data = await res.json();
     return data.data; // Array of torrents
   };
@@ -77,7 +89,12 @@ const TorrentStream = () => {
     setSearchError("");
     setTorrentResults([]);
     try {
-      const torrents = await fetchSearchedTorrents(selectedSite, torrentSearch, 10, 1);
+      const torrents = await fetchSearchedTorrents(
+        selectedSite,
+        torrentSearch,
+        10,
+        1,
+      );
       setTorrentResults(torrents);
     } catch (err) {
       setSearchError("Failed to fetch search results.");
@@ -112,19 +129,23 @@ const TorrentStream = () => {
     if (submittedMagnet && selectedFile) {
       // Extract movie name from file name
       const movieName = selectedFile.replace(/\.[^/.]+$/, ""); // Remove file extension
-      fetch(`http://localhost:3000/api/subtitles/search?query=${encodeURIComponent(movieName)}`)
-        .then(res => res.json())
-        .then(data => {
+      fetch(
+        `http://localhost:3000/api/subtitles/search?query=${encodeURIComponent(movieName)}`,
+      )
+        .then((res) => res.json())
+        .then((data) => {
           if (Array.isArray(data)) {
             // Sort subtitles by score if available
-            const sortedSubtitles = data.sort((a, b) => (b.score || 0) - (a.score || 0));
+            const sortedSubtitles = data.sort(
+              (a, b) => (b.score || 0) - (a.score || 0),
+            );
             setAvailableSubtitles(sortedSubtitles);
           } else {
             setAvailableSubtitles([]);
           }
         })
-        .catch(err => {
-          console.error('Error fetching subtitles:', err);
+        .catch((err) => {
+          console.error("Error fetching subtitles:", err);
           setAvailableSubtitles([]);
         });
     }
@@ -133,16 +154,18 @@ const TorrentStream = () => {
   // Fetch file list after submitting magnet link
   const fetchTorrentFiles = async (magnet) => {
     try {
-      const res = await fetch(`http://localhost:3000/stream?magnet=${encodeURIComponent(magnet)}`);
+      const res = await fetch(
+        `http://localhost:3000/stream?magnet=${encodeURIComponent(magnet)}`,
+      );
       if (!res.ok) {
-        throw new Error('Failed to fetch files');
+        throw new Error("Failed to fetch files");
       }
       const data = await res.json();
-      console.log('Received files:', data.files); // Debug log
+      console.log("Received files:", data.files); // Debug log
       setTorrentFiles(data.files || []);
     } catch (err) {
-      console.error('Error fetching files:', err);
-      setError('Failed to fetch files. Please try again.');
+      console.error("Error fetching files:", err);
+      setError("Failed to fetch files. Please try again.");
       setTorrentFiles([]);
       throw err; // Re-throw to be caught by handleSubmit
     }
@@ -214,7 +237,7 @@ const TorrentStream = () => {
   const formatTime = (time) => {
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
   };
 
   const handlePlaybackRateChange = (rate) => {
@@ -232,35 +255,37 @@ const TorrentStream = () => {
     if (subtitle) {
       try {
         // Download and parse subtitle
-        const response = await fetch(`http://localhost:3000/api/subtitles/download?url=${encodeURIComponent(subtitle.downloadUrl)}&format=${subtitle.format}`);
+        const response = await fetch(
+          `http://localhost:3000/api/subtitles/download?url=${encodeURIComponent(subtitle.downloadUrl)}&format=${subtitle.format}`,
+        );
         const subtitleData = await response.json();
 
         // Create VTT content
         const vttContent = convertToVTT(subtitleData);
-        const vttBlob = new Blob([vttContent], { type: 'text/vtt' });
+        const vttBlob = new Blob([vttContent], { type: "text/vtt" });
         const vttUrl = URL.createObjectURL(vttBlob);
 
-        const track = document.createElement('track');
-        track.kind = 'subtitles';
+        const track = document.createElement("track");
+        track.kind = "subtitles";
         track.label = subtitle.name;
         track.srclang = subtitle.language;
         track.default = true;
         track.src = vttUrl;
-        
+
         if (videoRef.current) {
           videoRef.current.appendChild(track);
           subtitleTrackRef.current = track;
-          
+
           // Enable subtitles
-          videoRef.current.textTracks[0].mode = 'showing';
+          videoRef.current.textTracks[0].mode = "showing";
         }
       } catch (error) {
-        console.error('Error loading subtitle:', error);
+        console.error("Error loading subtitle:", error);
       }
     } else {
       // Disable subtitles
       if (videoRef.current && videoRef.current.textTracks.length > 0) {
-        videoRef.current.textTracks[0].mode = 'hidden';
+        videoRef.current.textTracks[0].mode = "hidden";
       }
     }
 
@@ -269,42 +294,42 @@ const TorrentStream = () => {
 
   // Convert subtitle data to VTT format
   const convertToVTT = (subtitles) => {
-    let vtt = 'WEBVTT\n\n';
-    
-    subtitles.forEach(sub => {
+    let vtt = "WEBVTT\n\n";
+
+    subtitles.forEach((sub) => {
       const start = formatVttTime(sub.start);
       const end = formatVttTime(sub.end);
       vtt += `${start} --> ${end}\n${sub.text}\n\n`;
     });
-    
+
     return vtt;
   };
 
   // Format time for VTT
   const formatVttTime = (ms) => {
     const date = new Date(ms);
-    const hours = date.getUTCHours().toString().padStart(2, '0');
-    const minutes = date.getUTCMinutes().toString().padStart(2, '0');
-    const seconds = date.getUTCSeconds().toString().padStart(2, '0');
-    const milliseconds = date.getUTCMilliseconds().toString().padStart(3, '0');
+    const hours = date.getUTCHours().toString().padStart(2, "0");
+    const minutes = date.getUTCMinutes().toString().padStart(2, "0");
+    const seconds = date.getUTCSeconds().toString().padStart(2, "0");
+    const milliseconds = date.getUTCMilliseconds().toString().padStart(3, "0");
     return `${hours}:${minutes}:${seconds}.${milliseconds}`;
   };
 
   // Add subtitle track when video is loaded
   useEffect(() => {
     if (videoRef.current && selectedSubtitle) {
-      const track = document.createElement('track');
-      track.kind = 'subtitles';
+      const track = document.createElement("track");
+      track.kind = "subtitles";
       track.label = selectedSubtitle.name;
-      track.srclang = 'en';
+      track.srclang = "en";
       track.default = true;
       track.src = `http://localhost:3000/subtitle?magnet=${encodeURIComponent(submittedMagnet)}&file=${encodeURIComponent(selectedFile)}&subtitle=${encodeURIComponent(selectedSubtitle.name)}`;
-      
+
       videoRef.current.appendChild(track);
       subtitleTrackRef.current = track;
-      
+
       // Enable subtitles
-      videoRef.current.textTracks[0].mode = 'showing';
+      videoRef.current.textTracks[0].mode = "showing";
     }
   }, [videoRef.current, selectedSubtitle, submittedMagnet, selectedFile]);
 
@@ -312,15 +337,15 @@ const TorrentStream = () => {
   useEffect(() => {
     if (videoRef.current) {
       const video = videoRef.current;
-      console.log('Available text tracks:', video.textTracks.length);
-      
+      console.log("Available text tracks:", video.textTracks.length);
+
       for (let i = 0; i < video.textTracks.length; i++) {
         const track = video.textTracks[i];
         console.log(`Track ${i}:`, {
           kind: track.kind,
           label: track.label,
           mode: track.mode,
-          language: track.language
+          language: track.language,
         });
       }
     }
@@ -331,9 +356,9 @@ const TorrentStream = () => {
       setIsFullscreen(!!document.fullscreenElement);
     };
 
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
     return () => {
-      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
     };
   }, []);
 
@@ -343,12 +368,12 @@ const TorrentStream = () => {
       const video = videoRef.current;
 
       const handleWaiting = () => {
-        console.log('Video is buffering...');
+        console.log("Video is buffering...");
         setIsBuffering(true);
       };
 
       const handlePlaying = () => {
-        console.log('Video is playing');
+        console.log("Video is playing");
         setIsBuffering(false);
       };
 
@@ -359,14 +384,14 @@ const TorrentStream = () => {
         }
       };
 
-      video.addEventListener('waiting', handleWaiting);
-      video.addEventListener('playing', handlePlaying);
-      video.addEventListener('progress', handleProgress);
+      video.addEventListener("waiting", handleWaiting);
+      video.addEventListener("playing", handlePlaying);
+      video.addEventListener("progress", handleProgress);
 
       return () => {
-        video.removeEventListener('waiting', handleWaiting);
-        video.removeEventListener('playing', handlePlaying);
-        video.removeEventListener('progress', handleProgress);
+        video.removeEventListener("waiting", handleWaiting);
+        video.removeEventListener("playing", handlePlaying);
+        video.removeEventListener("progress", handleProgress);
       };
     }
   }, [submittedMagnet]);
@@ -378,18 +403,20 @@ const TorrentStream = () => {
 
     // Debug video state
     const logVideoState = () => {
-      console.log('Video State:', {
+      console.log("Video State:", {
         currentTime: video.currentTime,
         duration: video.duration,
-        buffered: video.buffered.length ? {
-          start: video.buffered.start(0),
-          end: video.buffered.end(0)
-        } : 'No buffered ranges',
+        buffered: video.buffered.length
+          ? {
+              start: video.buffered.start(0),
+              end: video.buffered.end(0),
+            }
+          : "No buffered ranges",
         readyState: video.readyState,
         networkState: video.networkState,
         paused: video.paused,
         ended: video.ended,
-        error: video.error ? video.error.message : null
+        error: video.error ? video.error.message : null,
       });
     };
 
@@ -398,29 +425,29 @@ const TorrentStream = () => {
 
     // Log state changes
     const events = [
-      'loadstart',
-      'progress',
-      'suspend',
-      'abort',
-      'error',
-      'emptied',
-      'stalled',
-      'loadedmetadata',
-      'loadeddata',
-      'canplay',
-      'canplaythrough',
-      'playing',
-      'waiting',
-      'seeking',
-      'seeked',
-      'ended',
-      'ratechange',
-      'durationchange',
-      'timeupdate',
-      'volumechange'
+      "loadstart",
+      "progress",
+      "suspend",
+      "abort",
+      "error",
+      "emptied",
+      "stalled",
+      "loadedmetadata",
+      "loadeddata",
+      "canplay",
+      "canplaythrough",
+      "playing",
+      "waiting",
+      "seeking",
+      "seeked",
+      "ended",
+      "ratechange",
+      "durationchange",
+      "timeupdate",
+      "volumechange",
     ];
 
-    events.forEach(event => {
+    events.forEach((event) => {
       video.addEventListener(event, () => {
         console.log(`Video event: ${event}`);
         logVideoState();
@@ -430,25 +457,25 @@ const TorrentStream = () => {
     // Monitor network requests
     const observer = new PerformanceObserver((list) => {
       for (const entry of list.getEntries()) {
-        if (entry.initiatorType === 'video' || entry.name.includes('/stream')) {
-          console.log('Network request:', {
+        if (entry.initiatorType === "video" || entry.name.includes("/stream")) {
+          console.log("Network request:", {
             name: entry.name,
             type: entry.initiatorType,
             duration: entry.duration,
             startTime: entry.startTime,
             transferSize: entry.transferSize,
             encodedBodySize: entry.encodedBodySize,
-            decodedBodySize: entry.decodedBodySize
+            decodedBodySize: entry.decodedBodySize,
           });
         }
       }
     });
 
-    observer.observe({ entryTypes: ['resource'] });
+    observer.observe({ entryTypes: ["resource"] });
 
     // Cleanup
     return () => {
-      events.forEach(event => {
+      events.forEach((event) => {
         video.removeEventListener(event, logVideoState);
       });
       observer.disconnect();
@@ -458,13 +485,14 @@ const TorrentStream = () => {
   // Filter and sort subtitles
   const filteredSubtitles = useMemo(() => {
     let filtered = [...availableSubtitles];
-    
+
     // Filter by search term
     if (subtitleSearch) {
       const searchLower = subtitleSearch.toLowerCase();
-      filtered = filtered.filter(sub => 
-        sub.name.toLowerCase().includes(searchLower) ||
-        sub.language?.toLowerCase().includes(searchLower)
+      filtered = filtered.filter(
+        (sub) =>
+          sub.name.toLowerCase().includes(searchLower) ||
+          sub.language?.toLowerCase().includes(searchLower),
       );
     }
 
@@ -488,20 +516,23 @@ const TorrentStream = () => {
   // Close subtitle menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (subtitleMenuRef.current && !subtitleMenuRef.current.contains(event.target)) {
+      if (
+        subtitleMenuRef.current &&
+        !subtitleMenuRef.current.contains(event.target)
+      ) {
         setShowSubtitleMenu(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   // Group subtitles by language
   const groupedSubtitles = useMemo(() => {
     const groups = {};
-    filteredSubtitles.forEach(sub => {
-      const lang = sub.language || 'Unknown';
+    filteredSubtitles.forEach((sub) => {
+      const lang = sub.language || "Unknown";
       if (!groups[lang]) {
         groups[lang] = [];
       }
@@ -569,23 +600,34 @@ const TorrentStream = () => {
   // Update captions_arr whenever availableSubtitles or uploadedSubtitles changes
   useEffect(() => {
     // Map torrent subtitles
-    const torrentSubs = availableSubtitles.map(sub => ({
-      kind: 'subtitles',
+    const torrentSubs = availableSubtitles.map((sub) => ({
+      kind: "subtitles",
       src: `http://localhost:3000/subtitle?magnet=${encodeURIComponent(submittedMagnet)}&name=${encodeURIComponent(sub.name)}`,
-      srcLang: sub.language || 'en',
+      srcLang: sub.language || "en",
       label: sub.name,
-      default: selectedSubtitle && selectedSubtitle.name === sub.name && !selectedSubtitle.isUploaded
+      default:
+        selectedSubtitle &&
+        selectedSubtitle.name === sub.name &&
+        !selectedSubtitle.isUploaded,
     }));
     // Map uploaded subtitles
-    const uploadedSubs = uploadedSubtitles.map(sub => ({
-      kind: 'subtitles',
-      src: `http://localhost:3000${sub.path.replace(/\\/g, '/')}`,
-      srcLang: 'en',
+    const uploadedSubs = uploadedSubtitles.map((sub) => ({
+      kind: "subtitles",
+      src: `http://localhost:3000${sub.path.replace(/\\/g, "/")}`,
+      srcLang: "en",
       label: sub.name,
-      default: selectedSubtitle && selectedSubtitle.name === sub.name && selectedSubtitle.isUploaded
+      default:
+        selectedSubtitle &&
+        selectedSubtitle.name === sub.name &&
+        selectedSubtitle.isUploaded,
     }));
     setCaptions([...torrentSubs, ...uploadedSubs]);
-  }, [availableSubtitles, uploadedSubtitles, selectedSubtitle, submittedMagnet]);
+  }, [
+    availableSubtitles,
+    uploadedSubtitles,
+    selectedSubtitle,
+    submittedMagnet,
+  ]);
 
   // Modify the subtitle menu to include upload option
   const renderSubtitleMenu = () => (
@@ -649,11 +691,11 @@ const TorrentStream = () => {
               handleSubtitleChange(null);
               setShowSubtitleMenu(false);
             }}
-            className={`w-full text-left px-3 py-2 rounded text-sm ${!selectedSubtitle ? 'bg-blue-600' : 'hover:bg-gray-700'}`}
+            className={`w-full text-left px-3 py-2 rounded text-sm ${!selectedSubtitle ? "bg-blue-600" : "hover:bg-gray-700"}`}
           >
             Off
           </button>
-          
+
           {/* Uploaded Subtitles Section */}
           {uploadedSubtitles.length > 0 && (
             <div className="mt-2">
@@ -662,17 +704,19 @@ const TorrentStream = () => {
               </div>
               {uploadedSubtitles.map((subtitle, idx) => (
                 <button
-                  key={subtitle.name + '-' + idx}
+                  key={subtitle.name + "-" + idx}
                   onClick={() => {
                     handleSubtitleChange({
                       name: subtitle.name,
                       downloadUrl: subtitle.path,
-                      format: subtitle.name.endsWith('.vtt') ? 'vtt' : 'srt'
+                      format: subtitle.name.endsWith(".vtt") ? "vtt" : "srt",
                     });
                     setShowSubtitleMenu(false);
                   }}
                   className={`w-full text-left px-3 py-2 rounded text-sm ${
-                    selectedSubtitle?.name === subtitle.name ? 'bg-blue-600' : 'hover:bg-gray-700'
+                    selectedSubtitle?.name === subtitle.name
+                      ? "bg-blue-600"
+                      : "hover:bg-gray-700"
                   }`}
                 >
                   <div className="flex justify-between items-center">
@@ -694,13 +738,15 @@ const TorrentStream = () => {
               </div>
               {subtitles.map((subtitle, idx) => (
                 <button
-                  key={subtitle.name + '-' + idx}
+                  key={subtitle.name + "-" + idx}
                   onClick={() => {
                     handleSubtitleChange(subtitle);
                     setShowSubtitleMenu(false);
                   }}
                   className={`w-full text-left px-3 py-2 rounded text-sm ${
-                    selectedSubtitle?.name === subtitle.name ? 'bg-blue-600' : 'hover:bg-gray-700'
+                    selectedSubtitle?.name === subtitle.name
+                      ? "bg-blue-600"
+                      : "hover:bg-gray-700"
                   }`}
                 >
                   <div className="flex justify-between items-center">
@@ -729,8 +775,8 @@ const TorrentStream = () => {
   // Update the subtitle menu button to use the new render function
   const subtitleButton = (
     <div className="relative" ref={subtitleMenuRef}>
-      <button 
-        className={`text-white hover:text-blue-400 ${selectedSubtitle ? 'text-blue-400' : ''}`}
+      <button
+        className={`text-white hover:text-blue-400 ${selectedSubtitle ? "text-blue-400" : ""}`}
         title="Subtitles"
         onClick={() => setShowSubtitleMenu(!showSubtitleMenu)}
       >
@@ -754,17 +800,26 @@ const TorrentStream = () => {
     <div className="min-h-screen bg-gray-900 text-white p-8">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold mb-8">Torrent Stream</h1>
-        
+
         {/* Debug Info */}
         <div className="mb-4 p-4 bg-gray-800 rounded-lg">
           <h3 className="text-lg font-semibold mb-2">Debug Info</h3>
           <div className="text-sm">
-            <p>Status: {isLoading ? 'Loading...' : isBuffering ? 'Buffering...' : 'Ready'}</p>
+            <p>
+              Status:{" "}
+              {isLoading
+                ? "Loading..."
+                : isBuffering
+                  ? "Buffering..."
+                  : "Ready"}
+            </p>
             <p>Current Time: {currentTime.toFixed(2)}s</p>
             <p>Duration: {duration.toFixed(2)}s</p>
-            <p>Buffered: {videoRef.current?.buffered.length ? 
-              `${videoRef.current.buffered.start(0).toFixed(2)}s - ${videoRef.current.buffered.end(0).toFixed(2)}s` : 
-              'No buffered ranges'}
+            <p>
+              Buffered:{" "}
+              {videoRef.current?.buffered.length
+                ? `${videoRef.current.buffered.start(0).toFixed(2)}s - ${videoRef.current.buffered.end(0).toFixed(2)}s`
+                : "No buffered ranges"}
             </p>
             <p>Ready State: {videoRef.current?.readyState}</p>
             <p>Network State: {videoRef.current?.networkState}</p>
@@ -772,9 +827,18 @@ const TorrentStream = () => {
         </div>
 
         <div className="max-w-4xl mx-auto mt-16 p-6 bg-gray-900 rounded-2xl shadow-lg">
-          <h2 className="text-2xl font-bold text-white mb-4">Stream Torrent Video</h2>
-          <form onSubmit={handleTorrentSearch} className="flex flex-col md:flex-row gap-2 mb-4">
-            <select value={selectedSite} onChange={e => setSelectedSite(e.target.value)} className="p-2 rounded bg-gray-800 text-white">
+          <h2 className="text-2xl font-bold text-white mb-4">
+            Stream Torrent Video
+          </h2>
+          <form
+            onSubmit={handleTorrentSearch}
+            className="flex flex-col md:flex-row gap-2 mb-4"
+          >
+            <select
+              value={selectedSite}
+              onChange={(e) => setSelectedSite(e.target.value)}
+              className="p-2 rounded bg-gray-800 text-white"
+            >
               <option value="yts">YTS</option>
               <option value="1337x">1337x</option>
               <option value="thepiratebay">The Pirate Bay</option>
@@ -790,18 +854,25 @@ const TorrentStream = () => {
             <input
               type="text"
               value={torrentSearch}
-              onChange={e => setTorrentSearch(e.target.value)}
+              onChange={(e) => setTorrentSearch(e.target.value)}
               placeholder="Search for movies, shows..."
               className="flex-1 p-2 rounded bg-gray-800 text-white"
             />
-            <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded">Search</button>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-blue-600 text-white rounded"
+            >
+              Search
+            </button>
           </form>
           {/* Search Results */}
           <div className="mt-4">
             {isSearching ? (
               <div className="text-center py-4">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
-                <p className="mt-2 text-gray-600">Fetching search results... This may take a while.</p>
+                <p className="mt-2 text-gray-600">
+                  Fetching search results... This may take a while.
+                </p>
               </div>
             ) : searchError ? (
               <div className="text-center py-4">
@@ -816,12 +887,14 @@ const TorrentStream = () => {
                       <div>
                         <h3 className="font-medium">{result.name}</h3>
                         <p className="text-sm text-gray-600">
-                          {result.size ? `Size: ${result.size} | ` : ''}Provider: {selectedSite}
+                          {result.size ? `Size: ${result.size} | ` : ""}
+                          Provider: {selectedSite}
                         </p>
                       </div>
                     </div>
                     {/* If YTS, show qualities */}
-                    {Array.isArray(result.torrents) && result.torrents.length > 0 ? (
+                    {Array.isArray(result.torrents) &&
+                    result.torrents.length > 0 ? (
                       <div className="flex gap-2 mt-2">
                         {result.torrents.map((torrent, qidx) => (
                           <button
@@ -857,7 +930,9 @@ const TorrentStream = () => {
                           }
                         }}
                       >
-                        <span className="text-blue-600 underline">Use Magnet</span>
+                        <span className="text-blue-600 underline">
+                          Use Magnet
+                        </span>
                       </div>
                     )}
                   </div>
@@ -877,7 +952,7 @@ const TorrentStream = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className={`bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded transition-colors ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded transition-colors ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
             >
               {isLoading ? (
                 <div className="flex items-center justify-center">
@@ -885,7 +960,7 @@ const TorrentStream = () => {
                   Fetching Files...
                 </div>
               ) : (
-                'Fetch Files'
+                "Fetch Files"
               )}
             </button>
           </form>
@@ -901,19 +976,25 @@ const TorrentStream = () => {
           {/* Show file list if available */}
           {!isLoading && torrentFiles.length > 0 && !showPlayer && (
             <div className="mb-8">
-              <h2 className="text-xl font-semibold mb-2">Files in Torrent ({torrentFiles.length})</h2>
+              <h2 className="text-xl font-semibold mb-2">
+                Files in Torrent ({torrentFiles.length})
+              </h2>
               <ul className="bg-gray-800 rounded-lg p-4 max-h-96 overflow-y-auto">
                 {torrentFiles.map((file, idx) => (
                   <li
                     key={file.name}
-                    className={`flex items-center justify-between py-3 px-4 rounded hover:bg-gray-700 cursor-pointer transition-colors ${selectedFile === file.name ? 'bg-blue-700' : ''}`}
+                    className={`flex items-center justify-between py-3 px-4 rounded hover:bg-gray-700 cursor-pointer transition-colors ${selectedFile === file.name ? "bg-blue-700" : ""}`}
                     onClick={() => handleFileSelect(file.name)}
                   >
                     <div className="flex-1 min-w-0">
-                      <span className="truncate block text-sm font-medium">{file.name}</span>
+                      <span className="truncate block text-sm font-medium">
+                        {file.name}
+                      </span>
                       <span className="text-xs text-gray-400">{file.type}</span>
                     </div>
-                    <span className="ml-4 text-sm text-gray-400 whitespace-nowrap">{(file.length / (1024 * 1024)).toFixed(2)} MB</span>
+                    <span className="ml-4 text-sm text-gray-400 whitespace-nowrap">
+                      {(file.length / (1024 * 1024)).toFixed(2)} MB
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -921,18 +1002,30 @@ const TorrentStream = () => {
           )}
 
           {/* No Files Found Message */}
-          {!isLoading && submittedMagnet && torrentFiles.length === 0 && !showPlayer && (
-            <div className="text-center p-8 bg-gray-800 rounded-lg">
-              <p className="text-lg text-gray-400">No files found in the torrent.</p>
-              <p className="text-sm text-gray-500 mt-2">Please check the magnet link and try again.</p>
-            </div>
-          )}
+          {!isLoading &&
+            submittedMagnet &&
+            torrentFiles.length === 0 &&
+            !showPlayer && (
+              <div className="text-center p-8 bg-gray-800 rounded-lg">
+                <p className="text-lg text-gray-400">
+                  No files found in the torrent.
+                </p>
+                <p className="text-sm text-gray-500 mt-2">
+                  Please check the magnet link and try again.
+                </p>
+              </div>
+            )}
 
           {/* Show video player only after file selection */}
           {showPlayer && selectedFile && (
             <div className="mt-8">
-              <h3 className="text-lg font-semibold text-white mb-2">Now Playing: {selectedFile}</h3>
-              <div ref={containerRef} className="relative rounded-lg overflow-hidden bg-black">
+              <h3 className="text-lg font-semibold text-white mb-2">
+                Now Playing: {selectedFile}
+              </h3>
+              <div
+                ref={containerRef}
+                className="relative rounded-lg overflow-hidden bg-black"
+              >
                 {isLoading && (
                   <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
                     <FaSpinner className="text-white text-4xl animate-spin" />
@@ -970,11 +1063,13 @@ const TorrentStream = () => {
               {captions_arr.map((cap, idx) => (
                 <li key={idx}>
                   <button
-                    className={`px-2 py-1 rounded ${cap.default ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-800'}`}
+                    className={`px-2 py-1 rounded ${cap.default ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-800"}`}
                     onClick={() => {
                       setSelectedSubtitle({
                         name: cap.label,
-                        isUploaded: cap.src.startsWith('http://localhost:3000/uploads'),
+                        isUploaded: cap.src.startsWith(
+                          "http://localhost:3000/uploads",
+                        ),
                       });
                     }}
                   >
@@ -987,7 +1082,9 @@ const TorrentStream = () => {
 
           {uploadedSubtitles.length > 0 && (
             <div className="mb-4">
-              <label className="block font-semibold mb-2">Uploaded Subtitles:</label>
+              <label className="block font-semibold mb-2">
+                Uploaded Subtitles:
+              </label>
               <ul>
                 {uploadedSubtitles.map((sub, idx) => (
                   <li key={idx}>
@@ -1014,4 +1111,4 @@ const TorrentStream = () => {
   );
 };
 
-export default TorrentStream; 
+export default TorrentStream;

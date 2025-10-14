@@ -1,7 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { MovieSection } from "../movie";
 import { MovieLoader } from "../common";
-import { FaFire, FaStar, FaTv, FaFilm, FaPlus, FaCheck, FaTimes } from "react-icons/fa";
+import {
+  FaFire,
+  FaStar,
+  FaTv,
+  FaFilm,
+  FaPlus,
+  FaCheck,
+  FaTimes,
+} from "react-icons/fa";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -25,7 +33,7 @@ const HomePage = () => {
   const [addingToWatchlist, setAddingToWatchlist] = useState(false);
   const [isInWatchlist, setIsInWatchlist] = useState(false);
   const [watchlist, setWatchlist] = useState(null);
-  
+
   const user = useSelector((state) => state.user.data);
   const navigate = useNavigate();
 
@@ -42,15 +50,15 @@ const HomePage = () => {
 
         if (!response.ok) {
           throw new Error(
-            `Network response was not ok, status: ${response.status}`
+            `Network response was not ok, status: ${response.status}`,
           );
         }
 
         const data = await response.json();
         setMovies(data.results.slice(0, 10));
-        
+
         // Set hero movie from trending
-        if (url.includes('trending/movie/day') && data.results.length > 0) {
+        if (url.includes("trending/movie/day") && data.results.length > 0) {
           setHeroMovie(data.results[0]);
         }
       } catch (error) {
@@ -64,43 +72,43 @@ const HomePage = () => {
       await Promise.all([
         fetchMovies(
           "https://api.themoviedb.org/3/trending/movie/day?language=en-US&page=1",
-          setTrendingMoviesByDay
+          setTrendingMoviesByDay,
         ),
         fetchMovies(
           "https://api.themoviedb.org/3/trending/movie/week?language=en-US&page=1",
-          setTrendingMoviesByWeek
+          setTrendingMoviesByWeek,
         ),
         fetchMovies(
           "https://api.themoviedb.org/3/movie/now_playing?language=en-US&page=1",
-          setNowPlayingMovies
+          setNowPlayingMovies,
         ),
         fetchMovies(
           "https://api.themoviedb.org/3/movie/popular?language=en-US&page=1",
-          setPopularMovies
+          setPopularMovies,
         ),
         fetchMovies(
           "https://api.themoviedb.org/3/movie/upcoming?language=en-US&page=1",
-          setUpcomingMovies
+          setUpcomingMovies,
         ),
         fetchMovies(
           "https://api.themoviedb.org/3/movie/top_rated?language=en-US&page=1",
-          setTopRatedMovies
+          setTopRatedMovies,
         ),
         fetchMovies(
           "https://api.themoviedb.org/3/tv/popular?language=en-US&page=1",
-          setLatestShows
+          setLatestShows,
         ),
         fetchMovies(
           "https://api.themoviedb.org/3/trending/tv/day?language=en-US&page=1",
-          setTrendingShows
+          setTrendingShows,
         ),
         fetchMovies(
           "https://api.themoviedb.org/3/tv/on_the_air?language=en-US&page=1",
-          setOnTheAirShows
+          setOnTheAirShows,
         ),
         fetchMovies(
           "https://api.themoviedb.org/3/tv/top_rated?language=en-US&page=1",
-          setTopRatedShows
+          setTopRatedShows,
         ),
       ]);
       setLoading(false);
@@ -111,17 +119,18 @@ const HomePage = () => {
 
   // Helper to map TV show fields
   const mapShows = (shows) =>
-    shows && shows.map(show => ({
+    shows &&
+    shows.map((show) => ({
       ...show,
       title: show.name,
       release_date: show.first_air_date,
-      media_type: "tv"
+      media_type: "tv",
     }));
 
   // Fetch user's watchlist
   const fetchWatchlist = async () => {
     if (!user?.data?.username) return;
-    
+
     try {
       const response = await fetch(
         `${import.meta.env.VITE_BACKEND_BASE_URL}/api/list/getList/${user.data.username}/watchlist`,
@@ -131,7 +140,7 @@ const HomePage = () => {
             "Content-Type": "application/json",
           },
           credentials: "include",
-        }
+        },
       );
 
       if (response.ok) {
@@ -149,7 +158,7 @@ const HomePage = () => {
   useEffect(() => {
     if (heroMovie && watchlist) {
       const isInList = watchlist.content.some(
-        (movie) => movie.id?.toString() === heroMovie.id?.toString()
+        (movie) => movie.id?.toString() === heroMovie.id?.toString(),
       );
       setIsInWatchlist(isInList);
     }
@@ -165,8 +174,8 @@ const HomePage = () => {
   // Toggle Watchlist Handler (Add or Remove)
   const handleToggleWatchlist = async () => {
     if (!user) {
-      toast.error('Please login to manage your watchlist');
-      navigate('/login');
+      toast.error("Please login to manage your watchlist");
+      navigate("/login");
       return;
     }
 
@@ -180,34 +189,33 @@ const HomePage = () => {
         const response = await fetch(
           `${import.meta.env.VITE_BACKEND_BASE_URL}/api/list/removeFromList/watchlist`,
           {
-            method: 'POST',
+            method: "POST",
             headers: {
-              'Content-Type': 'application/json',
+              "Content-Type": "application/json",
             },
             body: JSON.stringify({
               imdbID: `movie-${heroMovie.id}`,
               tmdbId: heroMovie.id,
             }),
-            credentials: 'include',
-          }
+            credentials: "include",
+          },
         );
 
         if (!response.ok) {
-          throw new Error('Failed to remove from watchlist');
+          throw new Error("Failed to remove from watchlist");
         }
 
-        toast.success('Removed from watchlist!');
+        toast.success("Removed from watchlist!");
         setIsInWatchlist(false);
         await fetchWatchlist(); // Refresh watchlist
-        
       } else {
         // Add to watchlist
         const response = await fetch(
           `${import.meta.env.VITE_BACKEND_BASE_URL}/api/list/addToList/watchlist`,
           {
-            method: 'POST',
+            method: "POST",
             headers: {
-              'Content-Type': 'application/json',
+              "Content-Type": "application/json",
             },
             body: JSON.stringify({
               movie: {
@@ -217,23 +225,24 @@ const HomePage = () => {
                 imdbID: `movie-${heroMovie.id}`,
               },
             }),
-            credentials: 'include',
-          }
+            credentials: "include",
+          },
         );
 
         if (!response.ok) {
-          throw new Error('Failed to add to watchlist');
+          throw new Error("Failed to add to watchlist");
         }
 
         const data = await response.json();
-        toast.success(data.message || 'Added to watchlist!');
+        toast.success(data.message || "Added to watchlist!");
         setIsInWatchlist(true);
         await fetchWatchlist(); // Refresh watchlist
       }
-      
     } catch (error) {
-      console.error('Error toggling watchlist:', error);
-      toast.error(error.message || 'Failed to update watchlist. Please try again.');
+      console.error("Error toggling watchlist:", error);
+      toast.error(
+        error.message || "Failed to update watchlist. Please try again.",
+      );
     } finally {
       setAddingToWatchlist(false);
     }
@@ -250,7 +259,14 @@ const HomePage = () => {
       {heroMovie && (
         <div className="relative mb-20">
           {/* Hero container with proper aspect ratio */}
-          <div className="relative w-full" style={{ paddingTop: '56.25%', minHeight: '500px', maxHeight: '70vh' }}>
+          <div
+            className="relative w-full"
+            style={{
+              paddingTop: "56.25%",
+              minHeight: "500px",
+              maxHeight: "70vh",
+            }}
+          >
             {/* Background Image - no cropping, contained properly */}
             <div className="absolute inset-0">
               <div className="w-full h-full relative">
@@ -283,17 +299,17 @@ const HomePage = () => {
                       </span>
                     )}
                   </div>
-                  
+
                   {/* Title */}
                   <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white leading-tight drop-shadow-2xl px-4">
                     {heroMovie.title}
                   </h1>
-                  
+
                   {/* Description */}
                   <p className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-200 leading-relaxed line-clamp-2 md:line-clamp-3 max-w-4xl mx-auto px-4 drop-shadow-lg">
                     {heroMovie.overview}
                   </p>
-                  
+
                   {/* Buttons */}
                   <div className="flex flex-wrap justify-center gap-3 pt-2">
                     <a
@@ -302,19 +318,19 @@ const HomePage = () => {
                     >
                       View Details
                     </a>
-                    <button 
+                    <button
                       onClick={handleToggleWatchlist}
                       disabled={addingToWatchlist}
                       className={`px-5 py-2 text-sm font-semibold flex items-center gap-2 transition-all duration-300 rounded-lg ${
-                        isInWatchlist 
-                          ? 'bg-red-600 hover:bg-red-700 text-white' 
-                          : 'btn-ghost'
-                      } ${addingToWatchlist ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        isInWatchlist
+                          ? "bg-red-600 hover:bg-red-700 text-white"
+                          : "btn-ghost"
+                      } ${addingToWatchlist ? "opacity-50 cursor-not-allowed" : ""}`}
                     >
                       {addingToWatchlist ? (
                         <>
                           <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
-                          {isInWatchlist ? 'Removing...' : 'Adding...'}
+                          {isInWatchlist ? "Removing..." : "Adding..."}
                         </>
                       ) : isInWatchlist ? (
                         <>
@@ -333,7 +349,7 @@ const HomePage = () => {
               </div>
             </div>
           </div>
-          
+
           {/* Smooth fade to background - minimal interference */}
           <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#0a0e27] to-transparent pointer-events-none" />
         </div>
@@ -342,88 +358,89 @@ const HomePage = () => {
       {/* Main Content */}
       <div className="py-8 relative">
         <div className="container-modern max-w-[1400px] mx-auto">
-        
-        {/* Quick Stats - Removed for cleaner look */}
+          {/* Quick Stats - Removed for cleaner look */}
 
-        {/* Movie Sections */}
-        <div className="space-y-16">
-        <MovieSection
-          title="Trending Movies Today"
-          movies={trendingMoviesByDay}
-          loading={loading}
-          error={error}
-        />
-        
-        <MovieSection
-          title="Trending This Week"
-          movies={trendingMoviesByWeek}
-          loading={loading}
-          error={error}
-        />
-        
-        <MovieSection
-          title="Now Playing"
-          movies={nowPlayingMovies}
-          loading={loading}
-          error={error}
-        />
-        
-        <MovieSection
-          title="Popular Movies"
-          movies={popularMovies}
-          loading={loading}
-          error={error}
-        />
-        
-        <MovieSection
-          title="Top Rated Movies"
-          movies={topRatedMovies}
-          loading={loading}
-          error={error}
-        />
-        
-        <MovieSection
-          title="Coming Soon"
-          movies={upcomingMovies}
-          loading={loading}
-          error={error}
-        />
-        
-        {/* TV Shows Sections */}
-        <div className="pt-16 mt-16 border-t border-gray-800/50">
-          <h2 className="text-3xl font-bold gradient-text mb-12">TV Shows</h2>
-          
+          {/* Movie Sections */}
           <div className="space-y-16">
-          <MovieSection
-            title="Trending Shows"
-            movies={mapShows(trendingShows)}
-            loading={loading}
-            error={error}
-          />
-          
-          <MovieSection
-            title="On The Air"
-            movies={mapShows(onTheAirShows)}
-            loading={loading}
-            error={error}
-          />
-          
-          <MovieSection
-            title="Top Rated Shows"
-            movies={mapShows(topRatedShows)}
-            loading={loading}
-            error={error}
-          />
-          
-          <MovieSection
-            title="Popular Shows"
-            movies={mapShows(latestShows)}
-            loading={loading}
-            error={error}
-          />
+            <MovieSection
+              title="Trending Movies Today"
+              movies={trendingMoviesByDay}
+              loading={loading}
+              error={error}
+            />
+
+            <MovieSection
+              title="Trending This Week"
+              movies={trendingMoviesByWeek}
+              loading={loading}
+              error={error}
+            />
+
+            <MovieSection
+              title="Now Playing"
+              movies={nowPlayingMovies}
+              loading={loading}
+              error={error}
+            />
+
+            <MovieSection
+              title="Popular Movies"
+              movies={popularMovies}
+              loading={loading}
+              error={error}
+            />
+
+            <MovieSection
+              title="Top Rated Movies"
+              movies={topRatedMovies}
+              loading={loading}
+              error={error}
+            />
+
+            <MovieSection
+              title="Coming Soon"
+              movies={upcomingMovies}
+              loading={loading}
+              error={error}
+            />
+
+            {/* TV Shows Sections */}
+            <div className="pt-16 mt-16 border-t border-gray-800/50">
+              <h2 className="text-3xl font-bold gradient-text mb-12">
+                TV Shows
+              </h2>
+
+              <div className="space-y-16">
+                <MovieSection
+                  title="Trending Shows"
+                  movies={mapShows(trendingShows)}
+                  loading={loading}
+                  error={error}
+                />
+
+                <MovieSection
+                  title="On The Air"
+                  movies={mapShows(onTheAirShows)}
+                  loading={loading}
+                  error={error}
+                />
+
+                <MovieSection
+                  title="Top Rated Shows"
+                  movies={mapShows(topRatedShows)}
+                  loading={loading}
+                  error={error}
+                />
+
+                <MovieSection
+                  title="Popular Shows"
+                  movies={mapShows(latestShows)}
+                  loading={loading}
+                  error={error}
+                />
+              </div>
+            </div>
           </div>
-        </div>
-        </div>
         </div>
       </div>
     </div>

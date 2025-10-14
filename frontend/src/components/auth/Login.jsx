@@ -62,13 +62,22 @@ const Home = () => {
             localStorage.setItem("password", formData.password);
             localStorage.setItem("boxChecked", remember);
           } else {
-            if (localStorage.getItem("email") != null && localStorage.getItem("email") != "") {
+            if (
+              localStorage.getItem("email") != null &&
+              localStorage.getItem("email") != ""
+            ) {
               localStorage.removeItem("email");
             }
-            if (localStorage.getItem("password") != null  && localStorage.getItem("password") != "") {
+            if (
+              localStorage.getItem("password") != null &&
+              localStorage.getItem("password") != ""
+            ) {
               localStorage.removeItem("password");
             }
-            if (localStorage.getItem("boxChecked") != null && localStorage.getItem("boxChecked") != "") {
+            if (
+              localStorage.getItem("boxChecked") != null &&
+              localStorage.getItem("boxChecked") != ""
+            ) {
               localStorage.removeItem("boxChecked");
             }
             localStorage.removeItem("password");

@@ -18,7 +18,7 @@ function FollowedByList({ currentUser, profileUser, maxDisplayed = 3 }) {
       try {
         setIsLoading(true);
         const response = await fetch(
-          `${API_BASE_URL}/api/auth/getFriendsThatFollow/${currentUser}/${profileUser}`
+          `${API_BASE_URL}/api/auth/getFriendsThatFollow/${currentUser}/${profileUser}`,
         );
         if (!response.ok) {
           throw new Error("Failed to fetch mutual followers");

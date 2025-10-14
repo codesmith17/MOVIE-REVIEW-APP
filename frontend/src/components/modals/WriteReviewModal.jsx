@@ -41,7 +41,9 @@ const WriteReviewModal = ({
           <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-8 py-6 flex justify-between items-center">
             <div className="flex items-center gap-4">
               <div className="w-2 h-10 bg-yellow-400 rounded-full"></div>
-              <h2 className="text-3xl font-bold text-white">Write Your Review</h2>
+              <h2 className="text-3xl font-bold text-white">
+                Write Your Review
+              </h2>
             </div>
             <button
               onClick={onClose}
@@ -73,7 +75,11 @@ const WriteReviewModal = ({
                     </h3>
                     <div className="flex items-center justify-center lg:justify-start gap-3 text-gray-400">
                       <span className="text-lg">
-                        {(singleMovieData?.release_date || singleMovieData?.first_air_date || "").slice(0, 4)}
+                        {(
+                          singleMovieData?.release_date ||
+                          singleMovieData?.first_air_date ||
+                          ""
+                        ).slice(0, 4)}
                       </span>
                       {singleMovieData?.vote_average && (
                         <>
@@ -84,18 +90,19 @@ const WriteReviewModal = ({
                         </>
                       )}
                     </div>
-                    {singleMovieData?.genres && singleMovieData.genres.length > 0 && (
-                      <div className="flex flex-wrap gap-2 justify-center lg:justify-start mt-3">
-                        {singleMovieData.genres.slice(0, 3).map((genre) => (
-                          <span
-                            key={genre.id}
-                            className="px-3 py-1 bg-blue-600/30 text-blue-300 rounded-full text-xs font-medium border border-blue-500/30"
-                          >
-                            {genre.name}
-                          </span>
-                        ))}
-                      </div>
-                    )}
+                    {singleMovieData?.genres &&
+                      singleMovieData.genres.length > 0 && (
+                        <div className="flex flex-wrap gap-2 justify-center lg:justify-start mt-3">
+                          {singleMovieData.genres.slice(0, 3).map((genre) => (
+                            <span
+                              key={genre.id}
+                              className="px-3 py-1 bg-blue-600/30 text-blue-300 rounded-full text-xs font-medium border border-blue-500/30"
+                            >
+                              {genre.name}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                   </div>
                 </div>
 
@@ -144,7 +151,11 @@ const WriteReviewModal = ({
                         type="button"
                         onClick={() => setIsEditorExpanded(!isEditorExpanded)}
                         className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:text-white bg-gray-700 hover:bg-blue-600 rounded-lg transition-all font-medium"
-                        title={isEditorExpanded ? "Minimize editor" : "Maximize editor"}
+                        title={
+                          isEditorExpanded
+                            ? "Minimize editor"
+                            : "Maximize editor"
+                        }
                       >
                         {isEditorExpanded ? (
                           <>
@@ -176,7 +187,13 @@ const WriteReviewModal = ({
                           backgroundColor: "white",
                           transition: "height 0.3s ease",
                         }}
-                        formats={["bold", "italic", "underline", "list", "bullet"]}
+                        formats={[
+                          "bold",
+                          "italic",
+                          "underline",
+                          "list",
+                          "bullet",
+                        ]}
                       />
                     </div>
                   </div>
@@ -192,7 +209,9 @@ const WriteReviewModal = ({
                     <button
                       className="px-10 py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:from-gray-600 disabled:to-gray-600 text-lg shadow-lg hover:shadow-2xl hover:scale-105 transform"
                       onClick={handleReviewSubmit}
-                      disabled={!dateLogged || !review.trim() || starRatingTemp === 0}
+                      disabled={
+                        !dateLogged || !review.trim() || starRatingTemp === 0
+                      }
                     >
                       Submit Review ✨
                     </button>
@@ -208,4 +227,3 @@ const WriteReviewModal = ({
 };
 
 export default WriteReviewModal;
-

@@ -1,7 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { FaUser, FaStar, FaUserPlus, FaUserMinus, FaSpinner, FaSearch, FaArrowLeft, FaHeart } from "react-icons/fa";
+import {
+  FaUser,
+  FaStar,
+  FaUserPlus,
+  FaUserMinus,
+  FaSpinner,
+  FaSearch,
+  FaArrowLeft,
+  FaHeart,
+} from "react-icons/fa";
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
 
@@ -12,7 +21,7 @@ const FollowingListPage = () => {
   const { username } = useParams();
   const navigate = useNavigate();
   const user = useSelector((state) => state.user.data);
-  
+
   const [following, setFollowing] = useState([]);
   const [filteredFollowing, setFilteredFollowing] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -34,19 +43,20 @@ const FollowingListPage = () => {
             "Content-Type": "application/json",
           },
           credentials: "include",
-        }
+        },
       );
 
       if (response.ok) {
         const data = await response.json();
         setFollowing(data.following || []);
         setFilteredFollowing(data.following || []);
-        
+
         // Check following status for each user
         if (user?.data) {
           const statusMap = {};
           data.following?.forEach((followedUser) => {
-            statusMap[followedUser.username] = followedUser.followersList?.includes(user.data.username);
+            statusMap[followedUser.username] =
+              followedUser.followersList?.includes(user.data.username);
           });
           setFollowingStatus(statusMap);
         }
@@ -64,9 +74,12 @@ const FollowingListPage = () => {
   // Apply search filter
   useEffect(() => {
     if (searchQuery) {
-      const filtered = following.filter((followedUser) =>
-        followedUser.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        followedUser.name?.toLowerCase().includes(searchQuery.toLowerCase())
+      const filtered = following.filter(
+        (followedUser) =>
+          followedUser.username
+            ?.toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
+          followedUser.name?.toLowerCase().includes(searchQuery.toLowerCase()),
       );
       setFilteredFollowing(filtered);
     } else {
@@ -91,14 +104,14 @@ const FollowingListPage = () => {
             "Content-Type": "application/json",
           },
           credentials: "include",
-        }
+        },
       );
 
       if (response.ok) {
         const data = await response.json();
-        setFollowingStatus(prev => ({
+        setFollowingStatus((prev) => ({
           ...prev,
-          [followedUsername]: data.isFollowing
+          [followedUsername]: data.isFollowing,
         }));
         toast.success(data.message);
       } else {
@@ -118,7 +131,7 @@ const FollowingListPage = () => {
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   if (loading) {
@@ -149,13 +162,14 @@ const FollowingListPage = () => {
           >
             <FaArrowLeft /> Back to Profile
           </button>
-          
+
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent mb-2">
             {username}'s Following
           </h1>
           <p className="text-gray-400 text-lg flex items-center gap-2">
             <FaUserPlus className="text-blue-400" />
-            {filteredFollowing.length} {filteredFollowing.length === 1 ? 'user' : 'users'}
+            {filteredFollowing.length}{" "}
+            {filteredFollowing.length === 1 ? "user" : "users"}
           </p>
         </motion.div>
 
@@ -195,7 +209,10 @@ const FollowingListPage = () => {
                       whileHover={{ scale: 1.02, y: -5 }}
                       className="bg-gradient-to-br from-gray-700/50 to-gray-800/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-600/30 shadow-xl hover:shadow-2xl transition-all duration-300"
                     >
-                      <Link to={`/user/${followedUser.username}`} className="block">
+                      <Link
+                        to={`/user/${followedUser.username}`}
+                        className="block"
+                      >
                         <div className="flex items-center gap-4 mb-4">
                           {followedUser.profilePicture ? (
                             <img
@@ -212,7 +229,9 @@ const FollowingListPage = () => {
                             <h3 className="font-bold text-lg text-white truncate hover:text-cyan-300 transition-colors">
                               {followedUser.username}
                             </h3>
-                            <p className="text-gray-400 text-sm truncate">{followedUser.name}</p>
+                            <p className="text-gray-400 text-sm truncate">
+                              {followedUser.name}
+                            </p>
                           </div>
                         </div>
                       </Link>
@@ -229,26 +248,30 @@ const FollowingListPage = () => {
                           </div>
                         </div>
 
-                        {user?.data && user.data.username !== followedUser.username && (
-                          <button
-                            onClick={() => handleFollowToggle(followedUser.username)}
-                            className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
-                              followingStatus[followedUser.username]
-                                ? "bg-red-600 hover:bg-red-700 text-white"
-                                : "bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white"
-                            }`}
-                          >
-                            {followingStatus[followedUser.username] ? (
-                              <>
-                                <FaUserMinus className="inline mr-1" /> Unfollow
-                              </>
-                            ) : (
-                              <>
-                                <FaUserPlus className="inline mr-1" /> Follow
-                              </>
-                            )}
-                          </button>
-                        )}
+                        {user?.data &&
+                          user.data.username !== followedUser.username && (
+                            <button
+                              onClick={() =>
+                                handleFollowToggle(followedUser.username)
+                              }
+                              className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                                followingStatus[followedUser.username]
+                                  ? "bg-red-600 hover:bg-red-700 text-white"
+                                  : "bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white"
+                              }`}
+                            >
+                              {followingStatus[followedUser.username] ? (
+                                <>
+                                  <FaUserMinus className="inline mr-1" />{" "}
+                                  Unfollow
+                                </>
+                              ) : (
+                                <>
+                                  <FaUserPlus className="inline mr-1" /> Follow
+                                </>
+                              )}
+                            </button>
+                          )}
                       </div>
                     </motion.div>
                   </motion.div>
@@ -291,8 +314,15 @@ const FollowingListPage = () => {
                         {page}
                       </button>
                     );
-                  } else if (page === currentPage - 2 || page === currentPage + 2) {
-                    return <span key={page} className="text-gray-500">...</span>;
+                  } else if (
+                    page === currentPage - 2 ||
+                    page === currentPage + 2
+                  ) {
+                    return (
+                      <span key={page} className="text-gray-500">
+                        ...
+                      </span>
+                    );
                   }
                   return null;
                 })}
@@ -330,4 +360,3 @@ const FollowingListPage = () => {
 };
 
 export default FollowingListPage;
-

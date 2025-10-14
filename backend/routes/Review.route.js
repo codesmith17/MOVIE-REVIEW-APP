@@ -1,6 +1,19 @@
 const express = require("express");
 const router = express.Router();
-const { postReview, updateRating, getPersonalReview, getReviewById, getOtherReviews, postReviewLikes, deleteReview, editReview, getReviews, upsertRating, getRating, getLikedReviews } = require("../controllers/Review.controller");
+const {
+  postReview,
+  updateRating,
+  getPersonalReview,
+  getReviewById,
+  getOtherReviews,
+  postReviewLikes,
+  deleteReview,
+  editReview,
+  getReviews,
+  upsertRating,
+  getRating,
+  getLikedReviews,
+} = require("../controllers/Review.controller");
 const { verifyUser } = require("../controllers/Auth.controller");
 
 router.post("/postReview", verifyUser, postReview);

@@ -1,7 +1,11 @@
 const express = require("express");
 const router = express.Router();
 
-const { getList, addToList, removeFromList } = require("../controllers/List.controller.js");
+const {
+  getList,
+  addToList,
+  removeFromList,
+} = require("../controllers/List.controller.js");
 const { verifyUser } = require("../controllers/Auth.controller.js");
 
 router.get("/getList/:username/:type", getList);

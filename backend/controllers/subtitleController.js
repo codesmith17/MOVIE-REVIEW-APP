@@ -1,14 +1,14 @@
-const { parse } = require('subtitle');
-const { promisify } = require('util');
-const { gunzip } = require('zlib');
+const { parse } = require("subtitle");
+const { promisify } = require("util");
+const { gunzip } = require("zlib");
 const gunzipAsync = promisify(gunzip);
-const https = require('https');
+const https = require("https");
 
 // Subtitle search sources
 const SUBTITLE_SOURCES = {
-  OPENSUBTITLES: 'opensubtitles',
-  SUBSCENE: 'subscene',
-  SUBDB: 'subdb'
+  OPENSUBTITLES: "opensubtitles",
+  SUBSCENE: "subscene",
+  SUBDB: "subdb",
 };
 
 // Cache for subtitle search results
@@ -19,16 +19,19 @@ class SubtitleController {
   // Search subtitles from multiple sources
   async searchSubtitles(req, res) {
     try {
-      const { query, imdbId, season, episode, language = 'en' } = req.query;
-      
+      const { query, imdbId, season, episode, language = "en" } = req.query;
+
       if (!query && !imdbId) {
-        return res.status(400).json({ error: 'Query or IMDB ID is required' });
+        return res.status(400).json({ error: "Query or IMDB ID is required" });
       }
 
       // Check cache first
       const cacheKey = `${query}-${imdbId}-${season}-${episode}-${language}`;
       const cachedResult = subtitleCache.get(cacheKey);
-      if (cachedResult && Date.now() - cachedResult.timestamp < CACHE_DURATION) {
+      if (
+        cachedResult &&
+        Date.now() - cachedResult.timestamp < CACHE_DURATION
+      ) {
         return res.json(cachedResult.data);
       }
 
@@ -40,25 +43,26 @@ class SubtitleController {
       ];
 
       const results = await Promise.allSettled(searchPromises);
-      
+
       // Combine and deduplicate results
       const subtitles = results
-        .filter(result => result.status === 'fulfilled')
-        .flatMap(result => result.value)
-        .filter((subtitle, index, self) => 
-          index === self.findIndex(s => s.hash === subtitle.hash)
+        .filter((result) => result.status === "fulfilled")
+        .flatMap((result) => result.value)
+        .filter(
+          (subtitle, index, self) =>
+            index === self.findIndex((s) => s.hash === subtitle.hash),
         );
 
       // Cache the results
       subtitleCache.set(cacheKey, {
         data: subtitles,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
 
       res.json(subtitles);
     } catch (error) {
-      console.error('Subtitle search error:', error);
-      res.status(500).json({ error: 'Failed to search subtitles' });
+      console.error("Subtitle search error:", error);
+      res.status(500).json({ error: "Failed to search subtitles" });
     }
   }
 
@@ -67,7 +71,7 @@ class SubtitleController {
     try {
       const apiKey = process.env.OPENSUBTITLES_API_KEY;
       if (!apiKey) {
-        console.warn('OpenSubtitles API key not configured');
+        console.warn("OpenSubtitles API key not configured");
         return [];
       }
 
@@ -79,19 +83,22 @@ class SubtitleController {
         languages: language,
       });
 
-      const response = await fetch(`https://api.opensubtitles.com/api/v1/subtitles?${params}`, {
-        headers: {
-          'Api-Key': apiKey,
-          'User-Agent': 'MovieReviewApp/1.0'
-        }
-      });
+      const response = await fetch(
+        `https://api.opensubtitles.com/api/v1/subtitles?${params}`,
+        {
+          headers: {
+            "Api-Key": apiKey,
+            "User-Agent": "MovieReviewApp/1.0",
+          },
+        },
+      );
 
       if (!response.ok) {
         throw new Error(`OpenSubtitles API error: ${response.statusText}`);
       }
 
       const data = await response.json();
-      return data.data.map(sub => ({
+      return data.data.map((sub) => ({
         id: sub.id,
         name: sub.attributes.release,
         language: sub.attributes.language,
@@ -100,10 +107,10 @@ class SubtitleController {
         format: sub.attributes.files[0].format,
         size: sub.attributes.files[0].file_size,
         hash: sub.attributes.files[0].file_hash,
-        score: this.calculateSubtitleScore(sub.attributes)
+        score: this.calculateSubtitleScore(sub.attributes),
       }));
     } catch (error) {
-      console.error('OpenSubtitles search error:', error);
+      console.error("OpenSubtitles search error:", error);
       return [];
     }
   }
@@ -115,7 +122,7 @@ class SubtitleController {
       // This is a placeholder for SubDB implementation
       return [];
     } catch (error) {
-      console.error('SubDB search error:', error);
+      console.error("SubDB search error:", error);
       return [];
     }
   }
@@ -123,21 +130,21 @@ class SubtitleController {
   // Calculate subtitle score based on various factors
   calculateSubtitleScore(attributes) {
     let score = 0;
-    
+
     // Higher score for HD content
     if (attributes.moviehash_match) score += 10;
     if (attributes.hearing_impaired) score += 5;
     if (attributes.foreign_parts_only) score -= 5;
-    
+
     // Score based on download count
     score += Math.min(attributes.download_count / 1000, 10);
-    
+
     // Score based on upload date (newer is better)
     const uploadDate = new Date(attributes.upload_date);
     const now = new Date();
     const daysOld = (now - uploadDate) / (1000 * 60 * 60 * 24);
     score += Math.max(10 - daysOld, 0);
-    
+
     return score;
   }
 
@@ -145,9 +152,9 @@ class SubtitleController {
   async downloadSubtitle(req, res) {
     try {
       const { url, format } = req.query;
-      
+
       if (!url) {
-        return res.status(400).json({ error: 'Subtitle URL is required' });
+        return res.status(400).json({ error: "Subtitle URL is required" });
       }
 
       const response = await fetch(url);
@@ -157,21 +164,21 @@ class SubtitleController {
 
       const buffer = await response.arrayBuffer();
       let subtitleContent;
-      
-      if (format === 'gz') {
+
+      if (format === "gz") {
         subtitleContent = await gunzipAsync(Buffer.from(buffer));
       } else {
         subtitleContent = Buffer.from(buffer);
       }
 
       const subtitles = parse(subtitleContent.toString());
-      
+
       res.json(subtitles);
     } catch (error) {
-      console.error('Subtitle download error:', error);
-      res.status(500).json({ error: 'Failed to download subtitle' });
+      console.error("Subtitle download error:", error);
+      res.status(500).json({ error: "Failed to download subtitle" });
     }
   }
 }
 
-module.exports = new SubtitleController(); 
+module.exports = new SubtitleController();
