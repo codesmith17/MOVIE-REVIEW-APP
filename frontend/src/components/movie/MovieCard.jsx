@@ -111,10 +111,10 @@ const MovieCard = ({ id, title, year, type, image, rating, mediaType, priority =
   return (
     <Link to={`/${displayMediaType}/${id}`} className="group block perspective-1000">
       <div 
-        className="movie-card-hover relative overflow-hidden w-full max-w-[200px] mx-auto min-h-[360px] flex flex-col rounded-xl bg-gray-900/40 backdrop-blur-sm transition-all duration-500 ease-out group-hover:bg-gray-800/60 group-hover:shadow-2xl"
+        className="movie-card-hover relative overflow-hidden w-full max-w-[140px] sm:max-w-[160px] md:max-w-[180px] lg:max-w-[200px] mx-auto min-h-[240px] sm:min-h-[280px] md:min-h-[320px] lg:min-h-[360px] flex flex-col rounded-xl bg-gray-900/40 backdrop-blur-sm transition-all duration-500 ease-out group-hover:bg-gray-800/60 group-hover:shadow-2xl"
       >
         {/* Image Container */}
-        <div className="relative w-full h-[270px] flex-shrink-0 overflow-hidden rounded-t-xl z-10">
+        <div className="relative w-full h-[190px] sm:h-[220px] md:h-[245px] lg:h-[270px] flex-shrink-0 overflow-hidden rounded-t-xl z-10">
           <LazyImage
             src={image}
             alt={title}
@@ -136,20 +136,20 @@ const MovieCard = ({ id, title, year, type, image, rating, mediaType, priority =
           
           {/* Rating Badge */}
           {ratingBadge && (
-            <div className={`absolute top-3 right-3 flex items-center gap-1 ${ratingBadge.bgClass} backdrop-blur-md rounded-lg px-2.5 py-1.5 border ${ratingBadge.colorClass} font-bold text-sm shadow-lg z-20`}>
-              <FaStar className="text-xs" />
+            <div className={`absolute top-2 sm:top-3 right-2 sm:right-3 flex items-center gap-0.5 sm:gap-1 ${ratingBadge.bgClass} backdrop-blur-md rounded-md sm:rounded-lg px-1.5 sm:px-2.5 py-1 sm:py-1.5 border ${ratingBadge.colorClass} font-bold text-[10px] sm:text-xs md:text-sm shadow-lg z-20`}>
+              <FaStar className="text-[8px] sm:text-xs" />
               <span>{ratingBadge.value}</span>
             </div>
           )}
           
           {/* Media Type Badge */}
-          <div className="absolute top-3 left-3 badge badge-secondary text-xs px-2 py-1 backdrop-blur-md z-20">
+          <div className="absolute top-2 sm:top-3 left-2 sm:left-3 badge badge-secondary text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 backdrop-blur-md z-20">
             {mediaTypeLabel}
           </div>
         </div>
         
         {/* Content */}
-        <div className="content-glow flex-1 flex flex-col justify-start p-4 bg-gradient-to-b from-gray-800/50 to-gray-900/80 rounded-b-xl min-h-[90px] z-10 relative overflow-hidden">
+        <div className="content-glow flex-1 flex flex-col justify-start p-2 sm:p-3 md:p-4 bg-gradient-to-b from-gray-800/50 to-gray-900/80 rounded-b-xl min-h-[50px] sm:min-h-[70px] md:min-h-[80px] lg:min-h-[90px] z-10 relative overflow-hidden">
           {/* Subtle color gradient overlay only on bottom section */}
           <div 
             className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
@@ -159,18 +159,18 @@ const MovieCard = ({ id, title, year, type, image, rating, mediaType, priority =
             } : {}}
           />
           <div className="relative z-10">
-            <h3 className="text-sm font-bold text-gray-50 mb-2 line-clamp-3 leading-snug group-hover:text-white transition-colors duration-300">
+            <h3 className="text-[11px] sm:text-xs md:text-sm font-bold text-gray-50 mb-1 sm:mb-1.5 md:mb-2 line-clamp-2 sm:line-clamp-3 leading-tight sm:leading-snug group-hover:text-white transition-colors duration-300">
               {title}
             </h3>
             {year && (
-              <p className="text-xs text-gray-400 font-medium group-hover:text-gray-300 transition-colors duration-300">{year}</p>
+              <p className="text-[10px] sm:text-xs text-gray-400 font-medium group-hover:text-gray-300 transition-colors duration-300">{year}</p>
             )}
           </div>
         </div>
         
         {/* Bright border glow on hover with dominant color */}
         <div 
-          className="absolute inset-0 rounded-xl border-[3px] border-transparent transition-all duration-500 pointer-events-none group-hover:shadow-lg z-20"
+          className="absolute inset-0 rounded-xl border-2 sm:border-[2.5px] md:border-[3px] border-transparent transition-all duration-500 pointer-events-none group-hover:shadow-lg z-20"
           style={dominantColor ? {
             borderColor: 'transparent',
           } : {}}

@@ -5,7 +5,7 @@ import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 const defaultImage = "https://www.reelviews.net/resources/img/default_poster.jpg";
 
 const MovieCardSkeleton = () => (
-  <div className="skeleton w-full max-w-[200px] mx-auto min-h-[360px] rounded-xl"></div>
+  <div className="skeleton w-full max-w-[140px] sm:max-w-[160px] md:max-w-[180px] lg:max-w-[200px] mx-auto min-h-[240px] sm:min-h-[280px] md:min-h-[320px] lg:min-h-[360px] rounded-xl"></div>
 );
 
 const MovieSection = ({ title, movies, loading, error }) => {
@@ -37,7 +37,8 @@ const MovieSection = ({ title, movies, loading, error }) => {
 
   const scroll = (direction) => {
     if (scrollContainerRef.current) {
-      const scrollAmount = 400;
+      const isMobile = window.innerWidth < 640;
+      const scrollAmount = isMobile ? 200 : 400;
       scrollContainerRef.current.scrollBy({
         left: direction === 'left' ? -scrollAmount : scrollAmount,
         behavior: 'smooth'
@@ -95,7 +96,7 @@ const MovieSection = ({ title, movies, loading, error }) => {
         {/* Scrollable Container */}
         <div
           ref={scrollContainerRef}
-          className="flex gap-5 overflow-x-auto custom-scrollbar pb-4 scroll-smooth"
+          className="flex gap-3 sm:gap-4 md:gap-5 overflow-x-auto custom-scrollbar pb-4 scroll-smooth"
           style={{ scrollbarWidth: 'thin' }}
         >
           {loading ? (
