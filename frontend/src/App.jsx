@@ -3,7 +3,7 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useDispatch } from "react-redux";
-import { setUser } from "./components/features/user/userSlice";
+import { setUser, setAuthLoading } from "./components/features/user/userSlice";
 
 // Layout
 import { Navbar } from "./components/layout";
@@ -50,9 +50,13 @@ const App = () => {
         if (response.ok) {
           const data = await response.json();
           dispatch(setUser(data));
+        } else {
+          // Not authenticated, stop loading
+          dispatch(setAuthLoading(false));
         }
       } catch (error) {
-        // Fail silently
+        // Fail silently but stop loading
+        dispatch(setAuthLoading(false));
       }
     };
     fetchUserData();

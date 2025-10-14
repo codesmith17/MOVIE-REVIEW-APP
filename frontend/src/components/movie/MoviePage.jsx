@@ -74,6 +74,7 @@ const MoviePage = () => {
 console.log('singleMovieData:', singleMovieData);
   const [loadingRecommendations, setLoadingRecommendations] = useState(true);
   const [isInWatchlist, setIsInWatchlist] = useState(false);
+  const [isWatchlistLoading, setIsWatchlistLoading] = useState(true);
   const [isEditorExpanded, setIsEditorExpanded] = useState(false);
 
   // Refs and state for dynamic blur
@@ -111,6 +112,7 @@ console.log('singleMovieData:', singleMovieData);
     setCurrentReviewID("");
     setImdbID("");
     setIsInWatchlist(false);
+    setIsWatchlistLoading(true); // Reset loading state
     setShowModal(false);
     setIsEditorExpanded(false);
   }, [mediaType, id]);
@@ -428,8 +430,12 @@ console.log('singleMovieData:', singleMovieData);
   useEffect(() => {
     const checkWatchlist = async () => {
       const username = user?.username || user?.data?.username;
-      if (!username || !singleMovieData?.id) return;
+      if (!username || !singleMovieData?.id) {
+        setIsWatchlistLoading(false);
+        return;
+      }
       try {
+        setIsWatchlistLoading(true);
         const response = await fetch(
           `${API_BASE_URL}/api/list/getList/${username}/watchlist`,
           {
@@ -437,7 +443,10 @@ console.log('singleMovieData:', singleMovieData);
             headers: { "Content-Type": "application/json" },
           }
         );
-        if (!response.ok) return;
+        if (!response.ok) {
+          setIsWatchlistLoading(false);
+          return;
+        }
         const data = await response.json();
         if (data && data.data && data.data[0]) {
           // Check by both imdbID and id for backward compatibility
@@ -450,6 +459,8 @@ console.log('singleMovieData:', singleMovieData);
         }
       } catch (err) {
         // fail silently
+      } finally {
+        setIsWatchlistLoading(false);
       }
     };
     checkWatchlist();
@@ -797,26 +808,36 @@ console.log('singleMovieData:', singleMovieData);
                 </button>
                 
                 {/* Watchlist Button */}
-                <button
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors text-sm ${
-                    isInWatchlist
-                      ? "bg-green-600/20 text-green-400 hover:bg-red-600/20 hover:text-red-400"
-                      : "bg-blue-600 hover:bg-blue-500 text-white"
-                  }`}
-                  onClick={handleAddToWatchlist}
-                >
-                  {isInWatchlist ? (
-                    <>
-                      <FaCheck className="text-xs" />
-                      <span>In Watchlist</span>
-                    </>
-                  ) : (
-                    <>
-                      <FaPlus className="text-xs" />
-                      <span>Add to Watchlist</span>
-                    </>
-                  )}
-                </button>
+                {(user?.username || user?.data?.username) && (
+                  <button
+                    disabled={isWatchlistLoading}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors text-sm ${
+                      isWatchlistLoading
+                        ? "bg-gray-700/50 text-gray-500 cursor-not-allowed"
+                        : isInWatchlist
+                        ? "bg-green-600/20 text-green-400 hover:bg-red-600/20 hover:text-red-400"
+                        : "bg-blue-600 hover:bg-blue-500 text-white"
+                    }`}
+                    onClick={handleAddToWatchlist}
+                  >
+                    {isWatchlistLoading ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin"></div>
+                        <span>Loading...</span>
+                      </>
+                    ) : isInWatchlist ? (
+                      <>
+                        <FaCheck className="text-xs" />
+                        <span>In Watchlist</span>
+                      </>
+                    ) : (
+                      <>
+                        <FaPlus className="text-xs" />
+                        <span>Add to Watchlist</span>
+                      </>
+                    )}
+                  </button>
+                )}
                 
                 {/* Review Button */}
                 {(user?.username || user?.data?.username) ? (

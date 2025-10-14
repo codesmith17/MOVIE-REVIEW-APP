@@ -11,6 +11,7 @@ const Navbar = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const user = useSelector((state) => state.user.data);
+  const isAuthLoading = useSelector((state) => state.user.isAuthLoading);
 
   // Handle scroll for navbar background
   useEffect(() => {
@@ -87,7 +88,12 @@ const Navbar = () => {
             </form>
 
             {/* User Section */}
-            {user ? (
+            {isAuthLoading ? (
+              // Show skeleton/placeholder while checking auth
+              <div className="hidden md:flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-gray-700/50 animate-pulse"></div>
+              </div>
+            ) : user ? (
               <>
                 {/* Desktop User */}
                 <div className="hidden md:flex items-center gap-3">
@@ -186,7 +192,13 @@ const Navbar = () => {
                 About
               </Link>
 
-              {user ? (
+              {isAuthLoading ? (
+                // Mobile loading skeleton
+                <div className="px-4 py-2.5 flex items-center gap-2">
+                  <div className="w-4 h-4 rounded-full bg-gray-700/50 animate-pulse"></div>
+                  <div className="h-4 w-24 bg-gray-700/50 rounded animate-pulse"></div>
+                </div>
+              ) : user ? (
                 <>
                   <Link
                     to={`/user/${user?.username || user?.data?.username}`}
