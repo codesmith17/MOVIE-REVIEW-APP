@@ -29,7 +29,7 @@ import {
 } from "./components/pages";
 
 // Movie
-import { MovieList, MoviePage, TorrentStream } from "./components/movie";
+import { MovieList, MoviePage } from "./components/movie";
 
 // Reviews
 import { SingleReview } from "./components/reviews";
@@ -116,7 +116,6 @@ const App = () => {
               element={<MovieSpecificActivity />}
             />
             <Route path="/list/:listId" element={<ListDetailPage />} />
-            <Route path="/torrent-stream" element={<TorrentStream />} />
             {/* <Route path="/video-call" element={<LobbyScreen />} />
             <Route path="/room/:roomId" element={<RoomPage />} /> */}
             <Route path="*" element={<NotFound />} />

@@ -6,7 +6,7 @@ const defaultImage =
   "https://www.reelviews.net/resources/img/default_poster.jpg";
 
 const MovieCardSkeleton = () => (
-  <div className="skeleton w-full max-w-[140px] sm:max-w-[160px] md:max-w-[180px] lg:max-w-[200px] mx-auto min-h-[240px] sm:min-h-[280px] md:min-h-[320px] lg:min-h-[360px] rounded-xl"></div>
+  <div className="skeleton w-full max-w-[140px] sm:max-w-[160px] md:max-w-[180px] lg:max-w-[200px] mx-auto h-[240px] sm:h-[280px] md:h-[320px] lg:h-[360px] rounded-xl"></div>
 );
 
 const MovieSection = ({ title, movies, loading, error }) => {

@@ -134,7 +134,7 @@ const MovieCard = ({
       to={`/${displayMediaType}/${id}`}
       className="group block perspective-1000"
     >
-      <div className="movie-card-hover relative overflow-hidden w-full max-w-[140px] sm:max-w-[160px] md:max-w-[180px] lg:max-w-[200px] mx-auto min-h-[240px] sm:min-h-[280px] md:min-h-[320px] lg:min-h-[360px] flex flex-col rounded-xl bg-gray-900/40 backdrop-blur-sm transition-all duration-500 ease-out group-hover:bg-gray-800/60 group-hover:shadow-2xl">
+      <div className="movie-card-hover relative overflow-hidden w-full max-w-[140px] sm:max-w-[160px] md:max-w-[180px] lg:max-w-[200px] mx-auto h-[240px] sm:h-[280px] md:h-[320px] lg:h-[360px] flex flex-col rounded-xl bg-gray-900/40 backdrop-blur-sm transition-all duration-500 ease-out group-hover:bg-gray-800/60 group-hover:shadow-2xl">
         {/* Image Container */}
         <div className="relative w-full h-[190px] sm:h-[220px] md:h-[245px] lg:h-[270px] flex-shrink-0 overflow-hidden rounded-t-xl z-10">
           <LazyImage
