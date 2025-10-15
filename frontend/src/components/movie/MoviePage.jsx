@@ -685,7 +685,6 @@ const MoviePage = () => {
                   <img
                     src={`https://image.tmdb.org/t/p/w500${singleMovieData?.poster_path}`}
                     alt={singleMovieData.title || singleMovieData.name}
-                    crossOrigin="anonymous"
                     loading="eager"
                     className="w-64 lg:w-72 rounded-xl shadow-2xl object-cover"
                   />

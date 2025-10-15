@@ -97,7 +97,6 @@ const LazyImage = ({
         <img
           src={currentSrc}
           alt={alt}
-          crossOrigin="anonymous"
           className={`
             ${isLoading ? "opacity-0" : "opacity-100"}
             transition-opacity duration-300 ease-in-out

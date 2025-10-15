@@ -17,16 +17,22 @@ router.get("/find/:imdbId", tmdbController.findByImdbId);
 // Trending
 router.get("/trending/:mediaType/:timeWindow", tmdbController.getTrending);
 
-// Movie lists
-router.get("/movie/:category", tmdbController.getMovieList);
+// Movie lists - SPECIFIC routes before generic :id
+router.get("/movie/now_playing", tmdbController.getMovieList);
+router.get("/movie/popular", tmdbController.getMovieList);
+router.get("/movie/upcoming", tmdbController.getMovieList);
+router.get("/movie/top_rated", tmdbController.getMovieList);
 
-// TV lists
-router.get("/tv/:category", tmdbController.getTVList);
+// TV lists - SPECIFIC routes before generic :id
+router.get("/tv/popular", tmdbController.getTVList);
+router.get("/tv/on_the_air", tmdbController.getTVList);
+router.get("/tv/top_rated", tmdbController.getTVList);
+router.get("/tv/airing_today", tmdbController.getTVList);
 
 // Person details
 router.get("/person/:id", tmdbController.getPersonDetails);
 
-// Media details and related endpoints
+// Media details and related endpoints (MUST come AFTER specific routes)
 router.get("/:mediaType/:id/credits", tmdbController.getCredits);
 router.get("/:mediaType/:id/videos", tmdbController.getVideos);
 router.get("/:mediaType/:id/providers", tmdbController.getWatchProviders);

@@ -141,11 +141,12 @@ const getTrending = async (req, res) => {
 
 /**
  * Get movie list by category
- * GET /api/tmdb/movie/:category
+ * GET /api/tmdb/movie/now_playing, /api/tmdb/movie/popular, etc.
  */
 const getMovieList = async (req, res) => {
   try {
-    const { category } = req.params;
+    // Extract category from path (e.g., /movie/now_playing -> now_playing)
+    const category = req.path.split("/").pop();
     const { page = 1 } = req.query;
     const data = await tmdbService.getMovieList(category, page);
     res.json(data);
@@ -156,11 +157,12 @@ const getMovieList = async (req, res) => {
 
 /**
  * Get TV show list by category
- * GET /api/tmdb/tv/:category
+ * GET /api/tmdb/tv/popular, /api/tmdb/tv/on_the_air, etc.
  */
 const getTVList = async (req, res) => {
   try {
-    const { category } = req.params;
+    // Extract category from path (e.g., /tv/popular -> popular)
+    const category = req.path.split("/").pop();
     const { page = 1 } = req.query;
     const data = await tmdbService.getTVList(category, page);
     res.json(data);
