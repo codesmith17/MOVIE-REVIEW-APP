@@ -116,11 +116,32 @@ app.use("/api/list", listRoutes);
 
 // Serve static files from frontend build (AFTER API routes)
 const frontendPath = path.join(__dirname, "../frontend/dist");
-app.use(express.static(frontendPath));
+console.log("Frontend path:", frontendPath);
+console.log("Directory exists:", require("fs").existsSync(frontendPath));
+
+app.use(
+  express.static(frontendPath, {
+    index: false, // Don't auto-serve index.html here
+    fallthrough: true,
+  })
+);
 
 // SPA fallback - serve index.html for all non-API routes
 app.get("*", (req, res) => {
-  res.sendFile(path.join(frontendPath, "index.html"));
+  const indexPath = path.join(frontendPath, "index.html");
+  console.log("Trying to serve:", indexPath);
+  console.log("File exists:", require("fs").existsSync(indexPath));
+
+  if (require("fs").existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    res.status(500).json({
+      error: "Frontend not built",
+      message: "Frontend dist folder not found",
+      path: frontendPath,
+      __dirname,
+    });
+  }
 });
 
 // Error handler
