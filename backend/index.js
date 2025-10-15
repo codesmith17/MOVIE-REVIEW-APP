@@ -13,12 +13,13 @@ const fetch =
   ((...args) => import("node-fetch").then(({ default: fetch }) => fetch(...args)));
 
 app.use(express.json());
+// CORS - more permissive since frontend and backend are on same domain
 app.use(
   cors({
     origin:
       process.env.NODE_ENV === "production"
-        ? ["https://cine-critique-alpha.vercel.app"]
-        : ["http://localhost:5173", "https://cine-critique-alpha.vercel.app"],
+        ? true // Allow same origin
+        : ["http://localhost:5173", "http://localhost:3000"],
     credentials: true,
     optionsSuccessStatus: 200,
   })
@@ -62,6 +63,13 @@ async function connectToDatabase() {
 
 app.use(bodyParser.urlencoded({ extended: false }));
 
+// Serve static files from frontend build (in production)
+if (process.env.NODE_ENV === "production") {
+  const frontendPath = path.join(__dirname, "../frontend/dist");
+  app.use(express.static(frontendPath));
+  console.log("Serving frontend from:", frontendPath);
+}
+
 // Health check route (no DB required) - MUST be before DB middleware
 app.get("/health", (req, res) => {
   res.json({
@@ -104,10 +112,17 @@ app.use("/api/movie", movieRoutes);
 app.use("/api/comment", commentRoutes);
 app.use("/api/list", listRoutes);
 
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({ error: "Route not found" });
-});
+// Serve frontend for all non-API routes (SPA fallback)
+if (process.env.NODE_ENV === "production") {
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(__dirname, "../frontend/dist/index.html"));
+  });
+} else {
+  // 404 handler for development
+  app.use((req, res) => {
+    res.status(404).json({ error: "Route not found" });
+  });
+}
 
 // Error handler
 app.use((err, req, res, next) => {

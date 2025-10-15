@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
+    "build": "cd ../frontend && npm install && npm run build",
     "lint": "eslint . --ext js",
     "lint:strict": "eslint . --ext js --max-warnings 0",
     "lint:fix": "eslint . --ext js --fix",
