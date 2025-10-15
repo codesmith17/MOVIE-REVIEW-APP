@@ -1,7 +1,0 @@
-# Ignore root-level files during Vercel deployment
-# Vercel should deploy from frontend or backend subdirectories
-node_modules/
-.husky/
-package.json
-package-lock.json
-
