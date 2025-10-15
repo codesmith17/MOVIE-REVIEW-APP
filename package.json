@@ -2,11 +2,14 @@
   "name": "movie-review-app",
   "version": "1.0.0",
   "private": true,
-  "description": "Movie Review Application",
+  "description": "Movie Review Application - Monorepo",
   "scripts": {
-    "prepare": "husky",
+    "prepare": "husky || true",
     "lint": "npm run lint --prefix frontend && npm run lint --prefix backend",
     "format": "npm run format --prefix frontend && npm run format --prefix backend"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   },
   "devDependencies": {
     "husky": "^9.1.7",
