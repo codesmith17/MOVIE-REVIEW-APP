@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef, useMemo } from "react";
 import { FaPlay, FaTimes } from "react-icons/fa";
 
 const MovieVideos = ({ videos }) => {

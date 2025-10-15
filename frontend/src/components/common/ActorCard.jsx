@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 
 const ActorCard = ({ id, name, profilePath, character, gender }) => {

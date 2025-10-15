@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 // import { FaStar } from "react-icons/fa";
 import { MovieCard } from "../movie";

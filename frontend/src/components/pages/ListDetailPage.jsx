@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { MovieCard } from "../movie"; // Assuming MovieCard component is in the same directory
 

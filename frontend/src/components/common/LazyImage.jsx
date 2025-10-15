@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from "react";
 /**
  * LazyImage - Optimized image component with lazy loading and skeleton state
  * Prevents browser from loading all images at once

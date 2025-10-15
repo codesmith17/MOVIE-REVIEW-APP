@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { MovieSection } from "../movie";
 import { MovieLoader } from "../common";
 import { FaFire, FaStar, FaTv, FaFilm, FaPlus, FaCheck, FaTimes } from "react-icons/fa";

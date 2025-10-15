@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 // EditReviewModal.js
 import { Modal } from "react-responsive-modal";
 import "react-responsive-modal/styles.css";

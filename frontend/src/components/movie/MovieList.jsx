@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useLocation } from "react-router-dom";
 import MovieCard from "./MovieCard";
 import { Loading } from "../common";

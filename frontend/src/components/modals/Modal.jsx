@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { FaTimes } from "react-icons/fa";
 
 const Modal = ({ isOpen, toggleModal, children, maxWidth = "5xl", showCloseButton = true }) => {
