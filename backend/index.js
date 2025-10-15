@@ -119,26 +119,26 @@ app.use("/api/tmdb", tmdbRoutes);
 // Serve static files from frontend build (AFTER API routes)
 const frontendPath = path.join(__dirname, "../frontend/dist");
 
-// Serve static assets (JS, CSS, images, etc.)
-app.use(express.static(frontendPath));
+// Serve static assets with proper fallback
+app.use(
+  express.static(frontendPath, {
+    maxAge: "1d",
+    etag: true,
+  })
+);
 
-// SPA fallback - serve index.html for navigation routes (not for files)
-app.get("*", (req, res, next) => {
-  // If the request is for a file (has extension), let it 404
-  if (path.extname(req.path)) {
-    return next();
-  }
-
-  // Otherwise serve index.html for SPA routing
-  const indexPath = path.join(frontendPath, "index.html");
-  if (fs.existsSync(indexPath)) {
-    res.sendFile(indexPath);
-  } else {
-    res.status(500).json({
-      error: "Frontend not built",
-      message: "Frontend dist folder not found",
-    });
-  }
+// SPA fallback - MUST come after static middleware
+// This catches all non-API, non-static-file routes and serves index.html
+app.get("*", (req, res) => {
+  res.sendFile(path.join(frontendPath, "index.html"), (err) => {
+    if (err) {
+      console.error("Error serving index.html:", err);
+      res.status(500).json({
+        error: "Failed to serve application",
+        message: err.message,
+      });
+    }
+  });
 });
 
 // Error handler
