@@ -63,14 +63,7 @@ async function connectToDatabase() {
 
 app.use(bodyParser.urlencoded({ extended: false }));
 
-// Serve static files from frontend build (in production)
-if (process.env.NODE_ENV === "production") {
-  const frontendPath = path.join(__dirname, "../frontend/dist");
-  app.use(express.static(frontendPath));
-  console.log("Serving frontend from:", frontendPath);
-}
-
-// Health check route (no DB required) - MUST be before DB middleware
+// Health check route (no DB required) - MUST be first
 app.get("/health", (req, res) => {
   res.json({
     status: "ok",
@@ -80,8 +73,27 @@ app.get("/health", (req, res) => {
   });
 });
 
-// Middleware to ensure DB connection before handling requests (after health check)
-app.use(async (req, res, next) => {
+// API health check (with DB)
+app.get("/api/health", async (req, res) => {
+  try {
+    await connectToDatabase();
+    res.json({
+      status: "ok",
+      message: "Movie Review API is running",
+      timestamp: new Date().toISOString(),
+      database: "connected",
+    });
+  } catch (err) {
+    res.status(500).json({
+      status: "error",
+      message: "Database connection failed",
+      timestamp: new Date().toISOString(),
+    });
+  }
+});
+
+// Middleware to ensure DB connection for API routes only
+app.use("/api", async (req, res, next) => {
   try {
     await connectToDatabase();
     next();
@@ -95,16 +107,6 @@ app.use(async (req, res, next) => {
   }
 });
 
-// Basic root route (requires DB)
-app.get("/", (req, res) => {
-  res.json({
-    status: "ok",
-    message: "Movie Review API is running",
-    timestamp: new Date().toISOString(),
-    database: "connected",
-  });
-});
-
 // API routes
 app.use("/api/auth", authRoutes);
 app.use("/api/review", reviewRoutes);
@@ -112,17 +114,14 @@ app.use("/api/movie", movieRoutes);
 app.use("/api/comment", commentRoutes);
 app.use("/api/list", listRoutes);
 
-// Serve frontend for all non-API routes (SPA fallback)
-if (process.env.NODE_ENV === "production") {
-  app.get("*", (req, res) => {
-    res.sendFile(path.join(__dirname, "../frontend/dist/index.html"));
-  });
-} else {
-  // 404 handler for development
-  app.use((req, res) => {
-    res.status(404).json({ error: "Route not found" });
-  });
-}
+// Serve static files from frontend build (AFTER API routes)
+const frontendPath = path.join(__dirname, "../frontend/dist");
+app.use(express.static(frontendPath));
+
+// SPA fallback - serve index.html for all non-API routes
+app.get("*", (req, res) => {
+  res.sendFile(path.join(frontendPath, "index.html"));
+});
 
 // Error handler
 app.use((err, req, res, next) => {
