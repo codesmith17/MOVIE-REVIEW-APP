@@ -6,7 +6,7 @@ import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
-const TMDB_BEARER_TOKEN = import.meta.env.VITE_TMDB_BEARER_TOKEN;
+const BACKEND_URL = import.meta.env.VITE_BACKEND_BASE_URL || "";
 
 const HomePage = () => {
   const [nowPlayingMovies, setNowPlayingMovies] = useState([]);
@@ -30,15 +30,9 @@ const HomePage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchMovies = async (url, setMovies) => {
+    const fetchMovies = async (url, setMovies, isTrending = false) => {
       try {
-        const response = await fetch(url, {
-          method: "GET",
-          headers: {
-            accept: "application/json",
-            Authorization: `Bearer ${TMDB_BEARER_TOKEN}`,
-          },
-        });
+        const response = await fetch(url);
 
         if (!response.ok) {
           throw new Error(`Network response was not ok, status: ${response.status}`);
@@ -48,7 +42,7 @@ const HomePage = () => {
         setMovies(data.results.slice(0, 10));
 
         // Set hero movie from trending
-        if (url.includes("trending/movie/day") && data.results.length > 0) {
+        if (isTrending && data.results.length > 0) {
           setHeroMovie(data.results[0]);
         }
       } catch (error) {
@@ -60,46 +54,16 @@ const HomePage = () => {
     const fetchAllMovies = async () => {
       setLoading(true);
       await Promise.all([
-        fetchMovies(
-          "https://api.themoviedb.org/3/trending/movie/day?language=en-US&page=1",
-          setTrendingMoviesByDay
-        ),
-        fetchMovies(
-          "https://api.themoviedb.org/3/trending/movie/week?language=en-US&page=1",
-          setTrendingMoviesByWeek
-        ),
-        fetchMovies(
-          "https://api.themoviedb.org/3/movie/now_playing?language=en-US&page=1",
-          setNowPlayingMovies
-        ),
-        fetchMovies(
-          "https://api.themoviedb.org/3/movie/popular?language=en-US&page=1",
-          setPopularMovies
-        ),
-        fetchMovies(
-          "https://api.themoviedb.org/3/movie/upcoming?language=en-US&page=1",
-          setUpcomingMovies
-        ),
-        fetchMovies(
-          "https://api.themoviedb.org/3/movie/top_rated?language=en-US&page=1",
-          setTopRatedMovies
-        ),
-        fetchMovies(
-          "https://api.themoviedb.org/3/tv/popular?language=en-US&page=1",
-          setLatestShows
-        ),
-        fetchMovies(
-          "https://api.themoviedb.org/3/trending/tv/day?language=en-US&page=1",
-          setTrendingShows
-        ),
-        fetchMovies(
-          "https://api.themoviedb.org/3/tv/on_the_air?language=en-US&page=1",
-          setOnTheAirShows
-        ),
-        fetchMovies(
-          "https://api.themoviedb.org/3/tv/top_rated?language=en-US&page=1",
-          setTopRatedShows
-        ),
+        fetchMovies(`${BACKEND_URL}/api/tmdb/trending/movie/day`, setTrendingMoviesByDay, true),
+        fetchMovies(`${BACKEND_URL}/api/tmdb/trending/movie/week`, setTrendingMoviesByWeek),
+        fetchMovies(`${BACKEND_URL}/api/tmdb/movie/now_playing`, setNowPlayingMovies),
+        fetchMovies(`${BACKEND_URL}/api/tmdb/movie/popular`, setPopularMovies),
+        fetchMovies(`${BACKEND_URL}/api/tmdb/movie/upcoming`, setUpcomingMovies),
+        fetchMovies(`${BACKEND_URL}/api/tmdb/movie/top_rated`, setTopRatedMovies),
+        fetchMovies(`${BACKEND_URL}/api/tmdb/tv/popular`, setLatestShows),
+        fetchMovies(`${BACKEND_URL}/api/tmdb/trending/tv/day`, setTrendingShows),
+        fetchMovies(`${BACKEND_URL}/api/tmdb/tv/on_the_air`, setOnTheAirShows),
+        fetchMovies(`${BACKEND_URL}/api/tmdb/tv/top_rated`, setTopRatedShows),
       ]);
       setLoading(false);
     };

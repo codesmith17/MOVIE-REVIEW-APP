@@ -11,8 +11,7 @@ import "../../styles/quill-dark.css";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
-const API_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
-const TMDB_BEARER_TOKEN = import.meta.env.VITE_TMDB_BEARER_TOKEN;
+const API_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL || "";
 
 const MovieSpecificActivity = () => {
   const { movieId, username } = useParams();
@@ -41,16 +40,7 @@ const MovieSpecificActivity = () => {
       setLoading(true);
 
       // Fetch movie details
-      const movieResponse = await fetch(
-        `https://api.themoviedb.org/3/movie/${movieId}?language=en-US`,
-        {
-          method: "GET",
-          headers: {
-            accept: "application/json",
-            Authorization: `Bearer ${TMDB_BEARER_TOKEN}`,
-          },
-        }
-      );
+      const movieResponse = await fetch(`${API_BASE_URL}/api/tmdb/movie/${movieId}`);
 
       let imdb_id = "";
       if (movieResponse.ok) {

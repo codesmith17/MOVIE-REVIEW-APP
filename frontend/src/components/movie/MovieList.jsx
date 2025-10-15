@@ -3,9 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import MovieCard from "./MovieCard";
 import { Loading } from "../common";
 
-// Use the Bearer token from .env
-const TMDB_BEARER_TOKEN = import.meta.env.VITE_TMDB_BEARER_TOKEN;
-const BASE_URL = "https://api.themoviedb.org/3";
+const API_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL || "";
 
 const MovieList = () => {
   const [movieData, setMovieData] = useState([]);
@@ -37,13 +35,9 @@ const MovieList = () => {
     setLoading(true);
     setError("");
     try {
-      const response = await fetch(`${BASE_URL}/search/multi?query=${searchText}&page=${pageNum}`, {
-        method: "GET",
-        headers: {
-          accept: "application/json",
-          Authorization: `Bearer ${TMDB_BEARER_TOKEN}`,
-        },
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/api/tmdb/search/multi?query=${searchText}&page=${pageNum}`
+      );
       const data = await response.json();
       if (data.status_code === 7) {
         setError("Invalid API key. Please contact support or check your API key.");

@@ -18,8 +18,7 @@ import MovieVideos from "./MovieVideos";
 import WatchProviders from "./WatchProviders";
 import MovieCard from "./MovieCard";
 import { WriteReviewModal } from "../modals";
-const TMDB_BEARER_TOKEN = import.meta.env.VITE_TMDB_BEARER_TOKEN;
-const API_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
+const API_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL || "";
 
 const MoviePage = () => {
   const male_image =
@@ -220,14 +219,8 @@ const MoviePage = () => {
   };
   const fetchCastData = useCallback(() => {
     if (mediaType && id) {
-      const url = `https://api.themoviedb.org/3/${mediaType}/${id}/credits?language=en-US`;
-      fetch(url, {
-        method: "GET",
-        headers: {
-          accept: "application/json",
-          Authorization: `Bearer ${TMDB_BEARER_TOKEN}`,
-        },
-      })
+      const url = `${API_BASE_URL}/api/tmdb/${mediaType}/${id}/credits`;
+      fetch(url)
         .then((res) => res.json())
         .then((data) => {
           setCast(data.cast.slice(0, 10));
@@ -271,14 +264,8 @@ const MoviePage = () => {
   useEffect(() => {
     const fetchMovieData = () => {
       if (!mediaType || !id) return;
-      const url = `https://api.themoviedb.org/3/${mediaType}/${id}?language=en-US`;
-      fetch(url, {
-        method: "GET",
-        headers: {
-          accept: "application/json",
-          Authorization: `Bearer ${TMDB_BEARER_TOKEN}`,
-        },
-      })
+      const url = `${API_BASE_URL}/api/tmdb/${mediaType}/${id}`;
+      fetch(url)
         .then((response) => response.json())
         .then(async (res) => {
           // For TV shows, use TMDB ID with 'tv-' prefix since they don't have IMDB IDs
@@ -316,16 +303,7 @@ const MoviePage = () => {
 
     const fetchWatchProviders = async () => {
       try {
-        const response = await fetch(
-          `https://api.themoviedb.org/3/${mediaType}/${id}/watch/providers`,
-          {
-            method: "GET",
-            headers: {
-              accept: "application/json",
-              Authorization: `Bearer ${TMDB_BEARER_TOKEN}`,
-            },
-          }
-        );
+        const response = await fetch(`${API_BASE_URL}/api/tmdb/${mediaType}/${id}/providers`);
         if (!response.ok) throw new Error("Failed to fetch watch providers");
         const data = await response.json();
         setWatchProviders(data.results);
@@ -336,14 +314,8 @@ const MoviePage = () => {
     const fetchVideos = async () => {
       setVideoLoading(true);
       try {
-        const url = `https://api.themoviedb.org/3/${mediaType}/${id}/videos?language=en-US`;
-        fetch(url, {
-          method: "GET",
-          headers: {
-            accept: "application/json",
-            Authorization: `Bearer ${TMDB_BEARER_TOKEN}`,
-          },
-        })
+        const url = `${API_BASE_URL}/api/tmdb/${mediaType}/${id}/videos`;
+        fetch(url)
           .then((res) => res.json())
           .then((data) => {
             setVideos(data.results || []);
@@ -407,14 +379,8 @@ const MoviePage = () => {
     const getRecommendations = async () => {
       setLoadingRecommendations(true);
       try {
-        const url = `https://api.themoviedb.org/3/${mediaType}/${id}/recommendations?language=en-US&page=1`;
-        const response = await fetch(url, {
-          method: "GET",
-          headers: {
-            accept: "application/json",
-            Authorization: `Bearer ${TMDB_BEARER_TOKEN}`,
-          },
-        });
+        const url = `${API_BASE_URL}/api/tmdb/${mediaType}/${id}/recommendations`;
+        const response = await fetch(url);
         if (!response.ok) throw new Error("Failed to fetch recommendations");
         const data = await response.json();
         setRecommendations(data.results || []);

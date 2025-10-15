@@ -31,6 +31,7 @@ const reviewRoutes = require("./routes/Review.route");
 const movieRoutes = require("./routes/Movie.route");
 const commentRoutes = require("./routes/Comment.route");
 const listRoutes = require("./routes/List.route");
+const tmdbRoutes = require("./routes/Tmdb.route");
 // const subtitleRoutes = require('./routes/subtitleRoutes'); // Disabled for now
 
 // MongoDB connection with caching for serverless
@@ -113,33 +114,29 @@ app.use("/api/review", reviewRoutes);
 app.use("/api/movie", movieRoutes);
 app.use("/api/comment", commentRoutes);
 app.use("/api/list", listRoutes);
+app.use("/api/tmdb", tmdbRoutes);
 
 // Serve static files from frontend build (AFTER API routes)
 const frontendPath = path.join(__dirname, "../frontend/dist");
-console.log("Frontend path:", frontendPath);
-console.log("Directory exists:", require("fs").existsSync(frontendPath));
 
-app.use(
-  express.static(frontendPath, {
-    index: false, // Don't auto-serve index.html here
-    fallthrough: true,
-  })
-);
+// Serve static assets (JS, CSS, images, etc.)
+app.use(express.static(frontendPath));
 
-// SPA fallback - serve index.html for all non-API routes
-app.get("*", (req, res) => {
+// SPA fallback - serve index.html for navigation routes (not for files)
+app.get("*", (req, res, next) => {
+  // If the request is for a file (has extension), let it 404
+  if (path.extname(req.path)) {
+    return next();
+  }
+
+  // Otherwise serve index.html for SPA routing
   const indexPath = path.join(frontendPath, "index.html");
-  console.log("Trying to serve:", indexPath);
-  console.log("File exists:", require("fs").existsSync(indexPath));
-
-  if (require("fs").existsSync(indexPath)) {
+  if (fs.existsSync(indexPath)) {
     res.sendFile(indexPath);
   } else {
     res.status(500).json({
       error: "Frontend not built",
       message: "Frontend dist folder not found",
-      path: frontendPath,
-      __dirname,
     });
   }
 });

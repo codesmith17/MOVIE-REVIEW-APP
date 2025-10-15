@@ -11,8 +11,7 @@ import "../../styles/quill-dark.css";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
-const API_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
-const TMDB_BEARER_TOKEN = import.meta.env.VITE_TMDB_BEARER_TOKEN;
+const API_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL || "";
 
 const ActivityPage = () => {
   const { username } = useParams();
@@ -71,16 +70,7 @@ const ActivityPage = () => {
     await Promise.all(
       reviews.map(async (review) => {
         try {
-          const response = await fetch(
-            `https://api.themoviedb.org/3/movie/${review.imdbID}?language=en-US`,
-            {
-              method: "GET",
-              headers: {
-                accept: "application/json",
-                Authorization: `Bearer ${TMDB_BEARER_TOKEN}`,
-              },
-            }
-          );
+          const response = await fetch(`${API_BASE_URL}/api/tmdb/movie/${review.imdbID}`);
 
           if (response.ok) {
             const movieData = await response.json();

@@ -26,8 +26,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-toastify";
 import FollowedByList from "../user/FollowedByList";
 import UserActivitySummary from "../user/UserActivitySummary";
-const TMDB_BEARER_TOKEN = import.meta.env.VITE_TMDB_BEARER_TOKEN;
-const API_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
+const API_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL || "";
 
 const UserPage = () => {
   const { username } = useParams();
@@ -103,15 +102,7 @@ const UserPage = () => {
   const handleSearchMovie = async () => {
     try {
       setLoading(true);
-      const response = await fetch(
-        `https://api.themoviedb.org/3/search/movie?query=${searchQuery}&language=en-US&page=1`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${TMDB_BEARER_TOKEN}`,
-          },
-        }
-      );
+      const response = await fetch(`${API_BASE_URL}/api/tmdb/search/movie?query=${searchQuery}`);
 
       if (!response.ok) throw new Error("Failed to search movies");
       const data = await response.json();
@@ -723,16 +714,7 @@ const ReviewsTab = ({ username }) => {
             }
           }
 
-          const response = await fetch(
-            `https://api.themoviedb.org/3/${mediaType}/${mediaId}?language=en-US`,
-            {
-              method: "GET",
-              headers: {
-                accept: "application/json",
-                Authorization: `Bearer ${TMDB_BEARER_TOKEN}`,
-              },
-            }
-          );
+          const response = await fetch(`${API_BASE_URL}/api/tmdb/${mediaType}/${mediaId}`);
 
           if (response.ok) {
             const data = await response.json();
@@ -1112,15 +1094,7 @@ const ListsTab = ({ username }) => {
   const handleSearchMovie = async () => {
     try {
       setLoading(true);
-      const response = await fetch(
-        `https://api.themoviedb.org/3/search/multi?query=${searchQuery}&language=en-US&page=1`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${TMDB_BEARER_TOKEN}`,
-          },
-        }
-      );
+      const response = await fetch(`${API_BASE_URL}/api/tmdb/search/multi?query=${searchQuery}`);
 
       if (!response.ok) throw new Error("Failed to search movies and shows");
       const data = await response.json();

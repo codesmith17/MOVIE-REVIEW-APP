@@ -16,8 +16,7 @@ import { MdDelete } from "react-icons/md";
 import { Modal } from "../modals";
 import { motion, AnimatePresence } from "framer-motion";
 
-const API_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
-const TMDB_BEARER_TOKEN = import.meta.env.VITE_TMDB_BEARER_TOKEN;
+const API_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL || "";
 
 const SingleReview = () => {
   const { imdbID, reviewID } = useParams();
@@ -322,13 +321,7 @@ const SingleReview = () => {
       const mediaType = imdbID.startsWith("tv-") ? "tv" : "movie";
       const mediaId = imdbID.replace(/^(tv|movie)-/, "");
 
-      fetch(`https://api.themoviedb.org/3/${mediaType}/${mediaId}?language=en-US`, {
-        method: "GET",
-        headers: {
-          accept: "application/json",
-          Authorization: `Bearer ${TMDB_BEARER_TOKEN}`,
-        },
-      })
+      fetch(`${API_BASE_URL}/api/tmdb/${mediaType}/${mediaId}`)
         .then((response) => response.json())
         .then((data) => {
           if (data.poster_path) {
@@ -344,13 +337,7 @@ const SingleReview = () => {
         });
     } else {
       // Use TMDB's find API for traditional IMDB IDs
-      fetch(`https://api.themoviedb.org/3/find/${imdbID}?external_source=imdb_id&language=en-US`, {
-        method: "GET",
-        headers: {
-          accept: "application/json",
-          Authorization: `Bearer ${TMDB_BEARER_TOKEN}`,
-        },
-      })
+      fetch(`${API_BASE_URL}/api/tmdb/find/${imdbID}`)
         .then((response) => response.json())
         .then((data) => {
           // Check both movie_results and tv_results

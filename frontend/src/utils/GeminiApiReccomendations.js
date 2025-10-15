@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-const TMDB_BEARER_TOKEN = import.meta.env.VITE_TMDB_BEARER_TOKEN;
+const API_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL || "";
 
 const genAI = new GoogleGenerativeAI(GOOGLE_API_KEY);
 
@@ -29,16 +29,9 @@ export const fetchRecommendations = async (imdbID, title, year) => {
 
 async function fetchMovieDetails(title) {
   try {
-    // Use TMDB search API instead of OMDB
+    // Use backend TMDB proxy API
     const response = await fetch(
-      `https://api.themoviedb.org/3/search/movie?query=${encodeURIComponent(title)}&language=en-US&page=1`,
-      {
-        method: "GET",
-        headers: {
-          accept: "application/json",
-          Authorization: `Bearer ${TMDB_BEARER_TOKEN}`,
-        },
-      }
+      `${API_BASE_URL}/api/tmdb/search/movie?query=${encodeURIComponent(title)}`
     );
     const data = await response.json();
 

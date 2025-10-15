@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { MovieCard } from "../movie"; // Assuming MovieCard component is in the same directory
 
-const TMDB_BEARER_TOKEN = import.meta.env.VITE_TMDB_BEARER_TOKEN;
+const API_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL || "";
 
 const ListDetailPage = () => {
   const location = useLocation();
@@ -16,15 +16,9 @@ const ListDetailPage = () => {
 
       // Fetch details for each movie in list.content
       const promises = list.content.map(async (movie) => {
-        const url = `https://api.themoviedb.org/3/movie/${movie.id}?language=en-US`;
+        const url = `${API_BASE_URL}/api/tmdb/movie/${movie.id}`;
         try {
-          const response = await fetch(url, {
-            method: "GET",
-            headers: {
-              accept: "application/json",
-              Authorization: `Bearer ${TMDB_BEARER_TOKEN}`,
-            },
-          });
+          const response = await fetch(url);
           if (!response.ok) {
             throw new Error("Failed to fetch movie details");
           }

@@ -4,7 +4,7 @@ import { useParams, Link } from "react-router-dom";
 import { MovieCard } from "../movie";
 // import ActorCard from "./ActorCard";
 
-const TMDB_BEARER_TOKEN = import.meta.env.VITE_TMDB_BEARER_TOKEN;
+const API_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL || "";
 
 const PersonPage = () => {
   const [personData, setPersonData] = useState(null);
@@ -14,14 +14,7 @@ const PersonPage = () => {
   useEffect(() => {
     const fetchPersonData = async () => {
       try {
-        const response = await fetch(
-          `https://api.themoviedb.org/3/person/${id}?append_to_response=combined_credits&language=en-US`,
-          {
-            headers: {
-              Authorization: `Bearer ${TMDB_BEARER_TOKEN}`,
-            },
-          }
-        );
+        const response = await fetch(`${API_BASE_URL}/api/tmdb/person/${id}`);
         if (!response.ok) {
           throw new Error("Network response was not ok");
         }

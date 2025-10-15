@@ -13,8 +13,7 @@ import {
 } from "react-icons/fa";
 import { toast } from "react-toastify";
 
-const API_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
-const TMDB_BEARER_TOKEN = import.meta.env.VITE_TMDB_BEARER_TOKEN;
+const API_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL || "";
 const ITEMS_PER_PAGE = 12;
 
 const ReviewsListPage = () => {
@@ -70,16 +69,7 @@ const ReviewsListPage = () => {
             }
           }
 
-          const response = await fetch(
-            `https://api.themoviedb.org/3/${mediaType}/${mediaId}?language=en-US`,
-            {
-              method: "GET",
-              headers: {
-                accept: "application/json",
-                Authorization: `Bearer ${TMDB_BEARER_TOKEN}`,
-              },
-            }
-          );
+          const response = await fetch(`${API_BASE_URL}/api/tmdb/${mediaType}/${mediaId}`);
 
           if (response.ok) {
             const data = await response.json();
