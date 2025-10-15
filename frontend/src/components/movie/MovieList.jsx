@@ -126,6 +126,7 @@ const MovieList = () => {
                 <img
                   src={`https://image.tmdb.org/t/p/w154${item.poster_path}`}
                   alt={item.title || item.name}
+                  crossOrigin="anonymous"
                   className="w-full sm:w-32 h-48 object-cover bg-gray-800 flex-shrink-0"
                   loading="lazy"
                   onError={() => handleImageError(item.id)}
