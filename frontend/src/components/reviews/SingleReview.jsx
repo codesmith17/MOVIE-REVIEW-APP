@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { AiFillDislike } from "react-icons/ai";
 import DatePicker from "react-datepicker";
@@ -8,14 +8,7 @@ import "../../styles/quill-dark.css";
 import "react-datepicker/dist/react-datepicker.css";
 import { AiFillLike } from "react-icons/ai";
 import { StarRating, ReadOnlyStarRating, Loading } from "../common";
-import {
-  FaStar,
-  FaStarHalfAlt,
-  FaEdit,
-  FaCalendarAlt,
-  FaThumbsUp,
-  FaReply,
-} from "react-icons/fa";
+import { FaStar, FaStarHalfAlt, FaEdit, FaCalendarAlt, FaThumbsUp, FaReply } from "react-icons/fa";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useSelector } from "react-redux";
@@ -51,9 +44,10 @@ const SingleReview = () => {
   const [replyLikes, setReplyLikes] = useState({});
   const [totalComments, setTotalComments] = useState(0);
   const [hasMoreComments, setHasMoreComments] = useState(true);
+  const [notFound, setNotFound] = useState(false);
 
   // New function to handle reply likes
-  const [_, setIsUpdatingRating] = useState(false);
+  const [, setIsUpdatingRating] = useState(false);
 
   const handleRatingChange = async (newRating) => {
     setRating(newRating);
@@ -69,7 +63,7 @@ const SingleReview = () => {
           },
           credentials: "include",
           body: JSON.stringify({ rating: newRating }),
-        },
+        }
       );
       if (response.status === 400) {
         toast.error("Failed to update rating. Please login to rate");
@@ -122,13 +116,11 @@ const SingleReview = () => {
               ? {
                   ...comment,
                   replies: comment.replies.map((reply, index) =>
-                    index === replyIndex
-                      ? { ...reply, likes: data.likes }
-                      : reply,
+                    index === replyIndex ? { ...reply, likes: data.likes } : reply
                   ),
                 }
-              : comment,
-          ),
+              : comment
+          )
         );
         setReplyLikes((prev) => ({
           ...prev,
@@ -157,20 +149,15 @@ const SingleReview = () => {
     // console.log(username);
 
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/auth/getOthersData/${username}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
+      const response = await fetch(`${API_BASE_URL}/api/auth/getOthersData/${username}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
         },
-      );
+      });
       // console.log(response);
       if (!response.ok) {
         throw new Error("Failed to fetch user data");
-
-        return;
       }
 
       const data = await response.json();
@@ -214,7 +201,7 @@ const SingleReview = () => {
           headers: {
             "Content-Type": "application/json",
           },
-        },
+        }
       );
 
       if (response.ok) {
@@ -229,9 +216,7 @@ const SingleReview = () => {
         setPersonalReview(data.review);
         // console.log(personalReview);
         const dateLoggedString = data.review.dateLogged;
-        const dateLogged = new Date(
-          dateLoggedString.split("/").reverse().join("-"),
-        );
+        const dateLogged = new Date(dateLoggedString.split("/").reverse().join("-"));
         if (!isNaN(dateLogged.getTime())) {
           setSelectedDate(dateLogged);
         } else {
@@ -261,7 +246,7 @@ const SingleReview = () => {
             "Content-Type": "application/json",
           },
           credentials: "include",
-        },
+        }
       );
 
       if (response.ok) {
@@ -282,9 +267,7 @@ const SingleReview = () => {
           .map((comment) => comment?._id);
         setCurrentLiked(likedComments);
         const dislikedComments = data?.data
-          .filter((comment) =>
-            comment?.dislikedBy.includes(user?.data.username),
-          )
+          .filter((comment) => comment?.dislikedBy.includes(user?.data.username))
           .map((comment) => comment?._id);
         setCurrentDisliked(dislikedComments);
       } else {
@@ -339,16 +322,13 @@ const SingleReview = () => {
       const mediaType = imdbID.startsWith("tv-") ? "tv" : "movie";
       const mediaId = imdbID.replace(/^(tv|movie)-/, "");
 
-      fetch(
-        `https://api.themoviedb.org/3/${mediaType}/${mediaId}?language=en-US`,
-        {
-          method: "GET",
-          headers: {
-            accept: "application/json",
-            Authorization: `Bearer ${TMDB_BEARER_TOKEN}`,
-          },
+      fetch(`https://api.themoviedb.org/3/${mediaType}/${mediaId}?language=en-US`, {
+        method: "GET",
+        headers: {
+          accept: "application/json",
+          Authorization: `Bearer ${TMDB_BEARER_TOKEN}`,
         },
-      )
+      })
         .then((response) => response.json())
         .then((data) => {
           if (data.poster_path) {
@@ -364,16 +344,13 @@ const SingleReview = () => {
         });
     } else {
       // Use TMDB's find API for traditional IMDB IDs
-      fetch(
-        `https://api.themoviedb.org/3/find/${imdbID}?external_source=imdb_id&language=en-US`,
-        {
-          method: "GET",
-          headers: {
-            accept: "application/json",
-            Authorization: `Bearer ${TMDB_BEARER_TOKEN}`,
-          },
+      fetch(`https://api.themoviedb.org/3/find/${imdbID}?external_source=imdb_id&language=en-US`, {
+        method: "GET",
+        headers: {
+          accept: "application/json",
+          Authorization: `Bearer ${TMDB_BEARER_TOKEN}`,
         },
-      )
+      })
         .then((response) => response.json())
         .then((data) => {
           // Check both movie_results and tv_results
@@ -406,7 +383,7 @@ const SingleReview = () => {
             rating: starRatingTemp,
             dateLogged: selectedDate,
           }),
-        },
+        }
       );
 
       if (response.ok) {
@@ -489,10 +466,8 @@ const SingleReview = () => {
         }
         setComments((prev) =>
           prev.map((comment) =>
-            comment._id === commentID
-              ? { ...comment, likes: data.likes }
-              : comment,
-          ),
+            comment._id === commentID ? { ...comment, likes: data.likes } : comment
+          )
         );
       } else {
         toast.error("Failed to like/unlike comment");
@@ -505,20 +480,17 @@ const SingleReview = () => {
 
   const handleCommentDislike = async (commentID) => {
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/comment/dislikeComment`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-          body: JSON.stringify({
-            commentID,
-            username: user.data.username,
-          }),
+      const response = await fetch(`${API_BASE_URL}/api/comment/dislikeComment`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-      );
+        credentials: "include",
+        body: JSON.stringify({
+          commentID,
+          username: user.data.username,
+        }),
+      });
       if (response.ok) {
         const data = await response.json();
         if (currentLiked.includes(commentID)) {
@@ -533,10 +505,8 @@ const SingleReview = () => {
         }
         setComments((prev) =>
           prev.map((comment) =>
-            comment._id === commentID
-              ? { ...comment, dislikes: data.dislikes }
-              : comment,
-          ),
+            comment._id === commentID ? { ...comment, dislikes: data.dislikes } : comment
+          )
         );
       } else {
         toast.error("Failed to dislike/undislike comment");
@@ -577,8 +547,8 @@ const SingleReview = () => {
                   ...comment,
                   replies: [...(comment.replies || []), data.reply],
                 }
-              : comment,
-          ),
+              : comment
+          )
         );
         setReplyComment((prev) => ({ ...prev, [commentID]: "" }));
         toast.success("Reply posted successfully!");
@@ -605,7 +575,7 @@ const SingleReview = () => {
             "Content-Type": "application/json",
           },
           credentials: "include",
-        },
+        }
       );
 
       if (response.ok) {
@@ -624,9 +594,7 @@ const SingleReview = () => {
         setCurrentLiked(likedComments);
 
         const dislikedComments = data?.data
-          .filter((comment) =>
-            comment?.dislikedBy.includes(user?.data.username),
-          )
+          .filter((comment) => comment?.dislikedBy.includes(user?.data.username))
           .map((comment) => comment?._id);
         setCurrentDisliked(dislikedComments);
       } else {
@@ -640,26 +608,23 @@ const SingleReview = () => {
   const handleDeleteComment = async (commentID) => {
     if (
       !window.confirm(
-        "Are you sure you want to delete this comment? All replies will also be deleted.",
+        "Are you sure you want to delete this comment? All replies will also be deleted."
       )
     ) {
       return;
     }
 
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/comment/deleteComment/${commentID}`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-          body: JSON.stringify({
-            reviewOwner: personalReview.username,
-          }),
+      const response = await fetch(`${API_BASE_URL}/api/comment/deleteComment/${commentID}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
         },
-      );
+        credentials: "include",
+        body: JSON.stringify({
+          reviewOwner: personalReview.username,
+        }),
+      });
 
       if (response.ok) {
         // Update the comment to show as deleted instead of removing it
@@ -672,8 +637,8 @@ const SingleReview = () => {
                   deleted: true,
                   replies: [],
                 }
-              : comment,
-          ),
+              : comment
+          )
         );
         toast.success("Comment deleted successfully");
       } else {
@@ -712,12 +677,10 @@ const SingleReview = () => {
             comment._id === commentID
               ? {
                   ...comment,
-                  replies: comment.replies.filter(
-                    (_, index) => index !== replyIndex,
-                  ),
+                  replies: comment.replies.filter((_, index) => index !== replyIndex),
                 }
-              : comment,
-          ),
+              : comment
+          )
         );
         toast.success("Reply deleted successfully");
       } else {
@@ -732,15 +695,10 @@ const SingleReview = () => {
 
   // Check if user can delete (is review owner or is "krishna")
   const canDelete = (commentUsername) => {
-    return (
-      user?.data?.username === personalReview?.username ||
-      user?.data?.username === "krishna"
-    );
+    return user?.data?.username === personalReview?.username || user?.data?.username === "krishna";
   };
   const handleDeleteReview = () => {
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this review?",
-    );
+    const confirmDelete = window.confirm("Are you sure you want to delete this review?");
     if (confirmDelete) {
       deleteReview();
     }
@@ -748,16 +706,13 @@ const SingleReview = () => {
 
   const deleteReview = async () => {
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/review/deleteReview/${reviewID}`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
+      const response = await fetch(`${API_BASE_URL}/api/review/deleteReview/${reviewID}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
         },
-      );
+        credentials: "include",
+      });
 
       if (response.ok) {
         toast.success("Review deleted successfully!");
@@ -835,9 +790,7 @@ const SingleReview = () => {
                   <Link to={`/user/${personalReview.username}`}>
                     <motion.img
                       whileHover={{ scale: 1.1 }}
-                      src={
-                        profilePicture || fetchedUserData?.data.profilePicture
-                      }
+                      src={profilePicture || fetchedUserData?.data.profilePicture}
                       alt="Profile"
                       className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full ring-2 sm:ring-4 ring-cyan-500/20 shadow-xl cursor-pointer"
                     />
@@ -849,9 +802,7 @@ const SingleReview = () => {
                   </h1>
                   <div className="flex items-center gap-1.5 sm:gap-2 mt-1 sm:mt-2 text-gray-400 text-xs sm:text-sm">
                     <FaCalendarAlt />
-                    <span className="break-words">
-                      {personalReview.dateLogged}
-                    </span>
+                    <span className="break-words">{personalReview.dateLogged}</span>
                   </div>
                 </div>
               </div>
@@ -865,8 +816,7 @@ const SingleReview = () => {
                     onClick={handleDeleteReview}
                     className="flex-1 md:flex-initial bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold py-2 sm:py-2.5 md:py-3 px-3 sm:px-4 md:px-6 rounded-lg transition duration-300 flex items-center justify-center gap-1.5 sm:gap-2 shadow-lg text-sm sm:text-base"
                   >
-                    <MdDelete className="text-base sm:text-lg md:text-xl" />{" "}
-                    Delete
+                    <MdDelete className="text-base sm:text-lg md:text-xl" /> Delete
                   </motion.button>
                   <motion.button
                     whileHover={{ scale: 1.05, y: -2 }}
@@ -898,10 +848,7 @@ const SingleReview = () => {
                   Rating
                 </h3>
                 <div className="bg-slate-700/30 rounded-xl p-4 sm:p-6 flex justify-center sm:justify-start">
-                  <StarRating
-                    value={rating}
-                    onRatingChange={handleRatingChange}
-                  />
+                  <StarRating value={rating} onRatingChange={handleRatingChange} />
                 </div>
               </div>
 
@@ -932,9 +879,7 @@ const SingleReview = () => {
                   }`}
                 >
                   <AiFillLike className="text-lg sm:text-xl md:text-2xl" />
-                  <span className="text-base sm:text-lg font-bold">
-                    {personalReview.likes}
-                  </span>
+                  <span className="text-base sm:text-lg font-bold">{personalReview.likes}</span>
                 </motion.button>
               </motion.div>
             </motion.div>
@@ -993,10 +938,7 @@ const SingleReview = () => {
             <div className="mb-6 sm:mb-8 text-center py-6 sm:py-8 bg-slate-700/30 rounded-xl">
               <p className="text-base sm:text-lg md:text-xl text-gray-300 px-4">
                 Please{" "}
-                <Link
-                  to="/login"
-                  className="text-cyan-400 hover:text-cyan-300 underline"
-                >
+                <Link to="/login" className="text-cyan-400 hover:text-cyan-300 underline">
                   login
                 </Link>{" "}
                 to post comments
@@ -1032,9 +974,7 @@ const SingleReview = () => {
                           {comment?.username}
                         </p>
                       </Link>
-                      <p className="text-xs text-gray-400">
-                        {getTimeAgo(comment?.time)}
-                      </p>
+                      <p className="text-xs text-gray-400">{getTimeAgo(comment?.time)}</p>
                     </div>
                   </div>
 
@@ -1165,13 +1105,9 @@ const SingleReview = () => {
                                 to={`/user/${reply?.username}`}
                                 className="hover:text-cyan-300 transition"
                               >
-                                <p className="font-semibold text-white">
-                                  {reply?.username}
-                                </p>
+                                <p className="font-semibold text-white">{reply?.username}</p>
                               </Link>
-                              <p className="text-xs text-gray-400">
-                                {getTimeAgo(reply?.time)}
-                              </p>
+                              <p className="text-xs text-gray-400">{getTimeAgo(reply?.time)}</p>
                             </div>
                           </div>
 
@@ -1180,9 +1116,7 @@ const SingleReview = () => {
                             <motion.button
                               whileHover={{ scale: 1.1 }}
                               whileTap={{ scale: 0.9 }}
-                              onClick={() =>
-                                handleDeleteReply(comment?._id, replyIndex)
-                              }
+                              onClick={() => handleDeleteReply(comment?._id, replyIndex)}
                               className="flex-shrink-0 bg-red-600/20 hover:bg-red-600/40 text-red-400 hover:text-red-300 p-2 rounded-lg transition-all duration-200 border border-red-500/30"
                               title="Delete reply"
                             >
@@ -1194,9 +1128,7 @@ const SingleReview = () => {
                         <motion.button
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
-                          onClick={() =>
-                            handleReplyLike(comment?._id, replyIndex)
-                          }
+                          onClick={() => handleReplyLike(comment?._id, replyIndex)}
                           className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-semibold text-sm transition-all ${
                             replyLikes[`${comment?._id}-${replyIndex}`]
                               ? "bg-blue-600 text-white"
@@ -1267,13 +1199,10 @@ const SingleReview = () => {
                 </label>
                 <span
                   className={`text-xs sm:text-sm ${
-                    currentReview?.length > MAX_CHARACTERS
-                      ? "text-red-400"
-                      : "text-gray-400"
+                    currentReview?.length > MAX_CHARACTERS ? "text-red-400" : "text-gray-400"
                   }`}
                 >
-                  {currentReview?.replace(/<[^>]*>/g, "").length || 0} /{" "}
-                  {MAX_CHARACTERS} characters
+                  {currentReview?.replace(/<[^>]*>/g, "").length || 0} / {MAX_CHARACTERS} characters
                 </span>
               </div>
               <div className="bg-slate-800 border border-slate-600 rounded-lg">
@@ -1284,9 +1213,7 @@ const SingleReview = () => {
                     if (textLength <= MAX_CHARACTERS) {
                       setCurrentReview(value);
                     } else {
-                      toast.error(
-                        `Review cannot exceed ${MAX_CHARACTERS} characters`,
-                      );
+                      toast.error(`Review cannot exceed ${MAX_CHARACTERS} characters`);
                     }
                   }}
                   theme="snow"
@@ -1304,10 +1231,7 @@ const SingleReview = () => {
                 Rating
               </label>
               <div className="bg-slate-700/30 rounded-xl p-3 sm:p-4 inline-block">
-                <StarRating
-                  value={starRatingTemp}
-                  onRatingChange={setStarRatingTemp}
-                />
+                <StarRating value={starRatingTemp} onRatingChange={setStarRatingTemp} />
               </div>
             </div>
 
@@ -1321,9 +1245,7 @@ const SingleReview = () => {
               <button
                 className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white font-semibold py-2 sm:py-2.5 md:py-3 px-4 sm:px-5 md:px-6 rounded-lg shadow-lg transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base w-full sm:w-auto"
                 onClick={handleReviewEditSubmit}
-                disabled={
-                  currentReview?.replace(/<[^>]*>/g, "").length > MAX_CHARACTERS
-                }
+                disabled={currentReview?.replace(/<[^>]*>/g, "").length > MAX_CHARACTERS}
               >
                 Save Changes
               </button>

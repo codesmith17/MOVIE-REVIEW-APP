@@ -10,8 +10,7 @@ const fs = require("fs");
 // Use native fetch in Node 18+ or fall back to node-fetch
 const fetch =
   globalThis.fetch ||
-  ((...args) =>
-    import("node-fetch").then(({ default: fetch }) => fetch(...args)));
+  ((...args) => import("node-fetch").then(({ default: fetch }) => fetch(...args)));
 
 app.use(express.json());
 app.use(
@@ -22,7 +21,7 @@ app.use(
         : ["http://localhost:5173", "https://cine-critique-alpha.vercel.app"],
     credentials: true,
     optionsSuccessStatus: 200,
-  }),
+  })
 );
 
 // Import routes
@@ -50,7 +49,7 @@ async function connectToDatabase() {
         family: 4,
         serverSelectionTimeoutMS: 10000, // Increased to 10 seconds for serverless cold starts
         socketTimeoutMS: 45000,
-      },
+      }
     );
     console.log("MongoDB CONNECTED successfully");
     cachedDb = connection;
@@ -115,10 +114,7 @@ app.use((err, req, res, next) => {
   console.error("Error:", err);
   res.status(500).json({
     error: "Internal server error",
-    message:
-      process.env.NODE_ENV === "development"
-        ? err.message
-        : "Something went wrong",
+    message: process.env.NODE_ENV === "development" ? err.message : "Something went wrong",
   });
 });
 

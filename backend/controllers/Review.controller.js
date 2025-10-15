@@ -23,15 +23,11 @@ const postReview = (req, res, next) => {
   newReview
     .save()
     .then((savedReview) => {
-      res
-        .status(200)
-        .json({ message: "Review posted successfully.", review: savedReview });
+      res.status(200).json({ message: "Review posted successfully.", review: savedReview });
     })
     .catch((err) => {
       console.error("Error posting review:", err);
-      res
-        .status(500)
-        .json({ message: "Server error. Please try again later." });
+      res.status(500).json({ message: "Server error. Please try again later." });
     });
 };
 
@@ -82,9 +78,7 @@ const getOtherReviews = (req, res, next) => {
     .limit(2)
     .then((response) => {
       if (response.length > 0) {
-        res
-          .status(200)
-          .json({ message: "REVIEWS AVAILABLE", reviews: response });
+        res.status(200).json({ message: "REVIEWS AVAILABLE", reviews: response });
         return;
       } else {
         res.status(204).json({ message: "NO REVIEWS AVAILABLE", reviews: [] });
@@ -112,9 +106,7 @@ const postReviewLikes = (req, res, next) => {
 
       if (userEmail === response.email) {
         // Prevent liking one's own review
-        res
-          .status(401)
-          .json({ message: "YOU ARE NOT ALLOWED TO LIKE YOUR OWN REVIEW" });
+        res.status(401).json({ message: "YOU ARE NOT ALLOWED TO LIKE YOUR OWN REVIEW" });
         return;
       }
 
@@ -123,16 +115,12 @@ const postReviewLikes = (req, res, next) => {
       let likes;
 
       // Check if the user has already liked the review
-      const isLikedByUser = likedArray.some(
-        (item) => item.username === req.user.email,
-      );
+      const isLikedByUser = likedArray.some((item) => item.username === req.user.email);
 
       if (isLikedByUser) {
         // Unlike the review
         likes = response.likes - 1;
-        newLikeArray = likedArray.filter(
-          (value) => value.username !== req.user.email,
-        );
+        newLikeArray = likedArray.filter((value) => value.username !== req.user.email);
       } else {
         // Like the review
         likes = response.likes + 1;
@@ -143,14 +131,9 @@ const postReviewLikes = (req, res, next) => {
       }
 
       // Update the review with the new like/unlike status
-      Review.updateOne(
-        { _id: currentReviewID },
-        { $set: { likes, likedBy: newLikeArray } },
-      )
+      Review.updateOne({ _id: currentReviewID }, { $set: { likes, likedBy: newLikeArray } })
         .then(() => {
-          res
-            .status(200)
-            .json({ message: "Review liked/unliked successfully", likes });
+          res.status(200).json({ message: "Review liked/unliked successfully", likes });
         })
         .catch((err) => {
           console.error(err);
@@ -171,9 +154,7 @@ const deleteReview = (req, res, next) => {
       if (!response) {
         res.status(404).json({ error: "Review not found" });
       }
-      res
-        .status(200)
-        .json({ message: "Review deleted successfully", response });
+      res.status(200).json({ message: "Review deleted successfully", response });
     })
     .catch((err) => {
       console.error("Error deleting review:", err);
@@ -184,11 +165,7 @@ const editReview = (req, res, next) => {
   const { reviewID } = req.params;
   const { review, rating, dateLogged } = req.body;
 
-  Review.findOneAndUpdate(
-    { _id: reviewID },
-    { review, rating, dateLogged },
-    { new: true },
-  )
+  Review.findOneAndUpdate({ _id: reviewID }, { review, rating, dateLogged }, { new: true })
     .then((updatedReview) => {
       if (!updatedReview) {
         return res.status(404).json({ error: "Review not found" });
@@ -227,9 +204,7 @@ const getReviews = async (req, res, next) => {
       return res.status(404).json({ message: "No reviews available" });
     }
 
-    return res
-      .status(200)
-      .json({ message: "Reviews fetched successfully", reviews });
+    return res.status(200).json({ message: "Reviews fetched successfully", reviews });
   } catch (err) {
     console.error("Error fetching reviews:", err);
     res.status(500).json({ error: "Failed to fetch reviews" });
@@ -252,7 +227,7 @@ const updateRating = async (req, res, next) => {
     const updatedReview = await Review.findByIdAndUpdate(
       reviewID,
       { rating },
-      { new: true, runValidators: true },
+      { new: true, runValidators: true }
     );
 
     if (!updatedReview) {
@@ -303,20 +278,13 @@ const getRating = async (req, res, next) => {
   const { username } = req.user;
   try {
     if (!imdbID || !username) {
-      return res
-        .status(400)
-        .json({ message: "IMDB ID AND USERNAME ARE REQUIRED" });
+      return res.status(400).json({ message: "IMDB ID AND USERNAME ARE REQUIRED" });
     }
-    const review = await Review.findOne(
-      { imdbID, username },
-      { rating: 1, _id: 0 },
-    );
+    const review = await Review.findOne({ imdbID, username }, { rating: 1, _id: 0 });
     if (!review) {
       return res.status(404).json({ message: "Review not found" });
     }
-    return res
-      .status(200)
-      .json({ message: "RATING FETCHED SUCCESSFULLY", rating: review.rating });
+    return res.status(200).json({ message: "RATING FETCHED SUCCESSFULLY", rating: review.rating });
   } catch (err) {
     console.error("Error fetching rating:", err);
     res.status(500).json({ error: "Failed to fetch rating" });

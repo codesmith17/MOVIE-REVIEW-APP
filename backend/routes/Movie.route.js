@@ -1,10 +1,7 @@
 const express = require("express");
 const router = express.Router();
 
-const {
-  verifyUser,
-  optionalAuth,
-} = require("../controllers/Auth.controller.js");
+const { verifyUser, optionalAuth } = require("../controllers/Auth.controller.js");
 const {
   postLikes,
   getLikes,

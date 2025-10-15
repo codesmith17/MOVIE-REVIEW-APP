@@ -1,5 +1,4 @@
 // ForgotPassword.jsx
-import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { toast } from "react-toastify";
@@ -54,10 +53,7 @@ const ForgotPassword = () => {
               </h1>
               <form className="space-y-4 md:space-y-6" onSubmit={onSubmit}>
                 <div>
-                  <label
-                    htmlFor="email"
-                    className="block mb-2 text-sm font-medium text-gray-100"
-                  >
+                  <label htmlFor="email" className="block mb-2 text-sm font-medium text-gray-100">
                     Your email
                   </label>
                   <input

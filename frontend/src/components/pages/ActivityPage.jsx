@@ -1,12 +1,5 @@
-import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import {
-  FaStar,
-  FaEdit,
-  FaCalendarAlt,
-  FaSpinner,
-  FaArrowLeft,
-} from "react-icons/fa";
+import { FaStar, FaEdit, FaCalendarAlt, FaSpinner, FaArrowLeft } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
@@ -47,9 +40,7 @@ const ActivityPage = () => {
       setLoading(true);
 
       // Fetch user reviews
-      const reviewsResponse = await fetch(
-        `${API_BASE_URL}/api/review/getReviews/${username}`,
-      );
+      const reviewsResponse = await fetch(`${API_BASE_URL}/api/review/getReviews/${username}`);
 
       if (reviewsResponse.ok) {
         const reviewsData = await reviewsResponse.json();
@@ -57,7 +48,7 @@ const ActivityPage = () => {
 
         // Sort by date (most recent first)
         const sortedReviews = reviews.sort(
-          (a, b) => new Date(b.dateLogged) - new Date(a.dateLogged),
+          (a, b) => new Date(b.dateLogged) - new Date(a.dateLogged)
         );
 
         setActivities(sortedReviews);
@@ -87,7 +78,7 @@ const ActivityPage = () => {
                 accept: "application/json",
                 Authorization: `Bearer ${TMDB_BEARER_TOKEN}`,
               },
-            },
+            }
           );
 
           if (response.ok) {
@@ -97,7 +88,7 @@ const ActivityPage = () => {
         } catch (error) {
           console.error(`Error fetching movie ${review.imdbID}:`, error);
         }
-      }),
+      })
     );
 
     setMovieDetails(details);
@@ -121,21 +112,18 @@ const ActivityPage = () => {
         ? `${editForm.dateLogged.getDate()}/${editForm.dateLogged.getMonth() + 1}/${editForm.dateLogged.getFullYear()}`
         : editingReview.dateLogged;
 
-      const response = await fetch(
-        `${API_BASE_URL}/api/review/updateReview/${editingReview._id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-          body: JSON.stringify({
-            review: editForm.review,
-            rating: editForm.rating,
-            dateLogged: formattedDate,
-          }),
+      const response = await fetch(`${API_BASE_URL}/api/review/updateReview/${editingReview._id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
         },
-      );
+        credentials: "include",
+        body: JSON.stringify({
+          review: editForm.review,
+          rating: editForm.rating,
+          dateLogged: formattedDate,
+        }),
+      });
 
       if (response.ok) {
         toast.success("Review updated successfully!");
@@ -167,8 +155,7 @@ const ActivityPage = () => {
             className="w-24 h-36 object-cover rounded-lg hover:scale-105 transition-transform"
             onError={(e) => {
               e.target.onerror = null;
-              e.target.src =
-                "https://via.placeholder.com/200x300?text=No+Image";
+              e.target.src = "https://via.placeholder.com/200x300?text=No+Image";
             }}
           />
         </Link>
@@ -207,15 +194,11 @@ const ActivityPage = () => {
                 <FaStar
                   key={index}
                   className={`text-lg ${
-                    index < activity.rating
-                      ? "text-yellow-400"
-                      : "text-gray-600"
+                    index < activity.rating ? "text-yellow-400" : "text-gray-600"
                   }`}
                 />
               ))}
-              <span className="text-white font-bold ml-2">
-                {activity.rating}/5
-              </span>
+              <span className="text-white font-bold ml-2">{activity.rating}/5</span>
             </div>
 
             <div className="flex items-center text-gray-400 text-sm">
@@ -277,8 +260,7 @@ const ActivityPage = () => {
               {isCurrentUser ? "Your Activity" : `${username}'s Activity`}
             </h1>
             <p className="text-gray-400 mt-1">
-              {activities.length} review{activities.length !== 1 ? "s" : ""}{" "}
-              found
+              {activities.length} review{activities.length !== 1 ? "s" : ""} found
             </p>
           </div>
         </div>
@@ -306,10 +288,7 @@ const ActivityPage = () => {
                     : `${username} hasn't reviewed any movies yet.`}
                 </p>
                 {isCurrentUser && (
-                  <Link
-                    to="/"
-                    className="text-blue-400 hover:text-blue-300 mt-4 inline-block"
-                  >
+                  <Link to="/" className="text-blue-400 hover:text-blue-300 mt-4 inline-block">
                     Discover movies to review →
                   </Link>
                 )}
@@ -319,22 +298,15 @@ const ActivityPage = () => {
         </div>
 
         {/* Edit Modal */}
-        <Modal
-          isOpen={showEditModal}
-          toggleModal={() => setShowEditModal(false)}
-        >
+        <Modal isOpen={showEditModal} toggleModal={() => setShowEditModal(false)}>
           <h2 className="text-2xl font-bold mb-4 text-white">Edit Review</h2>
           <div className="space-y-4">
             {/* Date */}
             <div>
-              <label className="block text-gray-300 font-bold mb-2">
-                Date Logged
-              </label>
+              <label className="block text-gray-300 font-bold mb-2">Date Logged</label>
               <DatePicker
                 selected={editForm.dateLogged}
-                onChange={(date) =>
-                  setEditForm((prev) => ({ ...prev, dateLogged: date }))
-                }
+                onChange={(date) => setEditForm((prev) => ({ ...prev, dateLogged: date }))}
                 dateFormat="dd/MM/yyyy"
                 className="text-white bg-gray-800 p-2 border border-gray-600 rounded-lg w-full focus:ring-2 focus:ring-blue-500"
                 maxDate={new Date()}
@@ -343,21 +315,15 @@ const ActivityPage = () => {
 
             {/* Rating */}
             <div>
-              <label className="block text-gray-300 font-bold mb-2">
-                Rating
-              </label>
+              <label className="block text-gray-300 font-bold mb-2">Rating</label>
               <div className="flex items-center space-x-1">
                 {[...Array(5)].map((_, index) => (
                   <FaStar
                     key={index}
                     className={`text-2xl cursor-pointer ${
-                      index < editForm.rating
-                        ? "text-yellow-400"
-                        : "text-gray-600"
+                      index < editForm.rating ? "text-yellow-400" : "text-gray-600"
                     }`}
-                    onClick={() =>
-                      setEditForm((prev) => ({ ...prev, rating: index + 1 }))
-                    }
+                    onClick={() => setEditForm((prev) => ({ ...prev, rating: index + 1 }))}
                   />
                 ))}
               </div>
@@ -365,15 +331,11 @@ const ActivityPage = () => {
 
             {/* Review */}
             <div>
-              <label className="block text-gray-300 font-bold mb-2">
-                Review
-              </label>
+              <label className="block text-gray-300 font-bold mb-2">Review</label>
               <div className="bg-gray-800 border border-gray-600 rounded-lg">
                 <ReactQuill
                   value={editForm.review}
-                  onChange={(value) =>
-                    setEditForm((prev) => ({ ...prev, review: value }))
-                  }
+                  onChange={(value) => setEditForm((prev) => ({ ...prev, review: value }))}
                   theme="snow"
                   className="text-white"
                   style={{

@@ -1,4 +1,3 @@
-import React, { useEffect } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -9,12 +8,7 @@ import { setUser, setAuthLoading } from "./components/features/user/userSlice";
 import { Navbar } from "./components/layout";
 
 // Auth
-import {
-  Login,
-  Signup,
-  ForgotPassword,
-  ResetPassword,
-} from "./components/auth";
+import { Login, Signup, ForgotPassword, ResetPassword } from "./components/auth";
 
 // Pages
 import {
@@ -86,35 +80,17 @@ const App = () => {
             <Route path="/upcoming" element={<HomePage />} />
             <Route path="/movie-list" element={<MovieList />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route
-              path="/movie-page/:imdbID/:reviewID"
-              element={<SingleReview />}
-            />
-            <Route
-              path="/reset-password/:resetToken"
-              element={<ResetPassword />}
-            />
+            <Route path="/movie-page/:imdbID/:reviewID" element={<SingleReview />} />
+            <Route path="/reset-password/:resetToken" element={<ResetPassword />} />
 
             <Route path="/:mediaType/:id" element={<MoviePage />} />
             <Route path="/celebrity/:id" element={<PersonPage />} />
             <Route path="/user/:username" element={<UserPage />} />
-            <Route
-              path="/user/:username/reviews"
-              element={<ReviewsListPage />}
-            />
-            <Route
-              path="/user/:username/followers"
-              element={<FollowersListPage />}
-            />
-            <Route
-              path="/user/:username/following"
-              element={<FollowingListPage />}
-            />
+            <Route path="/user/:username/reviews" element={<ReviewsListPage />} />
+            <Route path="/user/:username/followers" element={<FollowersListPage />} />
+            <Route path="/user/:username/following" element={<FollowingListPage />} />
             <Route path="/activity/:username" element={<ActivityPage />} />
-            <Route
-              path="/movie-activity/:movieId/:username"
-              element={<MovieSpecificActivity />}
-            />
+            <Route path="/movie-activity/:movieId/:username" element={<MovieSpecificActivity />} />
             <Route path="/list/:listId" element={<ListDetailPage />} />
             {/* <Route path="/video-call" element={<LobbyScreen />} />
             <Route path="/room/:roomId" element={<RoomPage />} /> */}

@@ -20,8 +20,7 @@ if (hasFirebaseCredentials) {
       client_id: process.env.FIREBASE_CLIENT_ID,
       auth_uri: process.env.FIREBASE_AUTH_URI,
       token_uri: process.env.FIREBASE_TOKEN_URI,
-      auth_provider_x509_cert_url:
-        process.env.FIREBASE_AUTH_PROVIDER_X509_CERT_URL,
+      auth_provider_x509_cert_url: process.env.FIREBASE_AUTH_PROVIDER_X509_CERT_URL,
       client_x509_cert_url: process.env.FIREBASE_CLIENT_X509_CERT_URL,
       universe_domain: process.env.FIREBASE_UNIVERSE_DOMAIN,
     };
@@ -37,9 +36,7 @@ if (hasFirebaseCredentials) {
     console.error("Firebase Admin initialization failed:", error.message);
   }
 } else {
-  console.warn(
-    "Firebase credentials not found. Firebase features will be disabled.",
-  );
+  console.warn("Firebase credentials not found. Firebase features will be disabled.");
 }
 
 module.exports = { admin, bucket };

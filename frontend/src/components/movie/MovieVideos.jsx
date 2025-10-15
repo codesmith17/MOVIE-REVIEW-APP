@@ -1,4 +1,3 @@
-import React, { useState, useMemo, useRef, useEffect } from "react";
 import { FaPlay, FaTimes } from "react-icons/fa";
 
 const MovieVideos = ({ videos }) => {
@@ -112,9 +111,7 @@ const MovieVideos = ({ videos }) => {
                 className="w-full h-full border-0"
               ></iframe>
             </div>
-            <h3 className="text-xl font-bold text-white mt-4 mb-2">
-              {selectedVideo.name}
-            </h3>
+            <h3 className="text-xl font-bold text-white mt-4 mb-2">{selectedVideo.name}</h3>
             <p className="text-gray-400 text-sm">{selectedVideo.type}</p>
           </div>
         </div>
@@ -148,9 +145,7 @@ const MovieVideos = ({ videos }) => {
                 </div>
               </div>
               <div className="mt-2">
-                <p className="text-sm text-white font-medium line-clamp-2">
-                  {video.name}
-                </p>
+                <p className="text-sm text-white font-medium line-clamp-2">{video.name}</p>
                 <p className="text-xs text-gray-400 mt-1">{video.type}</p>
               </div>
             </div>

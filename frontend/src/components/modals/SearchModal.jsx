@@ -67,14 +67,11 @@ const SearchModal = ({
                 className="w-16 h-24 object-cover rounded-md mr-4"
                 onError={(e) => {
                   e.target.onerror = null;
-                  e.target.src =
-                    "https://via.placeholder.com/92x138?text=No+Image";
+                  e.target.src = "https://via.placeholder.com/92x138?text=No+Image";
                 }}
               />
               <div className="flex-grow">
-                <h3 className="text-xl font-semibold text-white mb-1">
-                  {movie.title}
-                </h3>
+                <h3 className="text-xl font-semibold text-white mb-1">{movie.title}</h3>
                 <p className="text-gray-400 text-sm">
                   {new Date(movie.release_date).getFullYear()}
                 </p>
@@ -88,9 +85,7 @@ const SearchModal = ({
             </motion.div>
           ))
         ) : (
-          <p className="text-gray-400 text-center">
-            No results found. Try a different search.
-          </p>
+          <p className="text-gray-400 text-center">No results found. Try a different search.</p>
         )}
       </div>
       <button

@@ -1,4 +1,3 @@
-import React, { useState, useEffect } from "react";
 import { FaEye, FaEdit, FaStar, FaCalendarAlt } from "react-icons/fa";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -43,14 +42,14 @@ const MovieActivitySection = ({
               "Content-Type": "application/json",
             },
             credentials: "include",
-          },
+          }
         );
 
         if (reviewResponse.ok && reviewResponse.status !== 204) {
           const reviewData = await reviewResponse.json();
           if (reviewData.review) {
             const hasReviewText = Boolean(
-              reviewData.review.review && reviewData.review.review.trim(),
+              reviewData.review.review && reviewData.review.review.trim()
             );
             const hasRating = reviewData.review.rating > 0;
             setUserActivity({
@@ -163,9 +162,7 @@ const MovieActivitySection = ({
       transition={{ duration: 0.5 }}
       className="bg-gray-800 rounded-2xl p-4 md:p-6 mb-8 mt-8 shadow-lg"
     >
-      <h3 className="text-lg md:text-xl font-bold text-white mb-4 md:mb-6">
-        Your Activity
-      </h3>
+      <h3 className="text-lg md:text-xl font-bold text-white mb-4 md:mb-6">Your Activity</h3>
 
       {/* Status Section */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 mb-4 md:mb-6">
@@ -176,9 +173,7 @@ const MovieActivitySection = ({
           >
             <StatusIcon className="text-lg md:text-xl text-white" />
           </div>
-          <div
-            className={`text-base md:text-lg font-semibold ${statusInfo.textColor}`}
-          >
+          <div className={`text-base md:text-lg font-semibold ${statusInfo.textColor}`}>
             {statusInfo.label}
           </div>
         </div>
@@ -205,13 +200,10 @@ const MovieActivitySection = ({
       </div>
 
       {/* Show Your Activity Section */}
-      {(userActivity.hasReview ||
-        (userActivity.isWatched && userActivity.rating > 0)) && (
+      {(userActivity.hasReview || (userActivity.isWatched && userActivity.rating > 0)) && (
         <div className="bg-gray-900 rounded-xl p-3 md:p-4">
           <div className="flex justify-between items-center mb-2 md:mb-4">
-            <h4 className="text-base md:text-lg font-semibold text-white">
-              Show Your Activity
-            </h4>
+            <h4 className="text-base md:text-lg font-semibold text-white">Show Your Activity</h4>
             <Link
               to={`/movie-activity/${movieId}/${user.data.username}`}
               className="text-blue-400 hover:text-blue-300 text-xs md:text-sm"
@@ -223,17 +215,13 @@ const MovieActivitySection = ({
           <div className="bg-gray-800 rounded-lg p-3 md:p-4">
             <div className="flex justify-between items-start mb-2 md:mb-3">
               <div>
-                <h5 className="font-semibold text-white text-sm md:text-base">
-                  {movieTitle}
-                </h5>
+                <h5 className="font-semibold text-white text-sm md:text-base">{movieTitle}</h5>
                 <div className="flex items-center mt-1">
                   {[...Array(5)].map((_, index) => (
                     <FaStar
                       key={index}
                       className={`text-xs md:text-sm ${
-                        index < userActivity.rating
-                          ? "text-yellow-400"
-                          : "text-gray-600"
+                        index < userActivity.rating ? "text-yellow-400" : "text-gray-600"
                       }`}
                     />
                   ))}
@@ -256,15 +244,12 @@ const MovieActivitySection = ({
                 <div
                   className="text-gray-300 text-xs md:text-sm line-clamp-3"
                   dangerouslySetInnerHTML={{
-                    __html:
-                      userActivity.review.review.substring(0, 150) + "...",
+                    __html: userActivity.review.review.substring(0, 150) + "...",
                   }}
                 />
               )
             ) : (
-              <div className="text-gray-400 text-xs md:text-sm italic">
-                Not Reviewed
-              </div>
+              <div className="text-gray-400 text-xs md:text-sm italic">Not Reviewed</div>
             )}
           </div>
         </div>

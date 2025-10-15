@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { FaEye, FaHeart, FaStar } from "react-icons/fa";
 import { motion } from "framer-motion";
 
@@ -19,9 +19,7 @@ const UserActivitySummary = ({ username, isCurrentUser }) => {
         setLoading(true);
 
         // Fetch user reviews to get reviewed count and calculate average rating
-        const reviewsResponse = await fetch(
-          `${API_BASE_URL}/api/review/getReviews/${username}`,
-        );
+        const reviewsResponse = await fetch(`${API_BASE_URL}/api/review/getReviews/${username}`);
 
         let reviewedCount = 0;
         let totalRated = 0;
@@ -32,17 +30,12 @@ const UserActivitySummary = ({ username, isCurrentUser }) => {
           reviewedCount = reviewsData.reviews?.length || 0;
 
           // Calculate average rating
-          const ratingsData =
-            reviewsData.reviews?.filter((review) => review.rating > 0) || [];
+          const ratingsData = reviewsData.reviews?.filter((review) => review.rating > 0) || [];
           totalRated = ratingsData.length;
-          totalRatingSum = ratingsData.reduce(
-            (sum, review) => sum + review.rating,
-            0,
-          );
+          totalRatingSum = ratingsData.reduce((sum, review) => sum + review.rating, 0);
         }
 
-        const averageRating =
-          totalRated > 0 ? (totalRatingSum / totalRated).toFixed(1) : 0;
+        const averageRating = totalRated > 0 ? (totalRatingSum / totalRated).toFixed(1) : 0;
 
         setActivityStats({
           reviewedCount,
@@ -102,9 +95,7 @@ const UserActivitySummary = ({ username, isCurrentUser }) => {
           ))}
         </div>
       </div>
-      <div className="text-gray-400 text-sm font-medium">
-        Avg Rating ({totalRated} rated)
-      </div>
+      <div className="text-gray-400 text-sm font-medium">Avg Rating ({totalRated} rated)</div>
     </motion.div>
   );
 
@@ -112,10 +103,7 @@ const UserActivitySummary = ({ username, isCurrentUser }) => {
     return (
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         {[...Array(3)].map((_, index) => (
-          <div
-            key={index}
-            className="bg-gray-800 rounded-2xl p-6 animate-pulse"
-          >
+          <div key={index} className="bg-gray-800 rounded-2xl p-6 animate-pulse">
             <div className="w-16 h-16 bg-gray-700 rounded-full mx-auto mb-4"></div>
             <div className="h-6 bg-gray-700 rounded mb-2"></div>
             <div className="h-4 bg-gray-700 rounded"></div>

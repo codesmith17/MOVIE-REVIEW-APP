@@ -11,10 +11,9 @@ import "flowbite";
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <Provider store={store}>
-      {" "}
       {/* <SocketProvider> */}
       <App />
       {/* </SocketProvider> */}
     </Provider>
-  </React.StrictMode>,
+  </React.StrictMode>
 );

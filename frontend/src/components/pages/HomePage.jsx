@@ -1,15 +1,6 @@
-import React, { useEffect, useState } from "react";
 import { MovieSection } from "../movie";
 import { MovieLoader } from "../common";
-import {
-  FaFire,
-  FaStar,
-  FaTv,
-  FaFilm,
-  FaPlus,
-  FaCheck,
-  FaTimes,
-} from "react-icons/fa";
+import { FaFire, FaStar, FaTv, FaFilm, FaPlus, FaCheck, FaTimes } from "react-icons/fa";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -49,9 +40,7 @@ const HomePage = () => {
         });
 
         if (!response.ok) {
-          throw new Error(
-            `Network response was not ok, status: ${response.status}`,
-          );
+          throw new Error(`Network response was not ok, status: ${response.status}`);
         }
 
         const data = await response.json();
@@ -72,43 +61,43 @@ const HomePage = () => {
       await Promise.all([
         fetchMovies(
           "https://api.themoviedb.org/3/trending/movie/day?language=en-US&page=1",
-          setTrendingMoviesByDay,
+          setTrendingMoviesByDay
         ),
         fetchMovies(
           "https://api.themoviedb.org/3/trending/movie/week?language=en-US&page=1",
-          setTrendingMoviesByWeek,
+          setTrendingMoviesByWeek
         ),
         fetchMovies(
           "https://api.themoviedb.org/3/movie/now_playing?language=en-US&page=1",
-          setNowPlayingMovies,
+          setNowPlayingMovies
         ),
         fetchMovies(
           "https://api.themoviedb.org/3/movie/popular?language=en-US&page=1",
-          setPopularMovies,
+          setPopularMovies
         ),
         fetchMovies(
           "https://api.themoviedb.org/3/movie/upcoming?language=en-US&page=1",
-          setUpcomingMovies,
+          setUpcomingMovies
         ),
         fetchMovies(
           "https://api.themoviedb.org/3/movie/top_rated?language=en-US&page=1",
-          setTopRatedMovies,
+          setTopRatedMovies
         ),
         fetchMovies(
           "https://api.themoviedb.org/3/tv/popular?language=en-US&page=1",
-          setLatestShows,
+          setLatestShows
         ),
         fetchMovies(
           "https://api.themoviedb.org/3/trending/tv/day?language=en-US&page=1",
-          setTrendingShows,
+          setTrendingShows
         ),
         fetchMovies(
           "https://api.themoviedb.org/3/tv/on_the_air?language=en-US&page=1",
-          setOnTheAirShows,
+          setOnTheAirShows
         ),
         fetchMovies(
           "https://api.themoviedb.org/3/tv/top_rated?language=en-US&page=1",
-          setTopRatedShows,
+          setTopRatedShows
         ),
       ]);
       setLoading(false);
@@ -140,7 +129,7 @@ const HomePage = () => {
             "Content-Type": "application/json",
           },
           credentials: "include",
-        },
+        }
       );
 
       if (response.ok) {
@@ -158,7 +147,7 @@ const HomePage = () => {
   useEffect(() => {
     if (heroMovie && watchlist) {
       const isInList = watchlist.content.some(
-        (movie) => movie.id?.toString() === heroMovie.id?.toString(),
+        (movie) => movie.id?.toString() === heroMovie.id?.toString()
       );
       setIsInWatchlist(isInList);
     }
@@ -198,7 +187,7 @@ const HomePage = () => {
               tmdbId: heroMovie.id,
             }),
             credentials: "include",
-          },
+          }
         );
 
         if (!response.ok) {
@@ -226,7 +215,7 @@ const HomePage = () => {
               },
             }),
             credentials: "include",
-          },
+          }
         );
 
         if (!response.ok) {
@@ -240,9 +229,7 @@ const HomePage = () => {
       }
     } catch (error) {
       console.error("Error toggling watchlist:", error);
-      toast.error(
-        error.message || "Failed to update watchlist. Please try again.",
-      );
+      toast.error(error.message || "Failed to update watchlist. Please try again.");
     } finally {
       setAddingToWatchlist(false);
     }
@@ -289,9 +276,7 @@ const HomePage = () => {
                 <div className="fade-in space-y-6">
                   {/* Badges */}
                   <div className="flex items-center justify-center gap-3 flex-wrap">
-                    <span className="badge badge-primary text-xs px-3 py-1.5">
-                      Trending Now
-                    </span>
+                    <span className="badge badge-primary text-xs px-3 py-1.5">Trending Now</span>
                     {heroMovie.vote_average && (
                       <span className="badge badge-warning text-xs px-3 py-1.5 flex items-center gap-1.5">
                         <FaStar className="text-xs" />
@@ -322,9 +307,7 @@ const HomePage = () => {
                       onClick={handleToggleWatchlist}
                       disabled={addingToWatchlist}
                       className={`px-5 py-2 text-sm font-semibold flex items-center gap-2 transition-all duration-300 rounded-lg ${
-                        isInWatchlist
-                          ? "bg-red-600 hover:bg-red-700 text-white"
-                          : "btn-ghost"
+                        isInWatchlist ? "bg-red-600 hover:bg-red-700 text-white" : "btn-ghost"
                       } ${addingToWatchlist ? "opacity-50 cursor-not-allowed" : ""}`}
                     >
                       {addingToWatchlist ? (
@@ -406,9 +389,7 @@ const HomePage = () => {
 
             {/* TV Shows Sections */}
             <div className="pt-16 mt-16 border-t border-gray-800/50">
-              <h2 className="text-3xl font-bold gradient-text mb-12">
-                TV Shows
-              </h2>
+              <h2 className="text-3xl font-bold gradient-text mb-12">TV Shows</h2>
 
               <div className="space-y-16">
                 <MovieSection

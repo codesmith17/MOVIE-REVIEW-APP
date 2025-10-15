@@ -1,13 +1,6 @@
-import React, { useEffect } from "react";
 import { FaTimes } from "react-icons/fa";
 
-const Modal = ({
-  isOpen,
-  toggleModal,
-  children,
-  maxWidth = "5xl",
-  showCloseButton = true,
-}) => {
+const Modal = ({ isOpen, toggleModal, children, maxWidth = "5xl", showCloseButton = true }) => {
   // Lock body scroll when modal is open
   useEffect(() => {
     if (isOpen) {

@@ -1,4 +1,3 @@
-import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { MovieCard } from "../movie"; // Assuming MovieCard component is in the same directory
 
@@ -60,11 +59,7 @@ const ListDetailPage = () => {
             key={movie.id}
             id={movie.id}
             title={movie.title}
-            year={
-              movie.release_date
-                ? new Date(movie.release_date).getFullYear()
-                : "-"
-            }
+            year={movie.release_date ? new Date(movie.release_date).getFullYear() : "-"}
             type={movie.media_type || "movie"}
             mediaType={movie.media_type || "movie"}
             image={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}

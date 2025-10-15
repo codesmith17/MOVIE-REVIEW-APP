@@ -1,0 +1,26 @@
+{
+  "name": "movie-review-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Movie Review Application",
+  "scripts": {
+    "prepare": "husky",
+    "lint": "npm run lint --prefix frontend && npm run lint --prefix backend",
+    "format": "npm run format --prefix frontend && npm run format --prefix backend"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^15.2.11"
+  },
+  "lint-staged": {
+    "frontend/**/*.{js,jsx}": [
+      "npm run lint:fix --prefix frontend",
+      "npm run format --prefix frontend"
+    ],
+    "backend/**/*.js": [
+      "npm run lint:fix --prefix backend",
+      "npm run format --prefix backend"
+    ]
+  }
+}
+

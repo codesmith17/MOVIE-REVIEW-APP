@@ -42,9 +42,7 @@ const WatchProviders = ({ providers }) => {
 
   return (
     <div className="bg-gray-800 p-6 rounded-lg shadow-xl mt-8">
-      <h3 className="text-2xl font-bold mb-4 text-yellow-400">
-        Where to Watch in India
-      </h3>
+      <h3 className="text-2xl font-bold mb-4 text-yellow-400">Where to Watch in India</h3>
       {renderProviders(providers.flatrate, "Subscription")}
       {renderProviders(providers.free, "Free")}
       {renderProviders(providers.ads, "Ad-supported")}

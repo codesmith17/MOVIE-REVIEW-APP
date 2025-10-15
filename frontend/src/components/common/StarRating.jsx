@@ -1,4 +1,3 @@
-import React, { useState, useEffect } from "react";
 import ReactStars from "react-rating-stars-component";
 import { FaStar } from "react-icons/fa";
 import { FaStarHalf } from "react-icons/fa6";

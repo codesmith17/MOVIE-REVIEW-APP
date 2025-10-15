@@ -1,18 +1,8 @@
-import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { FaStar } from "react-icons/fa";
 import { LazyImage } from "../common";
 
-const MovieCard = ({
-  id,
-  title,
-  year,
-  type,
-  image,
-  rating,
-  mediaType,
-  priority = false,
-}) => {
+const MovieCard = ({ id, title, year, type, image, rating, mediaType, priority = false }) => {
   const [dominantColor, setDominantColor] = useState(null);
 
   // Extract dominant color from image
@@ -72,9 +62,7 @@ const MovieCard = ({
       } catch (error) {
         // CORS error or other issues - use a default based on title hash
         console.log("Could not extract color from image, using fallback");
-        const hash = title
-          .split("")
-          .reduce((acc, char) => acc + char.charCodeAt(0), 0);
+        const hash = title.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
         const r = (hash * 137) % 256;
         const g = (hash * 239) % 256;
         const b = (hash * 193) % 256;
@@ -85,9 +73,7 @@ const MovieCard = ({
     img.onerror = () => {
       console.log("Image failed to load, using fallback color");
       // Use fallback color based on title
-      const hash = title
-        .split("")
-        .reduce((acc, char) => acc + char.charCodeAt(0), 0);
+      const hash = title.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
       const r = (hash * 137) % 256;
       const g = (hash * 239) % 256;
       const b = (hash * 193) % 256;
@@ -99,8 +85,7 @@ const MovieCard = ({
   const getRatingBadge = (rating) => {
     if (!rating) return null;
 
-    const ratingValue =
-      typeof rating === "number" ? rating : parseFloat(rating);
+    const ratingValue = typeof rating === "number" ? rating : parseFloat(rating);
     let colorClass, bgClass;
 
     if (ratingValue >= 8) {
@@ -130,10 +115,7 @@ const MovieCard = ({
         : displayMediaType;
 
   return (
-    <Link
-      to={`/${displayMediaType}/${id}`}
-      className="group block perspective-1000"
-    >
+    <Link to={`/${displayMediaType}/${id}`} className="group block perspective-1000">
       <div className="movie-card-hover relative overflow-hidden w-full max-w-[140px] sm:max-w-[160px] md:max-w-[180px] lg:max-w-[200px] mx-auto h-[240px] sm:h-[280px] md:h-[320px] lg:h-[360px] flex flex-col rounded-xl bg-gray-900/40 backdrop-blur-sm transition-all duration-500 ease-out group-hover:bg-gray-800/60 group-hover:shadow-2xl">
         {/* Image Container */}
         <div className="relative w-full h-[190px] sm:h-[220px] md:h-[245px] lg:h-[270px] flex-shrink-0 overflow-hidden rounded-t-xl z-10">

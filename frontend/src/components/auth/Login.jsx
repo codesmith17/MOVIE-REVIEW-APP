@@ -1,4 +1,3 @@
-import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -62,10 +61,7 @@ const Home = () => {
             localStorage.setItem("password", formData.password);
             localStorage.setItem("boxChecked", remember);
           } else {
-            if (
-              localStorage.getItem("email") != null &&
-              localStorage.getItem("email") != ""
-            ) {
+            if (localStorage.getItem("email") != null && localStorage.getItem("email") != "") {
               localStorage.removeItem("email");
             }
             if (
@@ -107,10 +103,7 @@ const Home = () => {
               </h1>
               <form className="space-y-4 md:space-y-6" onSubmit={onSubmit}>
                 <div>
-                  <label
-                    htmlFor="email"
-                    className="block mb-2 text-sm font-medium text-gray-100"
-                  >
+                  <label htmlFor="email" className="block mb-2 text-sm font-medium text-gray-100">
                     Your email
                   </label>
                   <input
@@ -175,10 +168,7 @@ const Home = () => {
                 </button>
                 <p className="text-sm font-light text-gray-400 text-center">
                   Don't have an account yet?{" "}
-                  <Link
-                    to="/signup"
-                    className="font-medium text-primary-400 hover:underline"
-                  >
+                  <Link to="/signup" className="font-medium text-primary-400 hover:underline">
                     Sign up
                   </Link>
                 </p>

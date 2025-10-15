@@ -1,4 +1,3 @@
-import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { logout } from "../features/user/userSlice";
@@ -32,8 +31,7 @@ const Navbar = () => {
   };
 
   const handleLogout = () => {
-    document.cookie =
-      "access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie = "access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     dispatch(logout());
     navigate("/login");
     setIsMenuOpen(false);
@@ -131,10 +129,7 @@ const Navbar = () => {
                 </div>
 
                 {/* Mobile User Avatar */}
-                <Link
-                  to={`/user/${user?.username || user?.data?.username}`}
-                  className="md:hidden"
-                >
+                <Link to={`/user/${user?.username || user?.data?.username}`} className="md:hidden">
                   {user?.profilePicture || user?.data?.profilePicture ? (
                     <img
                       src={user?.profilePicture || user?.data?.profilePicture}
@@ -162,11 +157,7 @@ const Navbar = () => {
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="md:hidden p-2 text-gray-400 hover:text-white transition-colors"
             >
-              {isMenuOpen ? (
-                <FaTimes className="text-lg" />
-              ) : (
-                <FaBars className="text-lg" />
-              )}
+              {isMenuOpen ? <FaTimes className="text-lg" /> : <FaBars className="text-lg" />}
             </button>
           </div>
         </div>

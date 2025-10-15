@@ -1,4 +1,3 @@
-import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -13,10 +12,9 @@ const ResetPassword = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
 
   const secretKey = "krishna170902";
-  const decryptedUsername = crypto.AES.decrypt(
-    decodeURIComponent(resetToken),
-    secretKey,
-  ).toString(crypto.enc.Utf8);
+  const decryptedUsername = crypto.AES.decrypt(decodeURIComponent(resetToken), secretKey).toString(
+    crypto.enc.Utf8
+  );
   //   console.log(decryptedUsername);
   const handleChangePassword = (e) => {
     setPassword(e.target.value);
@@ -67,9 +65,7 @@ const ResetPassword = () => {
               <h1 className="text-xl font-bold leading-tight tracking-tight text-white md:text-2xl">
                 Reset Your Password
               </h1>
-              <p className="text-gray-400 text-base mb-6">
-                Enter your new password below.
-              </p>
+              <p className="text-gray-400 text-base mb-6">Enter your new password below.</p>
               <form className="space-y-4 md:space-y-6" onSubmit={onSubmit}>
                 <div>
                   <label

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { SearchModal } from "../modals";
 import {
   FaSpinner,
@@ -50,15 +50,12 @@ const UserPage = () => {
   const user = useSelector((state) => state.user.data);
   const fetchWatchlist = async () => {
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/list/getList/${username}/watchlist`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
+      const response = await fetch(`${API_BASE_URL}/api/list/getList/${username}/watchlist`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
         },
-      );
+      });
 
       if (!response.ok) {
         throw new Error("Failed to fetch watchlist");
@@ -80,15 +77,12 @@ const UserPage = () => {
 
   const fetchLikedReviewsCount = async () => {
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/review/getLikedReviews/${username}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
+      const response = await fetch(`${API_BASE_URL}/api/review/getLikedReviews/${username}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
         },
-      );
+      });
 
       if (response.ok) {
         const data = await response.json();
@@ -116,7 +110,7 @@ const UserPage = () => {
           headers: {
             Authorization: `Bearer ${TMDB_BEARER_TOKEN}`,
           },
-        },
+        }
       );
 
       if (!response.ok) throw new Error("Failed to search movies");
@@ -132,20 +126,17 @@ const UserPage = () => {
 
   const handleAddToWatchlist = async (movie) => {
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/list/addToList/watchlist`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            movie: {
-              ...movie,
-              listName: "watchlist",
-            },
-          }),
-          credentials: "include",
-        },
-      );
+      const response = await fetch(`${API_BASE_URL}/api/list/addToList/watchlist`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          movie: {
+            ...movie,
+            listName: "watchlist",
+          },
+        }),
+        credentials: "include",
+      });
       if (!response.ok) throw new Error("Failed to add movie to watchlist");
       await fetchWatchlist();
       toast.success("Movie added to watchlist");
@@ -162,16 +153,13 @@ const UserPage = () => {
     }
 
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/auth/toggleFollow/${username}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
+      const response = await fetch(`${API_BASE_URL}/api/auth/toggleFollow/${username}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-      );
+        credentials: "include",
+      });
 
       if (!response.ok) {
         throw new Error("Failed to toggle follow");
@@ -197,16 +185,13 @@ const UserPage = () => {
     } else {
       const fetchUserData = async () => {
         try {
-          const response = await fetch(
-            `${API_BASE_URL}/api/auth/getOthersData/${username}`,
-            {
-              method: "GET",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              credentials: "include",
+          const response = await fetch(`${API_BASE_URL}/api/auth/getOthersData/${username}`, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
             },
-          );
+            credentials: "include",
+          });
           if (!response.ok) {
             if (response.status === 404) {
               setNotFound(true);
@@ -223,9 +208,7 @@ const UserPage = () => {
           setFetchedUserData(data.data);
           setFollowersCount(data.data.followers);
           setIsFollowing(
-            data.data.followers
-              ? data.data.followersList.includes(user?.data?.username)
-              : false,
+            data.data.followers ? data.data.followersList.includes(user?.data?.username) : false
           );
         } catch (err) {
           setNotFound(true);
@@ -249,17 +232,14 @@ const UserPage = () => {
     formData.append("profilePicture", selectedFile);
 
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/auth/upload-profile-picture`,
-        {
-          method: "POST",
-          body: formData,
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-          credentials: "include",
+      const response = await fetch(`${API_BASE_URL}/api/auth/upload-profile-picture`, {
+        method: "POST",
+        body: formData,
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-      );
+        credentials: "include",
+      });
 
       if (!response.ok) {
         throw new Error("Failed to upload image");
@@ -433,10 +413,7 @@ const UserPage = () => {
                         transition={{ delay: 0.6 }}
                         className="text-xs sm:text-sm text-cyan-300 mb-3 sm:mb-4"
                       >
-                        <FollowedByList
-                          profileUser={username}
-                          currentUser={user?.data?.username}
-                        />
+                        <FollowedByList profileUser={username} currentUser={user?.data?.username} />
                       </motion.div>
                     )}
                   </div>
@@ -494,14 +471,10 @@ const UserPage = () => {
                           </motion.div>
                           <div className="text-left">
                             <p className="text-cyan-300 font-medium text-sm sm:text-base break-words">
-                              {selectedFile
-                                ? selectedFile.name
-                                : "Choose a file"}
+                              {selectedFile ? selectedFile.name : "Choose a file"}
                             </p>
                             <p className="text-xs sm:text-sm text-gray-400">
-                              {selectedFile
-                                ? "Click to change"
-                                : "PNG, JPG up to 10MB"}
+                              {selectedFile ? "Click to change" : "PNG, JPG up to 10MB"}
                             </p>
                           </div>
                         </div>
@@ -616,9 +589,7 @@ const UserPage = () => {
                 />
               </div>
 
-              <AnimatePresence mode="wait">
-                {renderTabContent()}
-              </AnimatePresence>
+              <AnimatePresence mode="wait">{renderTabContent()}</AnimatePresence>
             </motion.div>
           </motion.div>
         ) : notFound ? (
@@ -629,12 +600,8 @@ const UserPage = () => {
             className="max-w-lg mx-auto mt-16 bg-gradient-to-br from-gray-800/90 to-gray-900/90 backdrop-blur-xl p-12 rounded-3xl shadow-2xl text-center border border-gray-700/50"
           >
             <div className="text-6xl mb-6">😕</div>
-            <h2 className="text-3xl font-bold text-red-400 mb-3">
-              User Not Found
-            </h2>
-            <p className="text-gray-400 text-lg">
-              The user you're looking for doesn't exist.
-            </p>
+            <h2 className="text-3xl font-bold text-red-400 mb-3">User Not Found</h2>
+            <p className="text-gray-400 text-lg">The user you're looking for doesn't exist.</p>
           </motion.div>
         ) : null}
       </div>
@@ -653,9 +620,7 @@ const ModernStatBox = ({ icon: Icon, label, value, color, link }) => {
       <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-0.5 sm:mb-1">
         {value}
       </div>
-      <div className="text-xs sm:text-sm text-gray-400 font-medium">
-        {label}
-      </div>
+      <div className="text-xs sm:text-sm text-gray-400 font-medium">{label}</div>
 
       {/* Hover glow effect */}
       <div
@@ -672,13 +637,7 @@ const ModernStatBox = ({ icon: Icon, label, value, color, link }) => {
 };
 
 // Modern Tab Button Component
-const ModernTabButton = ({
-  icon: Icon,
-  label,
-  tab,
-  activeTab,
-  setActiveTab,
-}) => (
+const ModernTabButton = ({ icon: Icon, label, tab, activeTab, setActiveTab }) => (
   <motion.button
     whileHover={{ scale: 1.05, y: -2 }}
     whileTap={{ scale: 0.95 }}
@@ -725,9 +684,7 @@ const ReviewsTab = ({ username }) => {
   useEffect(() => {
     const fetchReviews = async () => {
       try {
-        const response = await fetch(
-          `${API_BASE_URL}/api/review/getReviews/${username}`,
-        );
+        const response = await fetch(`${API_BASE_URL}/api/review/getReviews/${username}`);
         const data = await response.json();
 
         if (response.ok) {
@@ -774,7 +731,7 @@ const ReviewsTab = ({ username }) => {
                 accept: "application/json",
                 Authorization: `Bearer ${TMDB_BEARER_TOKEN}`,
               },
-            },
+            }
           );
 
           if (response.ok) {
@@ -819,16 +776,11 @@ const ReviewsTab = ({ username }) => {
 
             const isTV = mediaData.mediaType === "tv";
             const title = isTV ? mediaData.name : mediaData.title;
-            const releaseDate = isTV
-              ? mediaData.first_air_date
-              : mediaData.release_date;
+            const releaseDate = isTV ? mediaData.first_air_date : mediaData.release_date;
             const mediaTypeLabel = isTV ? "TV Show" : "Movie";
 
             return (
-              <Link
-                key={review._id}
-                to={`/movie-page/${review.imdbID}/${review._id}`}
-              >
+              <Link key={review._id} to={`/movie-page/${review.imdbID}/${review._id}`}>
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -885,9 +837,7 @@ const ReviewsTab = ({ username }) => {
                     />
                     <div className="flex items-center mt-2 sm:mt-3 text-xs text-gray-500">
                       <FaCalendarAlt className="mr-1.5 sm:mr-2" />
-                      <span>
-                        {new Date(review.dateLogged).toLocaleDateString()}
-                      </span>
+                      <span>{new Date(review.dateLogged).toLocaleDateString()}</span>
                     </div>
                   </div>
                 </motion.div>
@@ -911,18 +861,15 @@ const WatchlistTab = ({ watchlist, setIsModalOpen, fetchWatchlist }) => {
     e.stopPropagation();
 
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/list/removeFromList/watchlist`,
-        {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            imdbID: movie.imdbID || `${movie.type}-${movie.id}`,
-            tmdbId: movie.id,
-          }),
-          credentials: "include",
-        },
-      );
+      const response = await fetch(`${API_BASE_URL}/api/list/removeFromList/watchlist`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          imdbID: movie.imdbID || `${movie.type}-${movie.id}`,
+          tmdbId: movie.id,
+        }),
+        credentials: "include",
+      });
 
       if (!response.ok) throw new Error("Failed to remove from watchlist");
 
@@ -944,11 +891,7 @@ const WatchlistTab = ({ watchlist, setIsModalOpen, fetchWatchlist }) => {
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6"
         >
           {watchlist.content.map((movie) => (
-            <MovieCard
-              key={movie.id}
-              movie={movie}
-              onRemove={handleRemoveFromWatchlist}
-            />
+            <MovieCard key={movie.id} movie={movie} onRemove={handleRemoveFromWatchlist} />
           ))}
         </motion.div>
       ) : (
@@ -968,10 +911,7 @@ const MovieCard = ({ movie, onRemove }) => (
     transition={{ duration: 0.3 }}
     className="group relative"
   >
-    <Link
-      to={`/${movie.type === "tv" ? "tv" : "movie"}/${movie.id}`}
-      className="block"
-    >
+    <Link to={`/${movie.type === "tv" ? "tv" : "movie"}/${movie.id}`} className="block">
       <div className="relative bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-xl rounded-xl sm:rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-300 border border-slate-700/50">
         {/* Poster Image */}
         <div className="relative overflow-hidden aspect-[2/3]">
@@ -989,9 +929,7 @@ const MovieCard = ({ movie, onRemove }) => (
             <div className="absolute bottom-0 left-0 right-0 p-4 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
               <div className="flex items-center gap-2 mb-2">
                 <FaEye className="text-cyan-300" />
-                <span className="text-cyan-100 text-sm font-medium">
-                  Click to view details
-                </span>
+                <span className="text-cyan-100 text-sm font-medium">Click to view details</span>
               </div>
             </div>
           </div>
@@ -1031,9 +969,7 @@ const MovieCard = ({ movie, onRemove }) => (
 
             <div className="flex items-center gap-1.5 bg-cyan-600/20 px-2.5 py-1 rounded-lg border border-cyan-500/30">
               <FaClock className="text-cyan-400 text-xs" />
-              <span className="text-cyan-300 text-xs font-medium">
-                Watchlist
-              </span>
+              <span className="text-cyan-300 text-xs font-medium">Watchlist</span>
             </div>
           </div>
         </div>
@@ -1070,12 +1006,9 @@ const EmptyWatchlist = () => (
       >
         🎬
       </motion.div>
-      <h3 className="text-3xl font-bold text-gray-200 mb-3">
-        Your watchlist is empty
-      </h3>
+      <h3 className="text-3xl font-bold text-gray-200 mb-3">Your watchlist is empty</h3>
       <p className="text-gray-400 text-lg">
-        Start adding movies and shows to keep track of what you want to watch
-        next!
+        Start adding movies and shows to keep track of what you want to watch next!
       </p>
     </motion.div>
   </div>
@@ -1108,9 +1041,7 @@ const ListsTab = ({ username }) => {
   const fetchLists = async () => {
     setListSearchLoading(true);
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/list/getList/${username}/normal`,
-      );
+      const response = await fetch(`${API_BASE_URL}/api/list/getList/${username}/normal`);
       console.log("Fetch response:", response); // Debug log
       if (response.ok) {
         const data = await response.json();
@@ -1123,11 +1054,7 @@ const ListsTab = ({ username }) => {
           setLists([]); // Set to empty array if data is not as expected
         }
       } else {
-        console.error(
-          "Failed to fetch lists:",
-          response.status,
-          response.statusText,
-        );
+        console.error("Failed to fetch lists:", response.status, response.statusText);
         toast.error("Failed to fetch lists");
         setLists([]); // Set to empty array on error
       }
@@ -1150,33 +1077,26 @@ const ListsTab = ({ username }) => {
       return;
     }
     if (newListName.trim().toLowerCase() === "watchlist") {
-      toast.error(
-        "Cannot create a list named 'watchlist'. This name is reserved.",
-      );
+      toast.error("Cannot create a list named 'watchlist'. This name is reserved.");
       return;
     }
 
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/list/addToList/normal`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            movie: {
-              ...(movie || {}),
-              listName: newListName,
-            },
-          }),
-          credentials: "include",
-        },
-      );
+      const response = await fetch(`${API_BASE_URL}/api/list/addToList/normal`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          movie: {
+            ...(movie || {}),
+            listName: newListName,
+          },
+        }),
+        credentials: "include",
+      });
 
       if (response.ok) {
         toast.success(
-          movie
-            ? "List created with selected movie"
-            : "Empty list created successfully",
+          movie ? "List created with selected movie" : "Empty list created successfully"
         );
         setNewListName("");
         fetchLists();
@@ -1199,7 +1119,7 @@ const ListsTab = ({ username }) => {
           headers: {
             Authorization: `Bearer ${TMDB_BEARER_TOKEN}`,
           },
-        },
+        }
       );
 
       if (!response.ok) throw new Error("Failed to search movies and shows");
@@ -1219,30 +1139,31 @@ const ListsTab = ({ username }) => {
     setIsCreatingList(false);
   };
 
-  const handleAddToList = async (item) => {
-    try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/list/addToList/normal`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            item: {
-              ...item,
-              listName: selectedList.name,
-            },
-          }),
-          credentials: "include",
-        },
-      );
-      if (!response.ok) throw new Error("Failed to add item to list");
-      toast.success("Item added to list");
-      fetchLists();
-    } catch (error) {
-      console.error("Error adding item to list:", error);
-      toast.error("Failed to add item to list");
-    }
-  };
+  // Commented out unused function with undefined variable
+  // const handleAddToList = async (item) => {
+  //   try {
+  //     const response = await fetch(
+  //       `${API_BASE_URL}/api/list/addToList/normal`,
+  //       {
+  //         method: "POST",
+  //         headers: { "Content-Type": "application/json" },
+  //         body: JSON.stringify({
+  //           item: {
+  //             ...item,
+  //             listName: selectedList.name,
+  //           },
+  //         }),
+  //         credentials: "include",
+  //       },
+  //     );
+  //     if (!response.ok) throw new Error("Failed to add item to list");
+  //     toast.success("Item added to list");
+  //     fetchLists();
+  //   } catch (error) {
+  //     console.error("Error adding item to list:", error);
+  //     toast.error("Failed to add item to list");
+  //   }
+  // };
 
   return (
     <TabContent title="Lists">
@@ -1305,8 +1226,7 @@ const ListsTab = ({ username }) => {
                     {list.type === "normal" ? "Custom List" : list.type}
                   </p>
                   <p className="text-gray-500 text-sm">
-                    {list.content.length}{" "}
-                    {list.content.length === 1 ? "item" : "items"}
+                    {list.content.length} {list.content.length === 1 ? "item" : "items"}
                   </p>
                 </div>
               </motion.div>
@@ -1321,9 +1241,7 @@ const ListsTab = ({ username }) => {
             className="max-w-md mx-auto"
           >
             <div className="text-8xl mb-6">📋</div>
-            <h3 className="text-3xl font-bold text-gray-200 mb-3">
-              No lists yet
-            </h3>
+            <h3 className="text-3xl font-bold text-gray-200 mb-3">No lists yet</h3>
             <p className="text-gray-400 text-lg">
               Create your first list to organize your favorite movies and shows!
             </p>
@@ -1397,9 +1315,7 @@ const LikesTab = () => (
           ❤️
         </motion.div>
         <h3 className="text-3xl font-bold text-gray-200 mb-3">Coming Soon</h3>
-        <p className="text-gray-400 text-lg">
-          Liked reviews and content will be displayed here.
-        </p>
+        <p className="text-gray-400 text-lg">Liked reviews and content will be displayed here.</p>
       </motion.div>
     </div>
   </TabContent>

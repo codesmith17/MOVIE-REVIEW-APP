@@ -1,5 +1,3 @@
-import React, { useState, useEffect, useRef } from "react";
-
 /**
  * LazyImage - Optimized image component with lazy loading and skeleton state
  * Prevents browser from loading all images at once
@@ -80,18 +78,13 @@ const LazyImage = ({
   };
 
   return (
-    <div
-      ref={imgRef}
-      className={`relative overflow-hidden ${className}`}
-      style={{ width, height }}
-    >
+    <div ref={imgRef} className={`relative overflow-hidden ${className}`} style={{ width, height }}>
       {/* Skeleton loader */}
       {isLoading && (
         <div
           className={`absolute inset-0 skeleton ${skeletonClassName}`}
           style={{
-            background:
-              "linear-gradient(90deg, #1e293b 0%, #2d3748 50%, #1e293b 100%)",
+            background: "linear-gradient(90deg, #1e293b 0%, #2d3748 50%, #1e293b 100%)",
             backgroundSize: "200% 100%",
             animation: "shimmer 2s infinite",
           }}

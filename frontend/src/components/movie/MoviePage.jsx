@@ -1,4 +1,3 @@
-import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
 import {
@@ -13,13 +12,7 @@ import {
 } from "react-icons/fa";
 import { useSelector } from "react-redux";
 import { OtherReviews } from "../reviews";
-import {
-  StarRating,
-  ReadOnlyStarRating,
-  ActorCard,
-  NotFound,
-  MovieLoader,
-} from "../common";
+import { StarRating, ReadOnlyStarRating, ActorCard, NotFound, MovieLoader } from "../common";
 import MovieVideos from "./MovieVideos";
 import WatchProviders from "./WatchProviders";
 import MovieCard from "./MovieCard";
@@ -146,15 +139,15 @@ const MoviePage = () => {
       .then((res) => {
         if (!res.ok) {
           if (res.status === 401) {
-            fetchOtherReviews("");
+            // Handle unauthorized
             return;
           } else {
-            fetchOtherReviews("");
+            // Handle other errors
             return;
           }
         } else {
           if (res.status === 204) {
-            fetchOtherReviews("");
+            // No content
             return;
           }
         }
@@ -170,7 +163,6 @@ const MoviePage = () => {
           setCurrentReviewID(res.review._id);
           setStarRating(res.review.rating);
           setStarRatingTemp(res.review.rating);
-          fetchOtherReviews(res.review._id);
         }
       })
       .catch((err) => {
@@ -222,9 +214,7 @@ const MoviePage = () => {
       // setUserReview(prevReview => ({ ...prevReview, rating }));
     } catch (error) {
       console.error("Error updating rating:", error);
-      toast.error(
-        "An error occurred while updating the rating. Please try again.",
-      );
+      toast.error("An error occurred while updating the rating. Please try again.");
     }
   };
   const fetchCastData = useCallback(() => {
@@ -305,15 +295,12 @@ const MoviePage = () => {
     };
 
     const fetchOtherReviews = (reviewID) => {
-      fetch(
-        `${API_BASE_URL}/api/review/getOtherReviews/${imdbID}/${reviewID}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
+      fetch(`${API_BASE_URL}/api/review/getOtherReviews/${imdbID}/${reviewID}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
         },
-      )
+      })
         .then((res) => {
           if (res.status === 204) return;
           return res.json();
@@ -336,7 +323,7 @@ const MoviePage = () => {
               accept: "application/json",
               Authorization: `Bearer ${TMDB_BEARER_TOKEN}`,
             },
-          },
+          }
         );
         if (!response.ok) throw new Error("Failed to fetch watch providers");
         const data = await response.json();
@@ -384,8 +371,7 @@ const MoviePage = () => {
 
     const castHandler = () => handleScrollBlur(castScrollRef, setCastBlur);
     const crewHandler = () => handleScrollBlur(crewScrollRef, setCrewBlur);
-    const recsHandler = () =>
-      handleScrollBlur(recommendationsScrollRef, setRecommendationsBlur);
+    const recsHandler = () => handleScrollBlur(recommendationsScrollRef, setRecommendationsBlur);
 
     if (castContainer) {
       castHandler(); // Initial check
@@ -401,12 +387,9 @@ const MoviePage = () => {
     }
 
     return () => {
-      if (castContainer)
-        castContainer.removeEventListener("scroll", castHandler);
-      if (crewContainer)
-        crewContainer.removeEventListener("scroll", crewHandler);
-      if (recsContainer)
-        recsContainer.removeEventListener("scroll", recsHandler);
+      if (castContainer) castContainer.removeEventListener("scroll", castHandler);
+      if (crewContainer) crewContainer.removeEventListener("scroll", crewHandler);
+      if (recsContainer) recsContainer.removeEventListener("scroll", recsHandler);
     };
   }, [cast, crew, recommendations]);
 
@@ -454,13 +437,10 @@ const MoviePage = () => {
       }
       try {
         setIsWatchlistLoading(true);
-        const response = await fetch(
-          `${API_BASE_URL}/api/list/getList/${username}/watchlist`,
-          {
-            method: "GET",
-            headers: { "Content-Type": "application/json" },
-          },
-        );
+        const response = await fetch(`${API_BASE_URL}/api/list/getList/${username}/watchlist`, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        });
         if (!response.ok) {
           setIsWatchlistLoading(false);
           return;
@@ -471,7 +451,7 @@ const MoviePage = () => {
           const found = data.data[0].content.some(
             (item) =>
               (item.imdbID && item.imdbID === imdbID) ||
-              (item.id && item.id.toString() === singleMovieData.id.toString()),
+              (item.id && item.id.toString() === singleMovieData.id.toString())
           );
           setIsInWatchlist(found);
         }
@@ -494,18 +474,15 @@ const MoviePage = () => {
     try {
       if (isInWatchlist) {
         // Remove from watchlist - send both imdbID and TMDB id for backward compatibility
-        const response = await fetch(
-          `${API_BASE_URL}/api/list/removeFromList/watchlist`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-            body: JSON.stringify({
-              imdbID: imdbID || `movie-${singleMovieData?.id}`,
-              tmdbId: singleMovieData?.id,
-            }),
-          },
-        );
+        const response = await fetch(`${API_BASE_URL}/api/list/removeFromList/watchlist`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            imdbID: imdbID || `movie-${singleMovieData?.id}`,
+            tmdbId: singleMovieData?.id,
+          }),
+        });
         if (!response.ok) throw new Error("Failed to remove from watchlist");
         setIsInWatchlist(false);
         toast.success("Removed from watchlist!");
@@ -517,25 +494,18 @@ const MoviePage = () => {
           title: singleMovieData?.title || singleMovieData?.name,
           imdbID: imdbID,
         };
-        const response = await fetch(
-          `${API_BASE_URL}/api/list/addToList/watchlist`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-            body: JSON.stringify({ movie: movieObj }),
-          },
-        );
+        const response = await fetch(`${API_BASE_URL}/api/list/addToList/watchlist`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ movie: movieObj }),
+        });
         if (!response.ok) throw new Error("Failed to add to watchlist");
         setIsInWatchlist(true);
         toast.success("Added to watchlist!");
       }
     } catch (err) {
-      toast.error(
-        isInWatchlist
-          ? "Failed to remove from watchlist"
-          : "Failed to add to watchlist",
-      );
+      toast.error(isInWatchlist ? "Failed to remove from watchlist" : "Failed to add to watchlist");
       console.error("Watchlist error:", err);
     }
   };
@@ -552,9 +522,7 @@ const MoviePage = () => {
         if (res) {
           console.log(res);
           if (res.status === 401) {
-            toast.error(
-              "UNAUTHORIZED, LOGIN WITH YOUR CREDENTIALS TO LOG, REVIEW OR RATE.",
-            );
+            toast.error("UNAUTHORIZED, LOGIN WITH YOUR CREDENTIALS TO LOG, REVIEW OR RATE.");
             navigate("/login");
             throw new Error("Failed to open Write Review modal");
           } else {
@@ -595,9 +563,7 @@ const MoviePage = () => {
       return;
     }
     const date = new Date(dateLogged);
-    const formattedDate = `${date.getDate()}/${
-      date.getMonth() + 1
-    }/${date.getFullYear()}`;
+    const formattedDate = `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
 
     const isEditing = personalReview && personalReview._id;
     const url = isEditing
@@ -622,9 +588,7 @@ const MoviePage = () => {
     })
       .then((res) => {
         if (!res.ok) {
-          throw new Error(
-            isEditing ? "Failed to update review." : "Failed to post review.",
-          );
+          throw new Error(isEditing ? "Failed to update review." : "Failed to post review.");
         }
         return res.json();
       })
@@ -632,15 +596,8 @@ const MoviePage = () => {
         const successMessage = isEditing
           ? "Review updated successfully."
           : "Review posted successfully.";
-        if (
-          res.message === successMessage ||
-          res.message === "Review posted successfully."
-        ) {
-          toast.success(
-            isEditing
-              ? "YOUR REVIEW HAS BEEN UPDATED"
-              : "YOUR REVIEW HAS BEEN POSTED",
-          );
+        if (res.message === successMessage || res.message === "Review posted successfully.") {
+          toast.success(isEditing ? "YOUR REVIEW HAS BEEN UPDATED" : "YOUR REVIEW HAS BEEN POSTED");
           const updatedReview = {
             ...(res.review || res.updatedReview),
             review,
@@ -666,9 +623,7 @@ const MoviePage = () => {
       })
       .catch((err) => {
         console.error("Review submit error:", err);
-        toast.error(
-          isEditing ? "Failed to update review." : "Failed to post review.",
-        );
+        toast.error(isEditing ? "Failed to update review." : "Failed to post review.");
       });
   };
 
@@ -804,39 +759,27 @@ const MoviePage = () => {
                     {mediaType === "tv" && (
                       <>
                         {singleMovieData.number_of_seasons && (
-                          <span>
-                            {singleMovieData.number_of_seasons} Seasons
-                          </span>
+                          <span>{singleMovieData.number_of_seasons} Seasons</span>
                         )}
                         {singleMovieData.number_of_episodes && (
-                          <span>
-                            • {singleMovieData.number_of_episodes} Episodes
-                          </span>
+                          <span>• {singleMovieData.number_of_episodes} Episodes</span>
                         )}
                         {singleMovieData.episode_run_time &&
                           singleMovieData.episode_run_time.length > 0 && (
-                            <span>
-                              • {singleMovieData.episode_run_time[0]} min
-                            </span>
+                            <span>• {singleMovieData.episode_run_time[0]} min</span>
                           )}
                       </>
                     )}
                     {mediaType === "movie" && singleMovieData.runtime && (
                       <span>{singleMovieData.runtime} min</span>
                     )}
-                    {singleMovieData.status && (
-                      <span>• {singleMovieData.status}</span>
-                    )}
+                    {singleMovieData.status && <span>• {singleMovieData.status}</span>}
                   </div>
 
                   {/* Overview */}
                   <div>
-                    <h2 className="text-lg font-semibold text-white mb-2">
-                      Overview
-                    </h2>
-                    <p className="text-gray-300 leading-relaxed">
-                      {singleMovieData.overview}
-                    </p>
+                    <h2 className="text-lg font-semibold text-white mb-2">Overview</h2>
+                    <p className="text-gray-300 leading-relaxed">{singleMovieData.overview}</p>
                   </div>
                   {/* Actions */}
                   <div className="flex flex-wrap items-center gap-4">
@@ -932,14 +875,9 @@ const MoviePage = () => {
                   {/* Star Rating */}
                   {(user?.username || user?.data?.username) && (
                     <div className="flex items-center gap-4">
-                      <StarRating
-                        value={starRating}
-                        onRatingChange={handleRatingChange}
-                      />
+                      <StarRating value={starRating} onRatingChange={handleRatingChange} />
                       <span className="text-sm text-gray-400">
-                        {starRating > 0
-                          ? `Your rating: ${starRating}/5`
-                          : "Rate this"}
+                        {starRating > 0 ? `Your rating: ${starRating}/5` : "Rate this"}
                       </span>
                     </div>
                   )}
@@ -950,9 +888,7 @@ const MoviePage = () => {
               <div className="space-y-16">
                 {videos.length > 0 && (
                   <div>
-                    <h2 className="text-2xl font-bold text-white mb-6">
-                      Videos
-                    </h2>
+                    <h2 className="text-2xl font-bold text-white mb-6">Videos</h2>
                     <MovieVideos videos={videos} />
                   </div>
                 )}
@@ -1027,17 +963,11 @@ const MoviePage = () => {
                                 onError={(e) => {
                                   e.target.onerror = null;
                                   e.target.src =
-                                    crewMember.gender === 1
-                                      ? female_image
-                                      : male_image;
+                                    crewMember.gender === 1 ? female_image : male_image;
                                 }}
                               />
-                              <p className="font-semibold text-sm text-white">
-                                {crewMember.name}
-                              </p>
-                              <p className="text-gray-400 text-xs">
-                                {crewMember.job}
-                              </p>
+                              <p className="font-semibold text-sm text-white">{crewMember.name}</p>
+                              <p className="text-gray-400 text-xs">{crewMember.job}</p>
                             </div>
                           </Link>
                         ))}
@@ -1054,18 +984,14 @@ const MoviePage = () => {
                 )}
 
                 <div>
-                  <h2 className="text-2xl font-bold text-white mb-6">
-                    Where to Watch
-                  </h2>
+                  <h2 className="text-2xl font-bold text-white mb-6">Where to Watch</h2>
                   <WatchProviders providers={watchProviders} />
                 </div>
 
                 {/* Your Activity Section */}
                 {personalReview && (user?.username || user?.data?.username) && (
                   <div>
-                    <h2 className="text-2xl font-bold text-white mb-6">
-                      Your Activity
-                    </h2>
+                    <h2 className="text-2xl font-bold text-white mb-6">Your Activity</h2>
                     <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-xl rounded-2xl p-6 border border-slate-700/50 shadow-2xl">
                       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4">
                         <div className="flex items-center gap-4">
@@ -1073,9 +999,7 @@ const MoviePage = () => {
                             <FaThumbsUp className="text-white text-xl" />
                           </div>
                           <div>
-                            <h3 className="text-xl font-bold text-white">
-                              Your Review
-                            </h3>
+                            <h3 className="text-xl font-bold text-white">Your Review</h3>
                             <div className="flex items-center gap-3 mt-1">
                               <div className="flex items-center gap-1">
                                 <FaStar className="text-yellow-400 text-sm" />
@@ -1122,8 +1046,7 @@ const MoviePage = () => {
                 {otherReviews && otherReviews.length > 0 && (
                   <div>
                     <h2 className="text-2xl font-bold text-white mb-6">
-                      {personalReview &&
-                      (user?.username || user?.data?.username)
+                      {personalReview && (user?.username || user?.data?.username)
                         ? "Reviews from Others"
                         : "Reviews"}
                     </h2>
@@ -1133,9 +1056,7 @@ const MoviePage = () => {
 
                 {recommendations.length > 0 && (
                   <div>
-                    <h2 className="text-2xl font-bold text-white mb-6">
-                      You Might Also Like
-                    </h2>
+                    <h2 className="text-2xl font-bold text-white mb-6">You Might Also Like</h2>
                     <div className="relative">
                       <div
                         ref={recommendationsScrollRef}
@@ -1156,9 +1077,7 @@ const MoviePage = () => {
                               ))
                           : recommendations.slice(0, 12).map((movie, index) => (
                               <div
-                                key={
-                                  movie.id + "-" + (movie.media_type || index)
-                                }
+                                key={movie.id + "-" + (movie.media_type || index)}
                                 className="flex-shrink-0"
                               >
                                 <MovieCard
@@ -1166,7 +1085,7 @@ const MoviePage = () => {
                                   title={movie.title || movie.name}
                                   image={`https://image.tmdb.org/t/p/w342${movie.poster_path}`}
                                   year={new Date(
-                                    movie.release_date || movie.first_air_date,
+                                    movie.release_date || movie.first_air_date
                                   ).getFullYear()}
                                   type={mediaType === "tv" ? "tv" : "movie"}
                                   rating={movie.vote_average}

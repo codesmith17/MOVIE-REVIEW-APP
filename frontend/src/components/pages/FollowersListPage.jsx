@@ -1,4 +1,3 @@
-import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -35,16 +34,13 @@ const FollowersListPage = () => {
 
   const fetchFollowers = async () => {
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/auth/getFollowers/${username}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
+      const response = await fetch(`${API_BASE_URL}/api/auth/getFollowers/${username}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
         },
-      );
+        credentials: "include",
+      });
 
       if (response.ok) {
         const data = await response.json();
@@ -55,9 +51,7 @@ const FollowersListPage = () => {
         if (user?.data) {
           const statusMap = {};
           data.followers?.forEach((follower) => {
-            statusMap[follower.username] = follower.followersList?.includes(
-              user.data.username,
-            );
+            statusMap[follower.username] = follower.followersList?.includes(user.data.username);
           });
           setFollowingStatus(statusMap);
         }
@@ -77,10 +71,8 @@ const FollowersListPage = () => {
     if (searchQuery) {
       const filtered = followers.filter(
         (follower) =>
-          follower.username
-            ?.toLowerCase()
-            .includes(searchQuery.toLowerCase()) ||
-          follower.name?.toLowerCase().includes(searchQuery.toLowerCase()),
+          follower.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          follower.name?.toLowerCase().includes(searchQuery.toLowerCase())
       );
       setFilteredFollowers(filtered);
     } else {
@@ -97,16 +89,13 @@ const FollowersListPage = () => {
     }
 
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/auth/toggleFollow/${followerUsername}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
+      const response = await fetch(`${API_BASE_URL}/api/auth/toggleFollow/${followerUsername}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-      );
+        credentials: "include",
+      });
 
       if (response.ok) {
         const data = await response.json();
@@ -169,8 +158,7 @@ const FollowersListPage = () => {
           </h1>
           <p className="text-gray-400 text-lg flex items-center gap-2">
             <FaHeart className="text-pink-400" />
-            {filteredFollowers.length}{" "}
-            {filteredFollowers.length === 1 ? "follower" : "followers"}
+            {filteredFollowers.length} {filteredFollowers.length === 1 ? "follower" : "followers"}
           </p>
         </motion.div>
 
@@ -227,9 +215,7 @@ const FollowersListPage = () => {
                             <h3 className="font-bold text-lg text-white truncate hover:text-cyan-300 transition-colors">
                               {follower.username}
                             </h3>
-                            <p className="text-gray-400 text-sm truncate">
-                              {follower.name}
-                            </p>
+                            <p className="text-gray-400 text-sm truncate">{follower.name}</p>
                           </div>
                         </div>
                       </Link>
@@ -246,30 +232,26 @@ const FollowersListPage = () => {
                           </div>
                         </div>
 
-                        {user?.data &&
-                          user.data.username !== follower.username && (
-                            <button
-                              onClick={() =>
-                                handleFollowToggle(follower.username)
-                              }
-                              className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
-                                followingStatus[follower.username]
-                                  ? "bg-red-600 hover:bg-red-700 text-white"
-                                  : "bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white"
-                              }`}
-                            >
-                              {followingStatus[follower.username] ? (
-                                <>
-                                  <FaUserMinus className="inline mr-1" />{" "}
-                                  Unfollow
-                                </>
-                              ) : (
-                                <>
-                                  <FaUserPlus className="inline mr-1" /> Follow
-                                </>
-                              )}
-                            </button>
-                          )}
+                        {user?.data && user.data.username !== follower.username && (
+                          <button
+                            onClick={() => handleFollowToggle(follower.username)}
+                            className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                              followingStatus[follower.username]
+                                ? "bg-red-600 hover:bg-red-700 text-white"
+                                : "bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white"
+                            }`}
+                          >
+                            {followingStatus[follower.username] ? (
+                              <>
+                                <FaUserMinus className="inline mr-1" /> Unfollow
+                              </>
+                            ) : (
+                              <>
+                                <FaUserPlus className="inline mr-1" /> Follow
+                              </>
+                            )}
+                          </button>
+                        )}
                       </div>
                     </motion.div>
                   </motion.div>
@@ -312,10 +294,7 @@ const FollowersListPage = () => {
                         {page}
                       </button>
                     );
-                  } else if (
-                    page === currentPage - 2 ||
-                    page === currentPage + 2
-                  ) {
+                  } else if (page === currentPage - 2 || page === currentPage + 2) {
                     return (
                       <span key={page} className="text-gray-500">
                         ...
@@ -342,9 +321,7 @@ const FollowersListPage = () => {
             className="text-center py-20"
           >
             <div className="text-8xl mb-6">👥</div>
-            <h3 className="text-3xl font-bold text-gray-200 mb-3">
-              No followers found
-            </h3>
+            <h3 className="text-3xl font-bold text-gray-200 mb-3">No followers found</h3>
             <p className="text-gray-400 text-lg">
               {searchQuery
                 ? "Try adjusting your search"

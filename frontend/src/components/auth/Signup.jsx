@@ -1,4 +1,3 @@
-import React, { useState, useRef } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useNavigate } from "react-router-dom";
@@ -33,9 +32,7 @@ const Signup = () => {
       .then((res) => res.json())
       .then((res) => {
         if (res.message === "User registered.") {
-          toast.success(
-            "USER HAS BEEN REGISTERED SIGN-IN USING YOUR CREDENTIALS",
-          );
+          toast.success("USER HAS BEEN REGISTERED SIGN-IN USING YOUR CREDENTIALS");
           navigate("/");
         } else {
           toast.error(res.message);
@@ -51,15 +48,10 @@ const Signup = () => {
     <section className="bg-gray-900 text-gray-100 min-h-screen flex flex-col justify-center items-center pt-16">
       <ToastContainer />
       <div className="w-full max-w-md bg-gray-800 rounded-lg shadow-md p-8 mt-16">
-        <h1 className="text-3xl font-bold text-center text-white mb-6">
-          Create an account
-        </h1>
+        <h1 className="text-3xl font-bold text-center text-white mb-6">Create an account</h1>
         <form className="space-y-6" onSubmit={submitHandler}>
           <div>
-            <label
-              htmlFor="name"
-              className="block mb-2 text-sm font-medium text-gray-100"
-            >
+            <label htmlFor="name" className="block mb-2 text-sm font-medium text-gray-100">
               Your name
             </label>
             <input
@@ -73,10 +65,7 @@ const Signup = () => {
             />
           </div>
           <div>
-            <label
-              htmlFor="username"
-              className="block mb-2 text-sm font-medium text-gray-100"
-            >
+            <label htmlFor="username" className="block mb-2 text-sm font-medium text-gray-100">
               Username
             </label>
             <input
@@ -90,10 +79,7 @@ const Signup = () => {
             />
           </div>
           <div>
-            <label
-              htmlFor="email"
-              className="block mb-2 text-sm font-medium text-gray-100"
-            >
+            <label htmlFor="email" className="block mb-2 text-sm font-medium text-gray-100">
               Your email
             </label>
             <input
@@ -107,10 +93,7 @@ const Signup = () => {
             />
           </div>
           <div>
-            <label
-              htmlFor="password"
-              className="block mb-2 text-sm font-medium text-gray-100"
-            >
+            <label htmlFor="password" className="block mb-2 text-sm font-medium text-gray-100">
               Password
             </label>
             <input
@@ -154,10 +137,7 @@ const Signup = () => {
             <div className="ml-3 text-sm">
               <label htmlFor="terms" className="font-light text-gray-400">
                 I accept the{" "}
-                <Link
-                  className="font-medium text-primary-400 hover:underline"
-                  to={"/auth/terms"}
-                >
+                <Link className="font-medium text-primary-400 hover:underline" to={"/auth/terms"}>
                   Terms and Conditions
                 </Link>
               </label>
@@ -171,10 +151,7 @@ const Signup = () => {
           </button>
           <p className="text-sm font-light text-gray-400 text-center">
             Already have an account?{" "}
-            <Link
-              to={"/"}
-              className="font-medium text-primary-400 hover:underline"
-            >
+            <Link to={"/"} className="font-medium text-primary-400 hover:underline">
               Login here
             </Link>
           </p>

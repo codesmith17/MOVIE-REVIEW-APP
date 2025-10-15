@@ -51,7 +51,7 @@ const uploadProfilePicture = async (req, res, next) => {
     const updatedUser = await User.findByIdAndUpdate(
       userId,
       { profilePicture: imageURL[0] },
-      { new: true },
+      { new: true }
     );
 
     if (!updatedUser) {
@@ -242,9 +242,7 @@ const signin = async (req, res, next) => {
 
   // Validate input
   if (!email || !password || email.trim() === "" || password.trim() === "") {
-    return res
-      .status(400)
-      .json({ message: "Email and password are required." });
+    return res.status(400).json({ message: "Email and password are required." });
   }
 
   try {
@@ -263,7 +261,7 @@ const signin = async (req, res, next) => {
     const token = jwt.sign(
       { id: user._id, email: user.email, username: user.username },
       "krishna170902",
-      { expiresIn: "24h" },
+      { expiresIn: "24h" }
     );
 
     // Initialize user graph (non-blocking)
@@ -304,9 +302,7 @@ const signup = (req, res) => {
   const { name, email, password, confirmPassword, username } = req.body.form;
   const checked = req.body.checked;
   if (checked === false) {
-    return res
-      .status(401)
-      .json({ message: "YOU HAVE TO AGREE OUR TERMS AND CONDITIONS" });
+    return res.status(401).json({ message: "YOU HAVE TO AGREE OUR TERMS AND CONDITIONS" });
   }
   // Check for missing fields
   if (
@@ -329,36 +325,25 @@ const signup = (req, res) => {
   })
     .then((user) => {
       if (user) {
-        return res
-          .status(401)
-          .json({
-            message:
-              "This user already exists. Try with another email ID or username.",
-          });
+        return res.status(401).json({
+          message: "This user already exists. Try with another email ID or username.",
+        });
       }
 
       if (password !== confirmPassword) {
-        return res
-          .status(401)
-          .json({ message: "Password and confirm password do not match." });
+        return res.status(401).json({ message: "Password and confirm password do not match." });
       }
 
-      return User.create({ name, email, password, username }).then(
-        (newUser) => {
-          res
-            .status(201)
-            .json({
-              message: "User registered.",
-              user: { name: newUser.name, email: newUser.email },
-            });
-        },
-      );
+      return User.create({ name, email, password, username }).then((newUser) => {
+        res.status(201).json({
+          message: "User registered.",
+          user: { name: newUser.name, email: newUser.email },
+        });
+      });
     })
     .catch((err) => {
       console.error(err);
-      res
-        .status(500)
-        .json({ message: "Server error. Please try again later." });
+      res.status(500).json({ message: "Server error. Please try again later." });
     });
 };
 
@@ -369,9 +354,7 @@ const getUserData = (req, res, next) => {
       if (user) {
         const { password, __v, ...rest } = user.toObject();
 
-        res
-          .status(200)
-          .json({ message: "DATA SENT SUCCESSFULLY.", data: rest });
+        res.status(200).json({ message: "DATA SENT SUCCESSFULLY.", data: rest });
       } else {
         res.status(404).json({ message: "User not found." });
       }
@@ -424,10 +407,7 @@ const getFriendsThatFollow = async (req, res, next) => {
 
                 if (followedUser) {
                   // Check if this is at target depth and follows end user
-                  if (
-                    distance + 1 === depth &&
-                    followedUsername === endUser.username
-                  ) {
+                  if (distance + 1 === depth && followedUsername === endUser.username) {
                     friendsThatFollow.push(user.username);
                   }
 
@@ -507,10 +487,7 @@ const forgotPassword = (req, res, next) => {
 
       const username = response.username;
       const secretKey = "krishna170902"; // Replace with your actual secret key
-      const encryptedUsername = crypto.AES.encrypt(
-        username,
-        secretKey,
-      ).toString();
+      const encryptedUsername = crypto.AES.encrypt(username, secretKey).toString();
       const link = `https://movie-review-app-inky.vercel.app/reset-password/${encodeURIComponent(encryptedUsername)}`;
 
       response.resetToken = encryptedUsername;
@@ -519,9 +496,7 @@ const forgotPassword = (req, res, next) => {
         .then(() => {
           nodemailer.createTestAccount((err, account) => {
             if (err) {
-              console.error(
-                "Failed to create a testing account. " + err.message,
-              );
+              console.error("Failed to create a testing account. " + err.message);
               return res.status(500).send("Internal Server Error");
             }
 
@@ -556,16 +531,11 @@ const forgotPassword = (req, res, next) => {
 
             transporter.sendMail(message, (err, info) => {
               if (err) {
-                console.error(
-                  "Error occurred while sending email. " + err.message,
-                );
+                console.error("Error occurred while sending email. " + err.message);
                 return res.status(500).send("Internal Server Error");
               }
               console.log("Message sent: %s", info.messageId);
-              console.log(
-                "Preview URL: %s",
-                nodemailer.getTestMessageUrl(info),
-              );
+              console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
               res.status(200).json({ message: "Reset email sent!" });
             });
           });
@@ -622,9 +592,7 @@ const getFollowers = async (req, res, next) => {
     // Get detailed information about followers
     const followers = await User.find({
       username: { $in: user.followersList },
-    }).select(
-      "username name profilePicture followers following reviewCount followersList",
-    );
+    }).select("username name profilePicture followers following reviewCount followersList");
 
     res.status(200).json({ followers });
   } catch (err) {
@@ -646,9 +614,7 @@ const getFollowing = async (req, res, next) => {
     // Get detailed information about users being followed
     const following = await User.find({
       username: { $in: user.followingList },
-    }).select(
-      "username name profilePicture followers following reviewCount followersList",
-    );
+    }).select("username name profilePicture followers following reviewCount followersList");
 
     res.status(200).json({ following });
   } catch (err) {

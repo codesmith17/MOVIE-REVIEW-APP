@@ -1,9 +1,7 @@
-import React, { useRef, useState, useEffect } from "react";
 import MovieCard from "./MovieCard";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 
-const defaultImage =
-  "https://www.reelviews.net/resources/img/default_poster.jpg";
+const defaultImage = "https://www.reelviews.net/resources/img/default_poster.jpg";
 
 const MovieCardSkeleton = () => (
   <div className="skeleton w-full max-w-[140px] sm:max-w-[160px] md:max-w-[180px] lg:max-w-[200px] mx-auto h-[240px] sm:h-[280px] md:h-[320px] lg:h-[360px] rounded-xl"></div>
@@ -21,10 +19,7 @@ const MovieSection = ({ title, movies, loading, error }) => {
 
     const checkScroll = () => {
       setCanScrollLeft(container.scrollLeft > 0);
-      setCanScrollRight(
-        container.scrollLeft <
-          container.scrollWidth - container.clientWidth - 10,
-      );
+      setCanScrollRight(container.scrollLeft < container.scrollWidth - container.clientWidth - 10);
     };
 
     checkScroll();
@@ -111,9 +106,7 @@ const MovieSection = ({ title, movies, loading, error }) => {
             <div className="w-full flex items-center justify-center py-12">
               <div className="card-modern p-6 max-w-md text-center">
                 <div className="text-red-400 text-4xl mb-3">⚠️</div>
-                <h3 className="text-lg font-bold text-white mb-2">
-                  Error Loading Content
-                </h3>
+                <h3 className="text-lg font-bold text-white mb-2">Error Loading Content</h3>
                 <p className="text-gray-400 text-sm">{error}</p>
               </div>
             </div>
@@ -124,11 +117,7 @@ const MovieSection = ({ title, movies, loading, error }) => {
                 <MovieCard
                   id={movie.id}
                   title={movie.title}
-                  year={
-                    movie.release_date
-                      ? new Date(movie.release_date).getFullYear()
-                      : "N/A"
-                  }
+                  year={movie.release_date ? new Date(movie.release_date).getFullYear() : "N/A"}
                   type={movie.media_type || "movie"}
                   mediaType={movie.media_type || "movie"}
                   image={

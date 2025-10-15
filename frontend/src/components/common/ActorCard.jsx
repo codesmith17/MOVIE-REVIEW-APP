@@ -1,4 +1,3 @@
-import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 
 const ActorCard = ({ id, name, profilePath, character, gender }) => {
@@ -32,11 +31,7 @@ const ActorCard = ({ id, name, profilePath, character, gender }) => {
           <div className="w-32 h-32 rounded-lg bg-gray-700 animate-pulse mx-auto mb-2"></div>
         ) : (
           <img
-            src={
-              imageError
-                ? defaultImage
-                : `https://image.tmdb.org/t/p/w200${profilePath}`
-            }
+            src={imageError ? defaultImage : `https://image.tmdb.org/t/p/w200${profilePath}`}
             alt={name}
             className="w-32 h-32 rounded-lg object-cover mx-auto mb-2"
             onError={(e) => {

@@ -1,9 +1,7 @@
 // import { GoogleGenerativeAI } from "@google/generative-ai";
 const { GoogleGenerativeAI } = require("@google/generative-ai");
-const GOOGLE_API_KEY =
-  process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
-const TMDB_BEARER_TOKEN =
-  process.env.TMDB_BEARER_TOKEN || process.env.VITE_TMDB_BEARER_TOKEN;
+const GOOGLE_API_KEY = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+const TMDB_BEARER_TOKEN = process.env.TMDB_BEARER_TOKEN || process.env.VITE_TMDB_BEARER_TOKEN;
 
 let genAI = null;
 let model = null;
@@ -17,15 +15,11 @@ if (GOOGLE_API_KEY) {
     console.error("Gemini AI initialization failed:", error.message);
   }
 } else {
-  console.warn(
-    "Gemini API key not found. AI recommendations will be disabled.",
-  );
+  console.warn("Gemini API key not found. AI recommendations will be disabled.");
 }
 const fetchRecommendations = async (imdbID, title, year) => {
   if (!model) {
-    console.warn(
-      "Gemini model not initialized. Returning empty recommendations.",
-    );
+    console.warn("Gemini model not initialized. Returning empty recommendations.");
     return [];
   }
 
@@ -38,9 +32,7 @@ const fetchRecommendations = async (imdbID, title, year) => {
     const movieTitles = text.split(",").map((title) => title.trim());
 
     // Fetch IMDb IDs and poster images for each movie
-    const moviesWithDetails = await Promise.all(
-      movieTitles.map(fetchMovieDetails),
-    );
+    const moviesWithDetails = await Promise.all(movieTitles.map(fetchMovieDetails));
 
     // console.log(moviesWithDetails);
     return moviesWithDetails.filter((movie) => movie !== null);
@@ -51,9 +43,7 @@ const fetchRecommendations = async (imdbID, title, year) => {
 };
 const trendingMovies = async () => {
   if (!model) {
-    console.warn(
-      "Gemini model not initialized. Returning empty trending movies.",
-    );
+    console.warn("Gemini model not initialized. Returning empty trending movies.");
     return [];
   }
 
@@ -67,7 +57,7 @@ const trendingMovies = async () => {
 
     // Fetch IMDb IDs and poster images for each movie
     const moviesWithDetails = await Promise.all(
-      movieTitles.map((singleTitle) => fetchMovieDetails(singleTitle)),
+      movieTitles.map((singleTitle) => fetchMovieDetails(singleTitle))
     );
 
     // console.log(moviesWithDetails);
@@ -88,7 +78,7 @@ async function fetchMovieDetails(title) {
           accept: "application/json",
           Authorization: `Bearer ${TMDB_BEARER_TOKEN}`,
         },
-      },
+      }
     );
     const data = await response.json();
 
@@ -108,9 +98,7 @@ async function fetchMovieDetails(title) {
         type: isMovie ? "movie" : isTV ? "series" : item.media_type,
         name: isMovie ? item.title : item.name,
         imdbID: `${item.media_type}-${item.id}`, // Use TMDB ID format
-        poster: item.poster_path
-          ? `https://image.tmdb.org/t/p/w500${item.poster_path}`
-          : null,
+        poster: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
       };
     } else {
       console.warn(`Movie not found: ${title}`);

@@ -5,8 +5,7 @@ const User = require("../models/User.model.js");
 const movieExistsInList = (list, movie) => {
   return list.content.some(
     (existingMovie) =>
-      (movie.imdbID && existingMovie.imdbID === movie.imdbID) ||
-      existingMovie.id == movie.id,
+      (movie.imdbID && existingMovie.imdbID === movie.imdbID) || existingMovie.id == movie.id
   );
 };
 
@@ -59,9 +58,7 @@ const getList = async (req, res, next) => {
       return res.status(200).json({ message: "NO SUCH LIST AVAILABLE" });
     }
 
-    return res
-      .status(200)
-      .json({ message: "LISTS FETCHED SUCCESSFULLY", data: list });
+    return res.status(200).json({ message: "LISTS FETCHED SUCCESSFULLY", data: list });
   } catch (error) {
     console.error("Error occurred while fetching list:", error);
     res.status(500).json({ message: "INTERNAL SERVER ERROR" });
@@ -76,22 +73,16 @@ const addToList = async (req, res, next) => {
 
   // Validate type
   if (type !== "watchlist" && type !== "normal") {
-    return res
-      .status(400)
-      .json({ message: "Invalid type. Must be 'watchlist' or 'normal'" });
+    return res.status(400).json({ message: "Invalid type. Must be 'watchlist' or 'normal'" });
   }
 
   // Validate list name for normal lists
   if (type === "normal") {
     if (!listName) {
-      return res
-        .status(400)
-        .json({ message: "List name is required for custom lists" });
+      return res.status(400).json({ message: "List name is required for custom lists" });
     }
     if (listName.toLowerCase() === "watchlist") {
-      return res
-        .status(400)
-        .json({ message: "Cannot use reserved name 'watchlist'" });
+      return res.status(400).json({ message: "Cannot use reserved name 'watchlist'" });
     }
   }
 
@@ -125,9 +116,7 @@ const addToList = async (req, res, next) => {
     await list.save();
 
     return res.status(200).json({
-      message: movieFetched
-        ? "Movie added to the list successfully"
-        : "List created successfully",
+      message: movieFetched ? "Movie added to the list successfully" : "List created successfully",
     });
   } catch (error) {
     console.error("Error in addToList:", error);
@@ -142,9 +131,7 @@ const removeFromList = async (req, res, next) => {
 
   // Validate input
   if (!imdbID && !tmdbId) {
-    return res
-      .status(400)
-      .json({ message: "Either imdbID or tmdbId is required" });
+    return res.status(400).json({ message: "Either imdbID or tmdbId is required" });
   }
 
   try {
@@ -161,19 +148,15 @@ const removeFromList = async (req, res, next) => {
       console.log("Movie not found. Searched for:", { imdbID, tmdbId });
       console.log(
         "List content:",
-        list.content.map((m) => ({ id: m.id, imdbID: m.imdbID })),
+        list.content.map((m) => ({ id: m.id, imdbID: m.imdbID }))
       );
       return res.status(404).json({ message: "Movie not found in the list" });
     }
 
-    console.log(
-      `Successfully removed ${initialLength - list.content.length} item(s)`,
-    );
+    console.log(`Successfully removed ${initialLength - list.content.length} item(s)`);
     await list.save();
 
-    return res
-      .status(200)
-      .json({ message: "Movie removed from the list successfully" });
+    return res.status(200).json({ message: "Movie removed from the list successfully" });
   } catch (error) {
     console.error("Error in removeFromList:", error);
     return res.status(500).json({ message: "Internal Server Error" });

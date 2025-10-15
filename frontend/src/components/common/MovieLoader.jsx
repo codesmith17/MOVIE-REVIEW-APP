@@ -1,11 +1,8 @@
-import React from "react";
 import { FaFilm } from "react-icons/fa";
 
 const MovieLoader = ({ fullScreen = false }) => {
   return (
-    <div
-      className={`flex items-center justify-center ${fullScreen ? "min-h-screen" : "py-20"}`}
-    >
+    <div className={`flex items-center justify-center ${fullScreen ? "min-h-screen" : "py-20"}`}>
       <div className="relative">
         {/* Animated film reel */}
         <div className="relative w-24 h-24">
@@ -44,16 +41,10 @@ const MovieLoader = ({ fullScreen = false }) => {
               <span className="animate-bounce" style={{ animationDelay: "0s" }}>
                 .
               </span>
-              <span
-                className="animate-bounce"
-                style={{ animationDelay: "0.1s" }}
-              >
+              <span className="animate-bounce" style={{ animationDelay: "0.1s" }}>
                 .
               </span>
-              <span
-                className="animate-bounce"
-                style={{ animationDelay: "0.2s" }}
-              >
+              <span className="animate-bounce" style={{ animationDelay: "0.2s" }}>
                 .
               </span>
             </span>

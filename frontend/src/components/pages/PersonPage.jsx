@@ -1,4 +1,3 @@
-import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 // import { FaStar } from "react-icons/fa";
 import { MovieCard } from "../movie";
@@ -20,7 +19,7 @@ const PersonPage = () => {
             headers: {
               Authorization: `Bearer ${TMDB_BEARER_TOKEN}`,
             },
-          },
+          }
         );
         if (!response.ok) {
           throw new Error("Network response was not ok");
@@ -78,14 +77,7 @@ const PersonPage = () => {
     return <div className="text-center text-2xl mt-10">Person not found</div>;
   }
 
-  const {
-    name,
-    birthday,
-    place_of_birth,
-    biography,
-    profile_path,
-    combined_credits,
-  } = personData;
+  const { name, birthday, place_of_birth, biography, profile_path, combined_credits } = personData;
   console.log(combined_credits);
   return (
     <div className="bg-gray-900 text-gray-100 min-h-screen relative overflow-hidden">
@@ -104,9 +96,7 @@ const PersonPage = () => {
       ></div>
 
       <div className="container mx-auto px-4 py-8 max-w-6xl relative z-10">
-        <h1 className="text-4xl md:text-5xl font-bold mb-8 text-center text-yellow-400">
-          {name}
-        </h1>
+        <h1 className="text-4xl md:text-5xl font-bold mb-8 text-center text-yellow-400">{name}</h1>
         <div className="flex flex-col md:flex-row items-center md:items-start space-y-8 md:space-y-0 md:space-x-12">
           <img
             src={`https://image.tmdb.org/t/p/w500${profile_path}`}
@@ -115,26 +105,19 @@ const PersonPage = () => {
           />
           <div className="flex-1 space-y-6">
             <p className="text-lg">
-              <span className="font-semibold text-yellow-400">Birthday:</span>{" "}
-              {birthday}
+              <span className="font-semibold text-yellow-400">Birthday:</span> {birthday}
             </p>
             <p className="text-lg">
-              <span className="font-semibold text-yellow-400">
-                Place of Birth:
-              </span>{" "}
+              <span className="font-semibold text-yellow-400">Place of Birth:</span>{" "}
               {place_of_birth}
             </p>
-            <h2 className="text-2xl font-semibold text-yellow-400">
-              Biography
-            </h2>
+            <h2 className="text-2xl font-semibold text-yellow-400">Biography</h2>
             <p className="text-gray-300">{biography}</p>
           </div>
         </div>
 
         <div className="mt-16">
-          <h2 className="text-3xl font-bold mb-8 text-center text-yellow-400">
-            Filmography
-          </h2>
+          <h2 className="text-3xl font-bold mb-8 text-center text-yellow-400">Filmography</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {(() => {
               const movies = combined_credits.cast

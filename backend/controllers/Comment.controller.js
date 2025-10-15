@@ -79,10 +79,7 @@ const replyLike = async (req, res, next) => {
     await comment.save();
 
     res.status(200).json({
-      message:
-        userLikedIndex === -1
-          ? "Reply liked successfully"
-          : "Reply unliked successfully",
+      message: userLikedIndex === -1 ? "Reply liked successfully" : "Reply unliked successfully",
       likes: reply.likes,
       likedBy: reply.likedBy,
     });
@@ -126,9 +123,7 @@ const postLikeComment = (req, res, next) => {
             });
           })
           .catch((err) => {
-            res
-              .status(500)
-              .json({ message: "Error updating comment", error: err });
+            res.status(500).json({ message: "Error updating comment", error: err });
           });
       } else {
         res.status(404).json({ message: "Comment not found" });
@@ -171,9 +166,7 @@ const postDislikeComment = (req, res, next) => {
             });
           })
           .catch((err) => {
-            res
-              .status(500)
-              .json({ message: "Error updating comment", error: err });
+            res.status(500).json({ message: "Error updating comment", error: err });
           });
       } else {
         res.status(404).json({ message: "Comment not found" });
@@ -207,9 +200,7 @@ const postReply = async (req, res, next) => {
     // Save the updated comment
     await comment.save();
 
-    res
-      .status(200)
-      .json({ message: "Reply posted successfully", reply: newReply });
+    res.status(200).json({ message: "Reply posted successfully", reply: newReply });
   } catch (error) {
     console.error("Error posting reply:", error);
     res.status(500).json({ message: "Something went wrong" });
@@ -224,9 +215,7 @@ const deleteComment = async (req, res, next) => {
   try {
     // Check if user is authorized (review owner or admin "krishna")
     if (currentUser !== reviewOwner && currentUser !== "krishna") {
-      return res
-        .status(403)
-        .json({ message: "Unauthorized to delete this comment" });
+      return res.status(403).json({ message: "Unauthorized to delete this comment" });
     }
 
     const comment = await Comment.findById(commentID);
@@ -256,9 +245,7 @@ const deleteReply = async (req, res, next) => {
   try {
     // Check if user is authorized (review owner or admin "krishna")
     if (currentUser !== reviewOwner && currentUser !== "krishna") {
-      return res
-        .status(403)
-        .json({ message: "Unauthorized to delete this reply" });
+      return res.status(403).json({ message: "Unauthorized to delete this reply" });
     }
 
     const comment = await Comment.findById(commentID);

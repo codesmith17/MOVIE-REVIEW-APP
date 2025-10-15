@@ -1,4 +1,3 @@
-import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -35,9 +34,7 @@ const ReviewsListPage = () => {
 
   const fetchReviews = async () => {
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/review/getReviews/${username}`,
-      );
+      const response = await fetch(`${API_BASE_URL}/api/review/getReviews/${username}`);
       const data = await response.json();
 
       if (response.ok) {
@@ -80,7 +77,7 @@ const ReviewsListPage = () => {
                 accept: "application/json",
                 Authorization: `Bearer ${TMDB_BEARER_TOKEN}`,
               },
-            },
+            }
           );
 
           if (response.ok) {
@@ -112,8 +109,7 @@ const ReviewsListPage = () => {
     if (searchQuery) {
       result = result.filter((review) => {
         const mediaData = movieDetails[review.imdbID];
-        const title =
-          mediaData?.mediaType === "tv" ? mediaData.name : mediaData?.title;
+        const title = mediaData?.mediaType === "tv" ? mediaData.name : mediaData?.title;
         return (
           title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
           review.review?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -193,8 +189,7 @@ const ReviewsListPage = () => {
             {username}'s Reviews
           </h1>
           <p className="text-gray-400 text-lg">
-            {filteredReviews.length}{" "}
-            {filteredReviews.length === 1 ? "review" : "reviews"} found
+            {filteredReviews.length} {filteredReviews.length === 1 ? "review" : "reviews"} found
           </p>
         </motion.div>
 
@@ -260,9 +255,7 @@ const ReviewsListPage = () => {
 
                   const isTV = mediaData.mediaType === "tv";
                   const title = isTV ? mediaData.name : mediaData.title;
-                  const releaseDate = isTV
-                    ? mediaData.first_air_date
-                    : mediaData.release_date;
+                  const releaseDate = isTV ? mediaData.first_air_date : mediaData.release_date;
                   const mediaTypeLabel = isTV ? "TV Show" : "Movie";
 
                   return (
@@ -326,11 +319,7 @@ const ReviewsListPage = () => {
                             />
                             <div className="flex items-center mt-3 text-xs text-gray-500">
                               <FaCalendarAlt className="mr-2" />
-                              <span>
-                                {new Date(
-                                  review.dateLogged,
-                                ).toLocaleDateString()}
-                              </span>
+                              <span>{new Date(review.dateLogged).toLocaleDateString()}</span>
                             </div>
                           </div>
                         </motion.div>
@@ -377,10 +366,7 @@ const ReviewsListPage = () => {
                         {page}
                       </button>
                     );
-                  } else if (
-                    page === currentPage - 2 ||
-                    page === currentPage + 2
-                  ) {
+                  } else if (page === currentPage - 2 || page === currentPage + 2) {
                     return (
                       <span key={page} className="text-gray-500">
                         ...
@@ -407,9 +393,7 @@ const ReviewsListPage = () => {
             className="text-center py-20"
           >
             <div className="text-8xl mb-6">📝</div>
-            <h3 className="text-3xl font-bold text-gray-200 mb-3">
-              No reviews found
-            </h3>
+            <h3 className="text-3xl font-bold text-gray-200 mb-3">No reviews found</h3>
             <p className="text-gray-400 text-lg">
               {searchQuery || filterType !== "all"
                 ? "Try adjusting your filters"

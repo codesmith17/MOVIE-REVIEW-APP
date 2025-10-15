@@ -17,9 +17,7 @@ export const fetchRecommendations = async (imdbID, title, year) => {
     const movieTitles = text.split(",").map((title) => title.trim());
 
     // Fetch IMDb IDs and poster images for each movie
-    const moviesWithDetails = await Promise.all(
-      movieTitles.map(fetchMovieDetails),
-    );
+    const moviesWithDetails = await Promise.all(movieTitles.map(fetchMovieDetails));
 
     console.log(moviesWithDetails);
     return moviesWithDetails.filter((movie) => movie !== null);
@@ -40,7 +38,7 @@ async function fetchMovieDetails(title) {
           accept: "application/json",
           Authorization: `Bearer ${TMDB_BEARER_TOKEN}`,
         },
-      },
+      }
     );
     const data = await response.json();
 
@@ -49,9 +47,7 @@ async function fetchMovieDetails(title) {
       return {
         name: movie.title,
         imdbID: `movie-${movie.id}`, // Use TMDB ID format
-        poster: movie.poster_path
-          ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
-          : null,
+        poster: movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : null,
         Year: movie.release_date ? movie.release_date.substring(0, 4) : null,
         Title: movie.title,
       };

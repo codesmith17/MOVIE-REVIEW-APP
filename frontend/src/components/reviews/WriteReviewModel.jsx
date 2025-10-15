@@ -1,4 +1,3 @@
-import React from "react";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import DatePicker from "react-datepicker";
@@ -17,9 +16,7 @@ const WriteReviewModal = ({
   return (
     <div className="space-y-4">
       <div>
-        <label className="block text-gray-700 font-bold mb-2">
-          Date Logged
-        </label>
+        <label className="block text-gray-700 font-bold mb-2">Date Logged</label>
         <DatePicker
           selected={dateLogged}
           onChange={handleDateChange}
@@ -31,9 +28,7 @@ const WriteReviewModal = ({
       </div>
 
       <div>
-        <label className="block text-gray-700 font-bold mb-2">
-          Your Review
-        </label>
+        <label className="block text-gray-700 font-bold mb-2">Your Review</label>
         <ReactQuill
           value={review}
           onChange={setReview}

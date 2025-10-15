@@ -1,8 +1,5 @@
 const Movie = require("../models/Movie.model");
-const {
-  fetchRecommendations,
-  trendingMovies,
-} = require("../utils/GeminiApiReccomendations");
+const { fetchRecommendations, trendingMovies } = require("../utils/GeminiApiReccomendations");
 const getLikes = (req, res, next) => {
   const imdbID = req.params.imdbID;
   const email = req.user ? req.user.email : null;
@@ -32,9 +29,7 @@ const getRecommendations = async (req, res, next) => {
   const { imdbID, title, year } = req.params;
   try {
     const recoMovies = await fetchRecommendations(imdbID, title, year);
-    res
-      .status(200)
-      .json({ message: "SUCCESSFULLY FETCHED RECOMMENDATIONS", recoMovies });
+    res.status(200).json({ message: "SUCCESSFULLY FETCHED RECOMMENDATIONS", recoMovies });
     return;
   } catch {
     console.error("ERROR OCCURED WHILE FETCHING RECOMMENDATIONS");
@@ -44,9 +39,7 @@ const getRecommendations = async (req, res, next) => {
 const getTrending = async (req, res, next) => {
   try {
     const trendMovies = await trendingMovies();
-    res
-      .status(200)
-      .json({ message: "SUCCESSFULLY FETCHED TRENDING", trendMovies });
+    res.status(200).json({ message: "SUCCESSFULLY FETCHED TRENDING", trendMovies });
     return;
   } catch {
     console.error("ERROR OCCURED WHILE FETCHING TRENDING");
@@ -73,31 +66,25 @@ const postLikes = (req, res, next) => {
             Movie.findOneAndDelete({ imdbID: imdbID })
               .then((deletedMovie) => {
                 console.log("Deleted successfully:", deletedMovie);
-                res
-                  .status(200)
-                  .json({
-                    message: "Like removed successfully.",
-                    movie: deletedMovie,
-                  });
+                res.status(200).json({
+                  message: "Like removed successfully.",
+                  movie: deletedMovie,
+                });
               })
               .catch((err) => {
                 console.error("Error deleting movie:", err);
-                res
-                  .status(500)
-                  .json({
-                    message: "An error occurred while deleting movie.",
-                    error: err,
-                  });
+                res.status(500).json({
+                  message: "An error occurred while deleting movie.",
+                  error: err,
+                });
               });
           } else {
             // Save the updated movie with removed like
             return movie.save().then((updatedMovie) => {
-              res
-                .status(200)
-                .json({
-                  message: "Like removed successfully.",
-                  movie: updatedMovie,
-                });
+              res.status(200).json({
+                message: "Like removed successfully.",
+                movie: updatedMovie,
+              });
             });
           }
         } else {
@@ -107,12 +94,10 @@ const postLikes = (req, res, next) => {
 
           // Save the updated movie with added like
           return movie.save().then((updatedMovie) => {
-            res
-              .status(200)
-              .json({
-                message: "Movie liked successfully.",
-                movie: updatedMovie,
-              });
+            res.status(200).json({
+              message: "Movie liked successfully.",
+              movie: updatedMovie,
+            });
           });
         }
       } else {
@@ -124,12 +109,10 @@ const postLikes = (req, res, next) => {
         });
 
         return newMovie.save().then((createdMovie) => {
-          res
-            .status(201)
-            .json({
-              message: "Movie liked successfully.",
-              movie: createdMovie,
-            });
+          res.status(201).json({
+            message: "Movie liked successfully.",
+            movie: createdMovie,
+          });
         });
       }
     })
@@ -160,7 +143,7 @@ const fetchHTML = (url) => {
           res.on("end", () => {
             resolve(data);
           });
-        },
+        }
       )
       .on("error", (err) => {
         reject(err);
@@ -177,25 +160,23 @@ const scrapeIMDb = async (req, res, next) => {
 
     const posterCardPromises = [];
 
-    $('section[data-testid="MoreLikeThis"] div.ipc-poster-card').each(
-      (index, element) => {
-        const href = $(element).find("a").attr("href");
-        const text = $(element).find("a").attr("aria-label");
-        const poster = $(element).find("img.ipc-image").attr("src");
+    $('section[data-testid="MoreLikeThis"] div.ipc-poster-card').each((index, element) => {
+      const href = $(element).find("a").attr("href");
+      const text = $(element).find("a").attr("aria-label");
+      const poster = $(element).find("img.ipc-image").attr("src");
 
-        if (href && text && poster) {
-          const fullUrl = new URL(href, "https://www.imdb.com").href;
-          const promise = parseMovieShow(fullUrl).then((restOfTheData) => ({
-            href: restOfTheData.url,
-            name: restOfTheData.text,
-            poster: restOfTheData.poster,
-            year: restOfTheData.year.substring(11, 15),
-            type: restOfTheData.type,
-          }));
-          posterCardPromises.push(promise);
-        }
-      },
-    );
+      if (href && text && poster) {
+        const fullUrl = new URL(href, "https://www.imdb.com").href;
+        const promise = parseMovieShow(fullUrl).then((restOfTheData) => ({
+          href: restOfTheData.url,
+          name: restOfTheData.text,
+          poster: restOfTheData.poster,
+          year: restOfTheData.year.substring(11, 15),
+          type: restOfTheData.type,
+        }));
+        posterCardPromises.push(promise);
+      }
+    });
 
     const posterCards = await Promise.all(posterCardPromises);
 
@@ -217,9 +198,7 @@ const parseMovieShow = async (url) => {
 
     const name = $("span.hero__primary-text").text().trim();
 
-    const infoList = $(
-      "ul.ipc-inline-list.ipc-inline-list--show-dividers.baseAlt",
-    );
+    const infoList = $("ul.ipc-inline-list.ipc-inline-list--show-dividers.baseAlt");
     const year = infoList.find("li:first-child a").text().trim();
 
     // Extract type from the HTML
