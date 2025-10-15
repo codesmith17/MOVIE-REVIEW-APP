@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "build": "cd ../frontend && npm install && npm run build",
+    "build": "echo 'Build step not needed for production'",
+    "vercel-build": "cd ../frontend && npm install && npm run build && cd ../backend && npm install",
     "lint": "eslint . --ext js",
     "lint:strict": "eslint . --ext js --max-warnings 0",
     "lint:fix": "eslint . --ext js --fix",
