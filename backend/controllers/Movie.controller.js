@@ -251,10 +251,34 @@ const parseMovieShow = async (url) => {
     throw error;
   }
 };
+const getLikedMoviesCount = async (req, res, next) => {
+  try {
+    const { username } = req.params;
+    const User = require("../models/User.model");
+
+    // Get user's email from username
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(404).json({ message: "User not found", count: 0 });
+    }
+
+    // Count movies where user's email is in the emails array
+    const count = await Movie.countDocuments({
+      emails: user.email,
+    });
+
+    res.status(200).json({ count });
+  } catch (err) {
+    console.error("Error in getLikedMoviesCount:", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 module.exports = {
   postLikes,
   getLikes,
   getRecommendations,
   getTrending,
   scrapeIMDb,
+  getLikedMoviesCount,
 };

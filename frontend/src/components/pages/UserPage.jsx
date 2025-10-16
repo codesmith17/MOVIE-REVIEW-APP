@@ -74,9 +74,9 @@ const UserPage = () => {
     }
   };
 
-  const fetchLikedReviewsCount = async () => {
+  const fetchLikedMoviesCount = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/review/getLikedReviews/${username}`, {
+      const response = await fetch(`${API_BASE_URL}/api/movie/getLikedMoviesCount/${username}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -88,14 +88,14 @@ const UserPage = () => {
         setLikedReviewsCount(data.count || 0);
       }
     } catch (error) {
-      console.error("Error fetching liked reviews:", error);
+      console.error("Error fetching liked movies count:", error);
     }
   };
 
   useEffect(() => {
     if (fetchedUserData) {
       fetchWatchlist();
-      fetchLikedReviewsCount();
+      fetchLikedMoviesCount();
     }
   }, [fetchedUserData]);
 
@@ -391,7 +391,7 @@ const UserPage = () => {
                       />
                       <ModernStatBox
                         icon={FaHeart}
-                        label="Liked"
+                        label="Liked Movies"
                         value={likedReviewsCount}
                         color="from-red-400 to-pink-500"
                       />
