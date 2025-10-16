@@ -57,12 +57,10 @@ const MovieCard = ({ id, title, year, type, image, rating, mediaType, priority =
           g = Math.floor(g / count);
           b = Math.floor(b / count);
 
-          console.log(`Extracted color for ${title}:`, { r, g, b });
           setDominantColor({ r, g, b });
         }
       } catch (error) {
         // CORS error or other issues - use a default based on title hash
-        console.log("Could not extract color from image, using fallback");
         const hash = title.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
         const r = (hash * 137) % 256;
         const g = (hash * 239) % 256;

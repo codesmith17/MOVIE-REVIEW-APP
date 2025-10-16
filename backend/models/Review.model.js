@@ -6,7 +6,8 @@ const likedSchema = new mongoose.Schema({
   },
   profilePicture: {
     type: String,
-    required: true,
+    required: false, // Made optional - not all users have profile pictures
+    default: "",
   },
 });
 const reviewSchema = new mongoose.Schema({

@@ -126,9 +126,18 @@ const postReviewLikes = (req, res, next) => {
         likes = response.likes + 1;
         newLikeArray = [
           ...likedArray,
-          { username: req.user.email, profilePicture: req.user.profilePicture },
+          { username: req.user.email, profilePicture: req.user.profilePicture || "" },
         ];
       }
+
+      console.log(
+        "[postReviewLikes] User:",
+        req.user.email,
+        "Action:",
+        isLikedByUser ? "Unlike" : "Like",
+        "New likes:",
+        likes
+      );
 
       // Update the review with the new like/unlike status
       Review.updateOne({ _id: currentReviewID }, { $set: { likes, likedBy: newLikeArray } })
@@ -297,6 +306,9 @@ const getLikedReviews = async (req, res, next) => {
 
     // First, get the user's email from their username
     const user = await User.findOne({ username });
+    console.log("[getLikedReviews] Username:", username);
+    console.log("[getLikedReviews] User email:", user?.email);
+
     if (!user) {
       return res.status(404).json({ message: "User not found", count: 0 });
     }
@@ -306,6 +318,22 @@ const getLikedReviews = async (req, res, next) => {
     const likedReviews = await Review.find({
       "likedBy.username": user.email,
     }).sort({ dateLogged: -1 });
+
+    console.log("[getLikedReviews] Found reviews:", likedReviews.length);
+
+    // Also check all reviews with ANY likes to debug
+    const anyLikedReviews = await Review.find({
+      "likedBy.0": { $exists: true },
+    }).limit(3);
+    console.log("[getLikedReviews] Sample reviews with likes:", anyLikedReviews.length);
+    anyLikedReviews.forEach((r) => {
+      console.log(
+        "  - Review",
+        r._id,
+        "likedBy:",
+        r.likedBy.map((l) => l.username)
+      );
+    });
 
     res.status(200).json({ reviews: likedReviews, count: likedReviews.length });
   } catch (err) {
