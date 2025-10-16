@@ -179,14 +179,25 @@ const editReview = (req, res, next) => {
 };
 const getReviews = async (req, res, next) => {
   const { username } = req.params;
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 6;
+  const skip = (page - 1) * limit;
+
   try {
     const userCount = await User.find({ username }).countDocuments();
     if (userCount === 0) {
       return res.status(404).json({ message: "No such user exists" });
     }
 
+    // Get total count for pagination
+    const totalReviews = await Review.countDocuments({ username });
+
+    // Get paginated reviews
     const reviews = await Review.aggregate([
       { $match: { username } },
+      { $sort: { dateLogged: -1 } }, // Sort by newest first
+      { $skip: skip },
+      { $limit: limit },
       {
         $project: {
           title: 1,
@@ -200,11 +211,16 @@ const getReviews = async (req, res, next) => {
       },
     ]);
 
-    if (reviews.length === 0) {
-      return res.status(404).json({ message: "No reviews available" });
-    }
-
-    return res.status(200).json({ message: "Reviews fetched successfully", reviews });
+    return res.status(200).json({
+      message: "Reviews fetched successfully",
+      reviews,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(totalReviews / limit),
+        totalReviews,
+        hasMore: page < Math.ceil(totalReviews / limit),
+      },
+    });
   } catch (err) {
     console.error("Error fetching reviews:", err);
     res.status(500).json({ error: "Failed to fetch reviews" });

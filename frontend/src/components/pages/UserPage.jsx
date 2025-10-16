@@ -42,9 +42,9 @@ const UserPage = () => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
-  const [followersCount, setFollowersCount] = useState(0);
-  const [followingCount, setFollowingCount] = useState(0);
-  const [likedReviewsCount, setLikedReviewsCount] = useState(0);
+  const [followersCount, setFollowersCount] = useState(null); // null = loading, number = loaded
+  const [followingCount, setFollowingCount] = useState(null);
+  const [likedReviewsCount, setLikedReviewsCount] = useState(null);
   const [activeTab, setActiveTab] = useState("reviews");
   const user = useSelector((state) => state.user.data);
   const fetchWatchlist = async () => {
@@ -170,7 +170,8 @@ const UserPage = () => {
     setIsLoading(true);
     if (user?.data && user.data.username === username) {
       setFetchedUserData(user.data);
-      setFollowersCount(user.data.followers);
+      setFollowersCount(user.data.followers || 0);
+      setFollowingCount(user.data.following || 0);
       setIsFollowing(false); // Can't follow yourself
       setIsLoading(false);
     } else {
@@ -197,7 +198,8 @@ const UserPage = () => {
             throw new Error("User data not found");
           }
           setFetchedUserData(data.data);
-          setFollowersCount(data.data.followers);
+          setFollowersCount(data.data.followers || 0);
+          setFollowingCount(data.data.following || 0);
           setIsFollowing(
             data.data.followers ? data.data.followersList.includes(user?.data?.username) : false
           );
@@ -385,7 +387,7 @@ const UserPage = () => {
                       <ModernStatBox
                         icon={FaUserPlus}
                         label="Following"
-                        value={fetchedUserData.following}
+                        value={followingCount}
                         color="from-blue-400 to-cyan-500"
                         link={`/user/${username}/following`}
                       />
@@ -609,7 +611,7 @@ const ModernStatBox = ({ icon: Icon, label, value, color, link }) => {
         <Icon className="text-white text-base sm:text-lg md:text-xl lg:text-2xl" />
       </div>
       <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-0.5 sm:mb-1">
-        {value}
+        {value === null ? <FaSpinner className="animate-spin text-gray-400 text-2xl" /> : value}
       </div>
       <div className="text-xs sm:text-sm text-gray-400 font-medium">{label}</div>
 
@@ -671,16 +673,26 @@ const ReviewsTab = ({ username }) => {
   const [reviews, setReviews] = useState([]);
   const [loadingReviews, setLoadingReviews] = useState(true);
   const [movieDetails, setMovieDetails] = useState({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pagination, setPagination] = useState(null);
+  const REVIEWS_PER_PAGE = 6;
 
+  // Fetch reviews from backend (server-side pagination)
   useEffect(() => {
     const fetchReviews = async () => {
+      setLoadingReviews(true);
       try {
-        const response = await fetch(`${API_BASE_URL}/api/review/getReviews/${username}`);
+        const response = await fetch(
+          `${API_BASE_URL}/api/review/getReviews/${username}?page=${currentPage}&limit=${REVIEWS_PER_PAGE}`
+        );
         const data = await response.json();
 
         if (response.ok) {
-          // console.log(data);
           setReviews(data.reviews);
+          setPagination(data.pagination);
+
+          // Fetch movie details for these reviews
+          await fetchMovieDetailsForReviews(data.reviews);
         } else {
           toast.error("Failed to fetch reviews");
         }
@@ -693,17 +705,19 @@ const ReviewsTab = ({ username }) => {
     };
 
     fetchReviews();
-  }, [username]);
+  }, [username, currentPage]);
 
-  useEffect(() => {
-    const fetchAllMovieDetails = async () => {
-      const details = {};
-      const fetchPromises = reviews.map(async (review) => {
+  // Fetch movie details for current page reviews
+  const fetchMovieDetailsForReviews = async (reviewsToFetch) => {
+    const details = { ...movieDetails };
+
+    const fetchPromises = reviewsToFetch
+      .filter((review) => !details[review.imdbID]) // Only fetch if not already cached
+      .map(async (review) => {
         try {
           let mediaType = "movie";
           let mediaId = review.imdbID;
 
-          // Check if the ID has a type prefix (tv- or movie-)
           if (typeof review.imdbID === "string") {
             if (review.imdbID.startsWith("tv-")) {
               mediaType = "tv";
@@ -720,113 +734,209 @@ const ReviewsTab = ({ username }) => {
             const data = await response.json();
             details[review.imdbID] = {
               ...data,
-              mediaType, // Store the media type for later use
+              mediaType,
             };
           } else {
             console.warn(`Failed to fetch details for ${review.imdbID}`);
+            details[review.imdbID] = {
+              error: true,
+              mediaType,
+            };
           }
         } catch (error) {
           console.error(`Error fetching details for ${review.imdbID}:`, error);
+          details[review.imdbID] = {
+            error: true,
+            mediaType: "movie",
+          };
         }
       });
 
-      await Promise.all(fetchPromises);
-      setMovieDetails(details);
-    };
+    await Promise.all(fetchPromises);
+    setMovieDetails(details);
+  };
 
-    if (reviews.length > 0) {
-      fetchAllMovieDetails();
-    }
-  }, [reviews, username]);
+  // Skeleton loader for review cards
+  const ReviewSkeleton = () => (
+    <div className="bg-gradient-to-br from-gray-700/50 to-gray-800/50 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl overflow-hidden border border-gray-600/30 animate-pulse">
+      <div className="flex items-start p-3 sm:p-4 md:p-5">
+        <div className="w-16 h-24 sm:w-20 sm:h-28 md:w-24 md:h-36 bg-gray-600 rounded-lg sm:rounded-xl" />
+        <div className="ml-3 sm:ml-4 md:ml-5 flex-1">
+          <div className="h-5 bg-gray-600 rounded w-3/4 mb-2" />
+          <div className="h-4 bg-gray-600 rounded w-1/2 mb-3" />
+          <div className="h-6 bg-gray-600 rounded w-20" />
+        </div>
+      </div>
+      <div className="px-3 sm:px-4 md:px-5 pb-3 sm:pb-4 md:pb-5">
+        <div className="h-3 bg-gray-600 rounded w-full mb-2" />
+        <div className="h-3 bg-gray-600 rounded w-4/5" />
+      </div>
+    </div>
+  );
 
   return (
     <TabContent title="Reviews">
       {loadingReviews ? (
-        <div className="flex justify-center py-12">
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-          >
-            <FaSpinner className="text-cyan-500 text-4xl" />
-          </motion.div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 sm:gap-6">
+          {[...Array(6)].map((_, index) => (
+            <ReviewSkeleton key={index} />
+          ))}
         </div>
       ) : reviews.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 sm:gap-6">
-          {reviews.map((review) => {
-            const mediaData = movieDetails[review.imdbID];
-            if (!mediaData) return null; // Skip if data hasn't loaded yet
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 sm:gap-6">
+            {reviews.map((review) => {
+              const mediaData = movieDetails[review.imdbID];
+              if (!mediaData) return <ReviewSkeleton key={review._id} />;
 
-            const isTV = mediaData.mediaType === "tv";
-            const title = isTV ? mediaData.name : mediaData.title;
-            const releaseDate = isTV ? mediaData.first_air_date : mediaData.release_date;
-            const mediaTypeLabel = isTV ? "TV Show" : "Movie";
+              if (mediaData.error) {
+                return (
+                  <div
+                    key={review._id}
+                    className="bg-gradient-to-br from-gray-700/50 to-gray-800/50 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl p-6 border border-gray-600/30"
+                  >
+                    <p className="text-gray-400 text-center">Failed to load movie details</p>
+                    <Link
+                      to={`/movie-page/${review.imdbID}/${review._id}`}
+                      className="text-cyan-400 hover:text-cyan-300 mt-2 block text-center"
+                    >
+                      View Review →
+                    </Link>
+                  </div>
+                );
+              }
 
-            return (
-              <Link key={review._id} to={`/movie-page/${review.imdbID}/${review._id}`}>
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  whileHover={{ scale: 1.02, y: -5 }}
-                  transition={{ duration: 0.3 }}
-                  className="group bg-gradient-to-br from-gray-700/50 to-gray-800/50 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-600/30"
-                >
-                  <div className="flex items-start p-3 sm:p-4 md:p-5">
-                    <div className="relative flex-shrink-0">
-                      {mediaData.poster_path ? (
-                        <img
-                          src={`https://image.tmdb.org/t/p/w200${mediaData.poster_path}`}
-                          alt={title}
-                          className="w-16 h-24 sm:w-20 sm:h-28 md:w-24 md:h-36 object-cover rounded-lg sm:rounded-xl shadow-lg"
-                        />
-                      ) : (
-                        <div className="w-16 h-24 sm:w-20 sm:h-28 md:w-24 md:h-36 bg-gray-600 rounded-lg sm:rounded-xl shadow-lg flex items-center justify-center">
-                          <FaFilm className="text-gray-400 text-xl sm:text-2xl md:text-3xl" />
+              const isTV = mediaData.mediaType === "tv";
+              const title = isTV ? mediaData.name : mediaData.title;
+              const releaseDate = isTV ? mediaData.first_air_date : mediaData.release_date;
+              const mediaTypeLabel = isTV ? "TV Show" : "Movie";
+
+              return (
+                <Link key={review._id} to={`/movie-page/${review.imdbID}/${review._id}`}>
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    whileHover={{ scale: 1.02, y: -5 }}
+                    transition={{ duration: 0.3 }}
+                    className="group bg-gradient-to-br from-gray-700/50 to-gray-800/50 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-600/30"
+                  >
+                    <div className="flex items-start p-3 sm:p-4 md:p-5">
+                      <div className="relative flex-shrink-0">
+                        {mediaData.poster_path ? (
+                          <img
+                            src={`https://image.tmdb.org/t/p/w200${mediaData.poster_path}`}
+                            alt={title}
+                            className="w-16 h-24 sm:w-20 sm:h-28 md:w-24 md:h-36 object-cover rounded-lg sm:rounded-xl shadow-lg"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="w-16 h-24 sm:w-20 sm:h-28 md:w-24 md:h-36 bg-gray-600 rounded-lg sm:rounded-xl shadow-lg flex items-center justify-center">
+                            <FaFilm className="text-gray-400 text-xl sm:text-2xl md:text-3xl" />
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent rounded-lg sm:rounded-xl" />
+                        {/* Media Type Badge */}
+                        <div className="absolute top-1 right-1 sm:top-2 sm:right-2 bg-cyan-600/90 backdrop-blur-sm px-1.5 py-0.5 sm:px-2 rounded text-xs text-white font-semibold">
+                          {mediaTypeLabel}
                         </div>
-                      )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent rounded-lg sm:rounded-xl" />
-                      {/* Media Type Badge */}
-                      <div className="absolute top-1 right-1 sm:top-2 sm:right-2 bg-cyan-600/90 backdrop-blur-sm px-1.5 py-0.5 sm:px-2 rounded text-xs text-white font-semibold">
-                        {mediaTypeLabel}
                       </div>
-                    </div>
-                    <div className="ml-3 sm:ml-4 md:ml-5 flex-1 min-w-0">
-                      <h4 className="font-bold text-sm sm:text-base md:text-lg mb-1 sm:mb-2 text-white group-hover:text-cyan-300 transition-colors line-clamp-2">
-                        {title || "Unknown Title"}
-                      </h4>
-                      <p className="text-xs sm:text-sm text-gray-400 mb-2 sm:mb-3">
-                        {releaseDate?.split("-")[0] || "N/A"} •{" "}
-                        {mediaData.genres?.[0]?.name || mediaTypeLabel}
-                      </p>
-                      <div className="flex items-center mb-2 sm:mb-3 gap-1.5 sm:gap-2 flex-wrap">
-                        <div className="flex items-center bg-yellow-500/20 px-2 sm:px-3 py-0.5 sm:py-1 rounded-lg">
-                          <FaStar className="text-yellow-400 mr-1 sm:mr-1.5 text-xs sm:text-sm" />
-                          <span className="font-bold text-white text-xs sm:text-sm">
-                            {review.rating}
+                      <div className="ml-3 sm:ml-4 md:ml-5 flex-1 min-w-0">
+                        <h4 className="font-bold text-sm sm:text-base md:text-lg mb-1 sm:mb-2 text-white group-hover:text-cyan-300 transition-colors line-clamp-2">
+                          {title || "Unknown Title"}
+                        </h4>
+                        <p className="text-xs sm:text-sm text-gray-400 mb-2 sm:mb-3">
+                          {releaseDate?.split("-")[0] || "N/A"} •{" "}
+                          {mediaData.genres?.[0]?.name || mediaTypeLabel}
+                        </p>
+                        <div className="flex items-center mb-2 sm:mb-3 gap-1.5 sm:gap-2 flex-wrap">
+                          <div className="flex items-center bg-yellow-500/20 px-2 sm:px-3 py-0.5 sm:py-1 rounded-lg">
+                            <FaStar className="text-yellow-400 mr-1 sm:mr-1.5 text-xs sm:text-sm" />
+                            <span className="font-bold text-white text-xs sm:text-sm">
+                              {review.rating}
+                            </span>
+                          </div>
+                          <span className="text-xs sm:text-sm text-gray-400 truncate">
+                            by {review.username}
                           </span>
                         </div>
-                        <span className="text-xs sm:text-sm text-gray-400 truncate">
-                          by {review.username}
-                        </span>
                       </div>
                     </div>
-                  </div>
-                  <div className="px-3 sm:px-4 md:px-5 pb-3 sm:pb-4 md:pb-5">
-                    <p
-                      className="text-xs sm:text-sm text-gray-300 line-clamp-2 sm:line-clamp-3"
-                      dangerouslySetInnerHTML={{
-                        __html: review.review.substring(0, 200) + "...",
-                      }}
-                    />
-                    <div className="flex items-center mt-2 sm:mt-3 text-xs text-gray-500">
-                      <FaCalendarAlt className="mr-1.5 sm:mr-2" />
-                      <span>{new Date(review.dateLogged).toLocaleDateString()}</span>
+                    <div className="px-3 sm:px-4 md:px-5 pb-3 sm:pb-4 md:pb-5">
+                      <p
+                        className="text-xs sm:text-sm text-gray-300 line-clamp-2 sm:line-clamp-3"
+                        dangerouslySetInnerHTML={{
+                          __html: review.review.substring(0, 200) + "...",
+                        }}
+                      />
+                      <div className="flex items-center mt-2 sm:mt-3 text-xs text-gray-500">
+                        <FaCalendarAlt className="mr-1.5 sm:mr-2" />
+                        <span>{new Date(review.dateLogged).toLocaleDateString()}</span>
+                      </div>
                     </div>
-                  </div>
-                </motion.div>
-              </Link>
-            );
-          })}
-        </div>
+                  </motion.div>
+                </Link>
+              );
+            })}
+          </div>
+
+          {/* Pagination Controls */}
+          {pagination && pagination.totalPages > 1 && (
+            <div className="flex flex-col items-center gap-4 mt-8">
+              <div className="flex justify-center items-center gap-2">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                  disabled={pagination.currentPage === 1}
+                  className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+                    pagination.currentPage === 1
+                      ? "bg-gray-700/50 text-gray-500 cursor-not-allowed"
+                      : "bg-gradient-to-r from-cyan-600 to-blue-600 text-white hover:from-cyan-700 hover:to-blue-700"
+                  }`}
+                >
+                  Previous
+                </motion.button>
+
+                <div className="flex gap-2">
+                  {[...Array(pagination.totalPages)].map((_, index) => (
+                    <motion.button
+                      key={index}
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => setCurrentPage(index + 1)}
+                      className={`w-10 h-10 rounded-lg font-semibold transition-all ${
+                        pagination.currentPage === index + 1
+                          ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white"
+                          : "bg-gray-700/50 text-gray-300 hover:bg-gray-700"
+                      }`}
+                    >
+                      {index + 1}
+                    </motion.button>
+                  ))}
+                </div>
+
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.min(pagination.totalPages, prev + 1))
+                  }
+                  disabled={pagination.currentPage === pagination.totalPages}
+                  className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+                    pagination.currentPage === pagination.totalPages
+                      ? "bg-gray-700/50 text-gray-500 cursor-not-allowed"
+                      : "bg-gradient-to-r from-cyan-600 to-blue-600 text-white hover:from-cyan-700 hover:to-blue-700"
+                  }`}
+                >
+                  Next
+                </motion.button>
+              </div>
+              <p className="text-sm text-gray-400">
+                Showing {reviews.length} of {pagination.totalReviews} reviews
+              </p>
+            </div>
+          )}
+        </>
       ) : (
         <div className="text-center py-16">
           <div className="text-6xl mb-4">📝</div>
