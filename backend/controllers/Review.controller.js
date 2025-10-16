@@ -295,9 +295,16 @@ const getLikedReviews = async (req, res, next) => {
   try {
     const { username } = req.params;
 
-    // Find all reviews where the user is in the likedBy array
+    // First, get the user's email from their username
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(404).json({ message: "User not found", count: 0 });
+    }
+
+    // Find all reviews where the user's email is in the likedBy array
+    // Note: The likedBy array stores email in the 'username' field (legacy naming)
     const likedReviews = await Review.find({
-      "likedBy.username": username,
+      "likedBy.username": user.email,
     }).sort({ dateLogged: -1 });
 
     res.status(200).json({ reviews: likedReviews, count: likedReviews.length });
