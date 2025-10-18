@@ -1,21 +1,33 @@
-const mongoose = require("mongoose");
-const movieSchema = new mongoose.Schema({
-  imdbID: {
-    type: String,
-    required: true,
-  },
-  likes: {
-    type: Number,
-    required: true,
-    default: 0,
-  },
+const { DataTypes } = require("sequelize");
+const { sequelize } = require("../config/database");
 
-  emails: [
-    {
-      type: String,
+const Movie = sequelize.define(
+  "Movie",
+  {
+    id: {
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
+      primaryKey: true,
     },
-  ],
-});
-const Movies = mongoose.model("Movies", movieSchema);
+    imdbID: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      unique: true,
+    },
+    likes: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+    },
+    emails: {
+      type: DataTypes.ARRAY(DataTypes.STRING),
+      defaultValue: [],
+    },
+  },
+  {
+    tableName: "movies",
+    timestamps: true,
+  }
+);
 
-module.exports = Movies;
+module.exports = Movie;

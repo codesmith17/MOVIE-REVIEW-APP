@@ -1,8 +1,8 @@
 {
-  "name": "movie-review-app",
+  "name": "cinesphere",
   "version": "1.0.0",
   "private": true,
-  "description": "Movie Review Application - Monorepo",
+  "description": "CineSphere - Your Ultimate Entertainment Companion",
   "scripts": {
     "prepare": "husky || true",
     "lint": "npm run lint --prefix frontend && npm run lint --prefix backend",

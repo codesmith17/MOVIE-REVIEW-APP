@@ -5,6 +5,13 @@ const nodemailer = require("nodemailer");
 const crypto = require("crypto-js");
 const { bucket } = require("../utils/firebaseAdmin");
 const { initializeGraph, getGraph } = require("../utils/GraphInstance.js");
+const { Op } = require("sequelize");
+
+// Security: Load secrets from environment variables
+const JWT_SECRET = process.env.JWT_SECRET || "krishna170902"; // Fallback for development only
+const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET || JWT_SECRET; // Refresh token secret
+const CRYPTO_SECRET = process.env.CRYPTO_SECRET || "krishna170902"; // For password reset encryption
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000"; // App base URL
 
 const basicGraphNetworkInitialisation = async (req, res, next) => {
   try {
@@ -45,16 +52,15 @@ const uploadProfilePicture = async (req, res, next) => {
       expires: "03-01-2500",
     });
 
-    const userId = req.user.id; // Ensure you have the user ID from the Firebase token
+    const userId = req.user.id; // Ensure you have the user ID from the token
 
     // Update the user's profile picture URL in the database
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
+    const [rowsUpdated] = await User.update(
       { profilePicture: imageURL[0] },
-      { new: true }
+      { where: { id: userId } }
     );
 
-    if (!updatedUser) {
+    if (rowsUpdated === 0) {
       return res.status(404).json({ message: "User not found" });
     }
 
@@ -72,7 +78,7 @@ const toggleFollow = async (req, res, next) => {
   try {
     // Check if target user exists
     const userToFollow = await User.findOne({
-      username: usernameBeingFollowed,
+      where: { username: usernameBeingFollowed },
     });
     if (!userToFollow) {
       return res.status(404).json({ message: "User not found" });
@@ -82,40 +88,64 @@ const toggleFollow = async (req, res, next) => {
     const isFollowing = userToFollow.followersList.includes(usernameFollowing);
 
     // Prepare update operations
-    let updateOperation, followingUpdateOperation, message;
+    let message;
 
     if (isFollowing) {
       // Unfollow
-      updateOperation = {
-        $inc: { followers: -1 },
-        $pull: { followersList: usernameFollowing },
-      };
-      followingUpdateOperation = {
-        $inc: { following: -1 },
-        $pull: { followingList: usernameBeingFollowed },
-      };
+      const updatedFollowersList = userToFollow.followersList.filter(
+        (u) => u !== usernameFollowing
+      );
+      const currentUser = await User.findOne({ where: { username: usernameFollowing } });
+      const updatedFollowingList = currentUser.followingList.filter(
+        (u) => u !== usernameBeingFollowed
+      );
+
+      await Promise.all([
+        User.update(
+          {
+            followers: userToFollow.followers - 1,
+            followersList: updatedFollowersList,
+          },
+          { where: { username: usernameBeingFollowed } }
+        ),
+        User.update(
+          {
+            following: currentUser.following - 1,
+            followingList: updatedFollowingList,
+          },
+          { where: { username: usernameFollowing } }
+        ),
+      ]);
+
       message = "Unfollowed successfully";
     } else {
       // Follow
-      updateOperation = {
-        $inc: { followers: 1 },
-        $push: { followersList: usernameFollowing },
-      };
-      followingUpdateOperation = {
-        $inc: { following: 1 },
-        $push: { followingList: usernameBeingFollowed },
-      };
+      const updatedFollowersList = [...userToFollow.followersList, usernameFollowing];
+      const currentUser = await User.findOne({ where: { username: usernameFollowing } });
+      const updatedFollowingList = [...currentUser.followingList, usernameBeingFollowed];
+
+      await Promise.all([
+        User.update(
+          {
+            followers: userToFollow.followers + 1,
+            followersList: updatedFollowersList,
+          },
+          { where: { username: usernameBeingFollowed } }
+        ),
+        User.update(
+          {
+            following: currentUser.following + 1,
+            followingList: updatedFollowingList,
+          },
+          { where: { username: usernameFollowing } }
+        ),
+      ]);
+
       message = "Followed successfully";
     }
 
-    // Update both users
-    await Promise.all([
-      User.updateOne({ username: usernameBeingFollowed }, updateOperation),
-      User.updateOne({ username: usernameFollowing }, followingUpdateOperation),
-    ]);
-
     // Get updated follower count
-    const updatedUser = await User.findOne({ username: usernameBeingFollowed });
+    const updatedUser = await User.findOne({ where: { username: usernameBeingFollowed } });
 
     res.status(200).json({
       message,
@@ -129,8 +159,8 @@ const toggleFollow = async (req, res, next) => {
 };
 
 const verifyUser = (req, res, next) => {
-  // Extract token from cookie
-  let token = req.headers?.cookie?.split("access_token=")[1] || null;
+  // Read access token from httpOnly cookie (most secure)
+  const token = req.cookies?.access_token;
   const source = req.params?.source;
 
   // Allow unauthenticated access for "likes" source
@@ -145,15 +175,19 @@ const verifyUser = (req, res, next) => {
     });
   }
 
-  // Clean token (remove trailing semicolon if present)
-  if (token.includes(";")) {
-    token = token.split(";")[0];
-  }
-
   // Verify JWT token
-  jwt.verify(token, "krishna170902", (err, decoded) => {
+  jwt.verify(token, JWT_SECRET, (err, decoded) => {
     if (err) {
       console.error("Token verification error:", err);
+
+      // If token expired, client should call refresh-token endpoint
+      if (err.name === "TokenExpiredError") {
+        return res.status(401).json({
+          message: "Token expired",
+          code: "TOKEN_EXPIRED",
+        });
+      }
+
       return res.status(500).json({
         message: "Failed to authenticate token.",
       });
@@ -176,21 +210,16 @@ const verifyUser = (req, res, next) => {
 
 // Optional authentication - allows requests with or without token
 const optionalAuth = (req, res, next) => {
-  // Extract token from cookie
-  let token = req.headers?.cookie?.split("access_token=")[1] || null;
+  // Read access token from httpOnly cookie
+  const token = req.cookies?.access_token;
 
   // If no token, continue without user
   if (!token) {
     return next();
   }
 
-  // Clean token (remove trailing semicolon if present)
-  if (token.includes(";")) {
-    token = token.split(";")[0];
-  }
-
   // Verify JWT token
-  jwt.verify(token, "krishna170902", (err, decoded) => {
+  jwt.verify(token, JWT_SECRET, (err, decoded) => {
     if (!err) {
       // If token is valid, attach user data
       req.user = decoded;
@@ -206,7 +235,7 @@ const initializeUserGraph = async (username) => {
     await initializeGraph();
     const graph = getGraph();
 
-    const user = await User.findOne({ username });
+    const user = await User.findOne({ where: { username } });
     if (!user) {
       throw new Error("User not found for graph initialization");
     }
@@ -237,6 +266,15 @@ const initializeUserGraph = async (username) => {
   }
 };
 
+// Helper function to generate refresh token
+const generateRefreshToken = (userId, email, username) => {
+  return jwt.sign(
+    { id: userId, email, username, type: "refresh" },
+    REFRESH_TOKEN_SECRET,
+    { expiresIn: "7d" } // 7 days
+  );
+};
+
 const signin = async (req, res, next) => {
   const { email, password } = req.body;
 
@@ -247,48 +285,54 @@ const signin = async (req, res, next) => {
 
   try {
     // Find user
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(404).json({ message: "User not found." });
-    }
+    const user = await User.findOne({ where: { email } });
 
     // Validate password
-    if (password !== user.password) {
-      return res.status(401).json({ message: "Invalid credentials." });
+    // Use generic message for both cases to prevent user enumeration attacks
+    if (!user || password !== user.password) {
+      return res.status(401).json({ message: "Invalid email or password." });
     }
 
-    // Generate JWT token
-    const token = jwt.sign(
-      { id: user._id, email: user.email, username: user.username },
-      "krishna170902",
-      { expiresIn: "24h" }
+    // Generate access token (15 min) and refresh token (7 days)
+    const accessToken = jwt.sign(
+      { id: user.id, email: user.email, username: user.username },
+      JWT_SECRET,
+      { expiresIn: "15m" } // Short-lived for security
     );
+
+    const refreshToken = generateRefreshToken(user.id, user.email, user.username);
 
     // Initialize user graph (non-blocking)
     initializeUserGraph(user.username).catch((err) => {
       console.error("Non-critical: Failed to initialize graph:", err);
     });
 
-    // Prepare response
+    // Prepare response - NO tokens in body for maximum security
     const responseData = {
       message: "Authentication successful.",
       user: {
-        access_token: token,
-        id: user._id,
+        id: user.id,
         email: user.email,
         name: user.name,
         username: user.username,
       },
     };
 
-    // Set cookie and send response
+    // Set BOTH tokens as httpOnly cookies (secure, not accessible via JS)
     res
-      .cookie("access_token", token, {
+      .cookie("access_token", accessToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production", // HTTPS only in production
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // Allow cross-site in production
-        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        maxAge: 15 * 60 * 1000, // 15 minutes
         path: "/",
+      })
+      .cookie("refresh_token", refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        path: "/api/auth",
       })
       .status(200)
       .json(responseData);
@@ -298,12 +342,14 @@ const signin = async (req, res, next) => {
   }
 };
 
-const signup = (req, res) => {
+const signup = async (req, res) => {
   const { name, email, password, confirmPassword, username } = req.body.form;
   const checked = req.body.checked;
+
   if (checked === false) {
     return res.status(401).json({ message: "YOU HAVE TO AGREE OUR TERMS AND CONDITIONS" });
   }
+
   // Check for missing fields
   if (
     !name ||
@@ -320,49 +366,90 @@ const signup = (req, res) => {
     return res.status(400).json({ message: "All fields are required." });
   }
 
-  User.findOne({
-    $or: [{ email }, { username }],
-  })
-    .then((user) => {
-      if (user) {
-        return res.status(401).json({
-          message: "This user already exists. Try with another email ID or username.",
-        });
-      }
-
-      if (password !== confirmPassword) {
-        return res.status(401).json({ message: "Password and confirm password do not match." });
-      }
-
-      return User.create({ name, email, password, username }).then((newUser) => {
-        res.status(201).json({
-          message: "User registered.",
-          user: { name: newUser.name, email: newUser.email },
-        });
-      });
-    })
-    .catch((err) => {
-      console.error(err);
-      res.status(500).json({ message: "Server error. Please try again later." });
+  try {
+    const user = await User.findOne({
+      where: {
+        [Op.or]: [{ email }, { username }],
+      },
     });
+
+    if (user) {
+      return res.status(401).json({
+        message: "This user already exists. Try with another email ID or username.",
+      });
+    }
+
+    if (password !== confirmPassword) {
+      return res.status(401).json({ message: "Password and confirm password do not match." });
+    }
+
+    const newUser = await User.create({ name, email, password, username });
+
+    // Auto sign-in after successful signup - generate both tokens
+    const accessToken = jwt.sign(
+      { id: newUser.id, email: newUser.email, username: newUser.username },
+      JWT_SECRET,
+      { expiresIn: "15m" } // Short-lived for security
+    );
+
+    const refreshToken = generateRefreshToken(newUser.id, newUser.email, newUser.username);
+
+    // Initialize user graph (non-blocking)
+    initializeUserGraph(newUser.username).catch((err) => {
+      console.error("Non-critical: Failed to initialize graph:", err);
+    });
+
+    const responseData = {
+      message: "User registered and logged in successfully.",
+      user: {
+        id: newUser.id,
+        email: newUser.email,
+        name: newUser.name,
+        username: newUser.username,
+      },
+    };
+
+    // Set BOTH tokens as httpOnly cookies (secure, not accessible via JS)
+    res
+      .cookie("access_token", accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        maxAge: 15 * 60 * 1000, // 15 minutes
+        path: "/",
+      })
+      .cookie("refresh_token", refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        path: "/api/auth",
+      })
+      .status(201)
+      .json(responseData);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error. Please try again later." });
+  }
 };
 
-const getUserData = (req, res, next) => {
+const getUserData = async (req, res, next) => {
   const email = req.user.email;
-  User.findOne({ email })
-    .then((user) => {
-      if (user) {
-        const { password, __v, ...rest } = user.toObject();
 
-        res.status(200).json({ message: "DATA SENT SUCCESSFULLY.", data: rest });
-      } else {
-        res.status(404).json({ message: "User not found." });
-      }
-    })
-    .catch((err) => {
-      console.error(err);
-      res.status(500).json({ message: "Internal Server Error" });
-    });
+  try {
+    const user = await User.findOne({ where: { email } });
+
+    if (user) {
+      const { password, ...rest } = user.toJSON();
+
+      res.status(200).json({ message: "DATA SENT SUCCESSFULLY.", data: rest });
+    } else {
+      res.status(404).json({ message: "User not found." });
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
 };
 
 const getFriendsThatFollow = async (req, res, next) => {
@@ -371,8 +458,8 @@ const getFriendsThatFollow = async (req, res, next) => {
   try {
     // Fetch both users from database
     const [myUser, otherUser] = await Promise.all([
-      User.findOne({ username: myUsername }).lean(),
-      User.findOne({ username: otherUsername }).lean(),
+      User.findOne({ where: { username: myUsername }, raw: true }),
+      User.findOne({ where: { username: otherUsername }, raw: true }),
     ]);
 
     if (!myUser || !otherUser) {
@@ -402,8 +489,9 @@ const getFriendsThatFollow = async (req, res, next) => {
                 visited.add(followedUsername);
 
                 const followedUser = await User.findOne({
-                  username: followedUsername,
-                }).lean();
+                  where: { username: followedUsername },
+                  raw: true,
+                });
 
                 if (followedUser) {
                   // Check if this is at target depth and follows end user
@@ -436,39 +524,26 @@ const getOthersData = async (req, res, next) => {
   try {
     const { username } = req.params;
 
-    // Aggregate user data with review count
-    const result = await User.aggregate([
-      { $match: { username } },
-      {
-        $lookup: {
-          from: "reviews",
-          localField: "username",
-          foreignField: "username",
-          as: "reviews",
-        },
-      },
-      {
-        $addFields: {
-          reviewCount: { $size: "$reviews" },
-        },
-      },
-      {
-        $project: {
-          password: 0,
-          __v: 0,
-          reviews: 0,
-          _id: 0,
-        },
-      },
-    ]);
+    // Find user
+    const user = await User.findOne({ where: { username } });
 
-    if (result.length === 0) {
+    if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
+    // Get review count
+    const reviewCount = await Review.count({ where: { username } });
+
+    // Prepare response data
+    const userData = user.toJSON();
+    delete userData.password;
+
     res.status(200).json({
       message: "Data sent successfully",
-      data: result[0],
+      data: {
+        ...userData,
+        reviewCount,
+      },
     });
   } catch (err) {
     console.error("Error in getOthersData:", err);
@@ -476,123 +551,123 @@ const getOthersData = async (req, res, next) => {
   }
 };
 
-const forgotPassword = (req, res, next) => {
+const forgotPassword = async (req, res, next) => {
   const email = req.body.email;
 
-  User.findOne({ email })
-    .then((response) => {
-      if (!response) {
-        return res.status(404).json({ message: "User not found" });
+  try {
+    const response = await User.findOne({ where: { email } });
+
+    if (!response) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const username = response.username;
+    const encryptedUsername = crypto.AES.encrypt(username, CRYPTO_SECRET).toString();
+    const link = `${FRONTEND_URL}/reset-password/${encodeURIComponent(encryptedUsername)}`;
+
+    // Update resetToken
+    await User.update({ resetToken: encryptedUsername }, { where: { email } });
+
+    nodemailer.createTestAccount((err, account) => {
+      if (err) {
+        console.error("Failed to create a testing account. " + err.message);
+        return res.status(500).send("Internal Server Error");
       }
 
-      const username = response.username;
-      const secretKey = "krishna170902"; // Replace with your actual secret key
-      const encryptedUsername = crypto.AES.encrypt(username, secretKey).toString();
-      const link = `https://movie-review-app-inky.vercel.app/reset-password/${encodeURIComponent(encryptedUsername)}`;
-
-      response.resetToken = encryptedUsername;
-      response
-        .save()
-        .then(() => {
-          nodemailer.createTestAccount((err, account) => {
-            if (err) {
-              console.error("Failed to create a testing account. " + err.message);
-              return res.status(500).send("Internal Server Error");
-            }
-
-            const transporter = nodemailer.createTransport({
-              service: "gmail",
-              host: "smtp.gmail.com",
-              port: 587,
-              secure: false,
-              auth: {
-                user: "kanchanlatakrishna@gmail.com",
-                pass: "nlme fgnu tfmd irwc",
-              },
-            });
-
-            const message = {
-              from: "KRISHNA <test.zboncak58@ethereal.email>",
-              to: email,
-              subject: "RESET PASSWORD!",
-              text: `FORGOT PASSWORD FOR MOVIE REVIEW WEBSITE`,
-              html: `
-                                        <p style="font-family: Arial, sans-serif; font-size: 16px;">
-                                            Dear ${username},<br><br>
-                                            <b>HERE IS THE LINK TO YOUR RESET PASSWORD!</b>
-                                            <a href="${link}">RESET PASSWORD LINK</a>
-                                            <br><br>
-                                            Best regards,<br>
-                                            😘💓💓💓💓💓💓<br>
-                                            Krishna Tripathi
-                                        </p>
-                                    `,
-            };
-
-            transporter.sendMail(message, (err, info) => {
-              if (err) {
-                console.error("Error occurred while sending email. " + err.message);
-                return res.status(500).send("Internal Server Error");
-              }
-              console.log("Message sent: %s", info.messageId);
-              console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
-              res.status(200).json({ message: "Reset email sent!" });
-            });
-          });
-        })
-        .catch((err) => {
-          console.error("Error saving user. " + err.message);
-          res.status(500).send("Internal Server Error");
-        });
-    })
-    .catch((err) => {
-      console.error("Error finding user. " + err.message);
-      res.status(500).send("Internal Server Error");
-    });
-};
-const resetPassword = (req, res, next) => {
-  const { password, username, resetToken } = req.body;
-  User.findOne({ username }).then((response) => {
-    if (!response) {
-      res.status(401).json({ message: "YOU ARE UNAUTHORIZED" });
-      return;
-    }
-    if (response.resetToken !== resetToken) {
-      res.status(401).json({ message: "YOU ARE UNAUTHORIZED" });
-      return;
-    }
-    if (response.password === password) {
-      res.status(400).json({ message: "TRY TO USE SOME NEW PASSWORD" });
-      return;
-    }
-    response.password = password;
-    response.resetToken = null;
-    response
-      .save()
-      .then(() => {
-        res.status(200).json({ message: "Password reset successfully!" });
-      })
-      .catch((err) => {
-        console.error("Error saving user. " + err.message);
-        res.status(500).json({ message: "Internal Server Error" });
+      const transporter = nodemailer.createTransport({
+        service: "gmail",
+        host: "smtp.gmail.com",
+        port: 587,
+        secure: false,
+        auth: {
+          user: "kanchanlatakrishna@gmail.com",
+          pass: "nlme fgnu tfmd irwc",
+        },
       });
-  });
+
+      const message = {
+        from: "KRISHNA <test.zboncak58@ethereal.email>",
+        to: email,
+        subject: "RESET PASSWORD!",
+        text: `FORGOT PASSWORD FOR CINESPHERE`,
+        html: `
+          <p style="font-family: Arial, sans-serif; font-size: 16px;">
+            Dear ${username},<br><br>
+            <b>HERE IS THE LINK TO YOUR RESET PASSWORD!</b>
+            <a href="${link}">RESET PASSWORD LINK</a>
+            <br><br>
+            Best regards,<br>
+            😘💓💓💓💓💓💓<br>
+            Krishna Tripathi
+          </p>
+        `,
+      };
+
+      transporter.sendMail(message, (err, info) => {
+        if (err) {
+          console.error("Error occurred while sending email. " + err.message);
+          return res.status(500).send("Internal Server Error");
+        }
+        console.log("Message sent: %s", info.messageId);
+        console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
+        res.status(200).json({ message: "Reset email sent!" });
+      });
+    });
+  } catch (err) {
+    console.error("Error finding user. " + err.message);
+    res.status(500).send("Internal Server Error");
+  }
+};
+
+const resetPassword = async (req, res, next) => {
+  const { password, username, resetToken } = req.body;
+
+  try {
+    const response = await User.findOne({ where: { username } });
+
+    if (!response) {
+      return res.status(401).json({ message: "YOU ARE UNAUTHORIZED" });
+    }
+
+    if (response.resetToken !== resetToken) {
+      return res.status(401).json({ message: "YOU ARE UNAUTHORIZED" });
+    }
+
+    if (response.password === password) {
+      return res.status(400).json({ message: "TRY TO USE SOME NEW PASSWORD" });
+    }
+
+    await User.update({ password, resetToken: null }, { where: { username } });
+
+    res.status(200).json({ message: "Password reset successfully!" });
+  } catch (err) {
+    console.error("Error saving user. " + err.message);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
 };
 
 const getFollowers = async (req, res, next) => {
   try {
     const { username } = req.params;
 
-    const user = await User.findOne({ username }).select("followersList");
+    const user = await User.findOne({
+      where: { username },
+      attributes: ["followersList"],
+    });
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
     // Get detailed information about followers
-    const followers = await User.find({
-      username: { $in: user.followersList },
-    }).select("username name profilePicture followers following reviewCount followersList");
+    const followers = await User.findAll({
+      where: {
+        username: {
+          [Op.in]: user.followersList,
+        },
+      },
+      attributes: ["username", "name", "profilePicture", "followers", "following", "followersList"],
+    });
 
     res.status(200).json({ followers });
   } catch (err) {
@@ -605,21 +680,99 @@ const getFollowing = async (req, res, next) => {
   try {
     const { username } = req.params;
 
-    const user = await User.findOne({ username }).select("followingList");
+    const user = await User.findOne({
+      where: { username },
+      attributes: ["followingList"],
+    });
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
     // Get detailed information about users being followed
-    const following = await User.find({
-      username: { $in: user.followingList },
-    }).select("username name profilePicture followers following reviewCount followersList");
+    const following = await User.findAll({
+      where: {
+        username: {
+          [Op.in]: user.followingList,
+        },
+      },
+      attributes: ["username", "name", "profilePicture", "followers", "following", "followersList"],
+    });
 
     res.status(200).json({ following });
   } catch (err) {
     console.error("Error in getFollowing:", err);
     res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// Refresh token endpoint
+const refreshToken = async (req, res) => {
+  try {
+    // Get refresh token from cookie or body
+    const refreshToken = req.cookies?.refresh_token || req.body.refreshToken;
+
+    if (!refreshToken) {
+      return res.status(401).json({ message: "Refresh token required" });
+    }
+
+    // Verify refresh token
+    jwt.verify(refreshToken, REFRESH_TOKEN_SECRET, async (err, decoded) => {
+      if (err) {
+        console.error("Refresh token verification error:", err);
+        return res.status(403).json({ message: "Invalid or expired refresh token" });
+      }
+
+      // Check if it's actually a refresh token
+      if (decoded.type !== "refresh") {
+        return res.status(403).json({ message: "Invalid token type" });
+      }
+
+      try {
+        // Verify user still exists
+        const user = await User.findOne({ where: { id: decoded.id } });
+        if (!user) {
+          return res.status(404).json({ message: "User not found" });
+        }
+
+        // Generate new access token
+        const newAccessToken = jwt.sign(
+          { id: decoded.id, email: decoded.email, username: decoded.username },
+          JWT_SECRET,
+          { expiresIn: "15m" }
+        );
+
+        // Generate new refresh token (token rotation for better security)
+        const newRefreshToken = generateRefreshToken(decoded.id, decoded.email, decoded.username);
+
+        // Set BOTH tokens as httpOnly cookies (maximum security)
+        res
+          .cookie("access_token", newAccessToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+            maxAge: 15 * 60 * 1000, // 15 minutes
+            path: "/",
+          })
+          .cookie("refresh_token", newRefreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+            path: "/api/auth",
+          })
+          .status(200)
+          .json({
+            message: "Token refreshed successfully",
+          });
+      } catch (error) {
+        console.error("Error in refresh token:", error);
+        res.status(500).json({ message: "Server error" });
+      }
+    });
+  } catch (error) {
+    console.error("Refresh token error:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -638,4 +791,5 @@ module.exports = {
   basicGraphNetworkInitialisation,
   getFollowers,
   getFollowing,
+  refreshToken,
 };

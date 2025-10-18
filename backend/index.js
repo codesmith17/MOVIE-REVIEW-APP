@@ -1,18 +1,21 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
-const mongoose = require("mongoose");
+const cookieParser = require("cookie-parser");
 const app = express();
 const process = require("process");
 const path = require("path");
 require("dotenv").config();
 const fs = require("fs");
+const { sequelize, testConnection, syncDatabase } = require("./config/database");
+
 // Use native fetch in Node 18+ or fall back to node-fetch
 const fetch =
   globalThis.fetch ||
   ((...args) => import("node-fetch").then(({ default: fetch }) => fetch(...args)));
 
 app.use(express.json());
+
 // CORS - more permissive since frontend and backend are on same domain
 app.use(
   cors({
@@ -32,37 +35,38 @@ const movieRoutes = require("./routes/Movie.route");
 const commentRoutes = require("./routes/Comment.route");
 const listRoutes = require("./routes/List.route");
 const tmdbRoutes = require("./routes/Tmdb.route");
-// const subtitleRoutes = require('./routes/subtitleRoutes'); // Disabled for now
 
-// MongoDB connection with caching for serverless
-let cachedDb = null;
+// YugabyteDB connection with caching for serverless
+let isConnected = false;
 
 async function connectToDatabase() {
-  if (cachedDb) {
-    console.log("Using cached database connection");
-    return cachedDb;
+  if (isConnected) {
+    console.log("Using existing YugabyteDB connection");
+    return sequelize;
   }
 
   try {
-    console.log("Attempting to connect to MongoDB...");
-    const connection = await mongoose.connect(
-      "mongodb+srv://krishna170902:44AueKgqHr2eDL8o@clusteracademind.ub2btq6.mongodb.net/movies-app?retryWrites=true&w=majority&appName=ClusterAcademind",
-      {
-        family: 4,
-        serverSelectionTimeoutMS: 10000, // Increased to 10 seconds for serverless cold starts
-        socketTimeoutMS: 45000,
-      }
-    );
-    console.log("MongoDB CONNECTED successfully");
-    cachedDb = connection;
-    return connection;
+    console.log("Attempting to connect to YugabyteDB...");
+    await testConnection();
+
+    // Skip sync - tables already exist and are configured correctly
+    // Syncing can cause issues when tables already have data and constraints
+    // If you need to update schema, do it manually with migrations
+    // if (process.env.NODE_ENV !== "production") {
+    //   await syncDatabase();
+    // }
+
+    isConnected = true;
+    console.log("YugabyteDB connected successfully");
+    return sequelize;
   } catch (err) {
-    console.error("MongoDB connection error:", err.message);
+    console.error("YugabyteDB connection error:", err.message);
     throw err;
   }
 }
 
 app.use(bodyParser.urlencoded({ extended: false }));
+app.use(cookieParser()); // Parse cookies from Cookie header
 
 // Health check route (no DB required) - MUST be first
 app.get("/health", (req, res) => {
@@ -71,6 +75,7 @@ app.get("/health", (req, res) => {
     message: "Server is running",
     timestamp: new Date().toISOString(),
     node_env: process.env.NODE_ENV || "development",
+    database: "YugabyteDB",
   });
 });
 
@@ -78,17 +83,21 @@ app.get("/health", (req, res) => {
 app.get("/api/health", async (req, res) => {
   try {
     await connectToDatabase();
+    // Test query
+    await sequelize.query("SELECT 1+1 AS result");
+
     res.json({
       status: "ok",
-      message: "Movie Review API is running",
+      message: "CineSphere API is running",
       timestamp: new Date().toISOString(),
-      database: "connected",
+      database: "YugabyteDB connected",
     });
   } catch (err) {
     res.status(500).json({
       status: "error",
       message: "Database connection failed",
       timestamp: new Date().toISOString(),
+      details: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
 });
@@ -156,6 +165,7 @@ if (process.env.NODE_ENV !== "production") {
   connectToDatabase().then(() => {
     app.listen(port, () => {
       console.log(`Server running on port ${port}`);
+      console.log(`YugabyteDB connection active`);
     });
   });
 }

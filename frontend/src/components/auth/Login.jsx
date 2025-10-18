@@ -4,8 +4,7 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useSelector, useDispatch } from "react-redux";
 import { setUser } from "../features/user/userSlice"; // Adjust the path as needed
-
-const API_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
+import axiosInstance from "../../utils/axiosConfig"; // Use axios with interceptor
 
 const Home = () => {
   const [remember, setRemember] = useState(false);
@@ -40,57 +39,57 @@ const Home = () => {
     setFormData({ ...formData, [e.target.id]: e.target.value.trim() });
   };
 
-  const onSubmit = (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault();
 
-    fetch(`${API_BASE_URL}/api/auth/signin`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include", // Important: allows cookies to be set by backend
-      body: JSON.stringify(formData),
-    })
-      .then((res) => res.json())
-      .then((response) => {
-        console.log(response);
-        if (response && response.message === "Authentication successful.") {
-          // Cookie is already set by backend with httpOnly flag
-          // Wrap user data to match the structure from getUserData
-          dispatch(setUser({ data: response.user }));
+    try {
+      const response = await axiosInstance.post("/api/auth/signin", formData);
 
-          if (remember) {
-            localStorage.setItem("email", formData.email);
-            localStorage.setItem("password", formData.password);
-            localStorage.setItem("boxChecked", remember);
-          } else {
-            if (localStorage.getItem("email") != null && localStorage.getItem("email") != "") {
-              localStorage.removeItem("email");
-            }
-            if (
-              localStorage.getItem("password") != null &&
-              localStorage.getItem("password") != ""
-            ) {
-              localStorage.removeItem("password");
-            }
-            if (
-              localStorage.getItem("boxChecked") != null &&
-              localStorage.getItem("boxChecked") != ""
-            ) {
-              localStorage.removeItem("boxChecked");
-            }
+      console.log(response.data);
+      if (response.data && response.data.message === "Authentication successful.") {
+        // Both access and refresh tokens are now in httpOnly cookies (maximum security)
+        // No tokens in localStorage - safe from XSS attacks!
+        // Wrap user data to match the structure from getUserData
+        dispatch(setUser({ data: response.data.user }));
+
+        if (remember) {
+          localStorage.setItem("email", formData.email);
+          localStorage.setItem("password", formData.password);
+          localStorage.setItem("boxChecked", remember);
+        } else {
+          if (localStorage.getItem("email") != null && localStorage.getItem("email") != "") {
+            localStorage.removeItem("email");
+          }
+          if (localStorage.getItem("password") != null && localStorage.getItem("password") != "") {
             localStorage.removeItem("password");
+          }
+          if (
+            localStorage.getItem("boxChecked") != null &&
+            localStorage.getItem("boxChecked") != ""
+          ) {
             localStorage.removeItem("boxChecked");
           }
-          toast.success("LOGIN SUCCESSFUL!\nWELCOME!!!", {
-            toastId: "success1",
-          });
-          navigate("/upcoming");
-        } else {
-          toast.error(response.message, "WRONG CREDENTIALS");
+          localStorage.removeItem("password");
+          localStorage.removeItem("boxChecked");
         }
-      })
-      .catch((error) => {
-        console.error("Error signing in:", error);
-      });
+        toast.success("LOGIN SUCCESSFUL!\nWELCOME!!!", {
+          toastId: "success1",
+        });
+        navigate("/upcoming");
+      } else {
+        // Clear any old cookies on signin failure
+        document.cookie = "access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        document.cookie = "refresh_token=; path=/api/auth; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        toast.error("Unable to sign in. Please check your credentials.");
+      }
+    } catch (error) {
+      console.error("Error signing in:", error);
+      // Clear any old cookies on signin failure
+      document.cookie = "access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      document.cookie = "refresh_token=; path=/api/auth; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      // Generic error message - don't reveal if user exists or not
+      toast.error("Unable to sign in. Please check your credentials.");
+    }
   };
 
   return (

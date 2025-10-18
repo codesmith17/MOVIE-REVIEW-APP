@@ -143,10 +143,13 @@ const ActivityPage = () => {
           <img
             src={`https://image.tmdb.org/t/p/w200${movieData?.poster_path}`}
             alt={movieData?.title}
-            className="w-24 h-36 object-cover rounded-lg hover:scale-105 transition-transform"
+            className="w-24 h-36 object-cover rounded-lg hover:scale-105 transition-transform bg-gray-800/50"
             onError={(e) => {
-              e.target.onerror = null;
-              e.target.src = "https://via.placeholder.com/200x300?text=No+Image";
+              // Prevent infinite loop
+              if (e.target.src !== `${window.location.origin}/assets/no-image.svg`) {
+                e.target.onerror = null;
+                e.target.src = "/assets/no-image.svg";
+              }
             }}
           />
         </Link>

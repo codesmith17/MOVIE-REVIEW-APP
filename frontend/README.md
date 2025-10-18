@@ -1,8 +1,22 @@
-# React + Vite
+# CineSphere Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+CineSphere is your ultimate entertainment companion for discovering, reviewing, and exploring movies and TV shows.
 
-Currently, two official plugins are available:
+## Tech Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **React** - UI framework
+- **Vite** - Build tool for fast development
+- **TailwindCSS** - Utility-first CSS framework
+- **Redux Toolkit** - State management
+- **React Router** - Client-side routing
+- **Framer Motion** - Animations
+- **Axios** - HTTP client with interceptors
+
+## Features
+
+- Browse trending movies and TV shows
+- Search and discover content
+- Write and read reviews
+- Create custom lists and watchlists
+- User profiles and activity tracking
+- Responsive design for all devices

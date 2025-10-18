@@ -4,6 +4,7 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useDispatch } from "react-redux";
 import { setUser, setAuthLoading } from "./components/features/user/userSlice";
+import axiosInstance from "./utils/axiosConfig";
 
 // Layout
 import { Navbar } from "./components/layout";
@@ -46,22 +47,18 @@ const App = () => {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/auth/getUserData`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-        });
-        if (response.ok) {
-          const data = await response.json();
-          dispatch(setUser(data));
+        // Use axiosInstance which has token refresh interceptor
+        const response = await axiosInstance.get("/api/auth/getUserData");
+
+        if (response.data && response.data.data) {
+          dispatch(setUser(response.data));
         } else {
           // Not authenticated, stop loading
           dispatch(setAuthLoading(false));
         }
       } catch (error) {
-        // Fail silently but stop loading
+        // If 401, user is not authenticated - fail silently
+        console.log("User not authenticated on page load");
         dispatch(setAuthLoading(false));
       }
     };
@@ -71,7 +68,12 @@ const App = () => {
   return (
     <>
       <ToastContainer />
-      <BrowserRouter>
+      <BrowserRouter
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
         <Navbar />
         {navigator.onLine ? (
           <Routes>

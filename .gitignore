@@ -3,6 +3,7 @@ logs
 *.log
 npm-debug.log*
 
+.env
 # Runtime data
 pids
 *.pid
@@ -29,6 +30,12 @@ build/Release
 # Dependency directories
 node_modules
 jspm_packages
+
+# YugabyteDB SSL Certificates (sensitive!)
+backend/certs/
+*.crt
+*.pem
+*.key
 
 # Optional npm cache directory
 .npm

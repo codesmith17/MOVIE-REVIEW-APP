@@ -1,48 +1,57 @@
-const mongoose = require("mongoose");
+const { DataTypes } = require("sequelize");
+const { sequelize } = require("../config/database");
 
-const contentSchema = new mongoose.Schema({
-  id: {
-    type: String,
-    required: true,
-    unique: true,
+const List = sequelize.define(
+  "List",
+  {
+    id: {
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
+      primaryKey: true,
+    },
+    name: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    description: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      defaultValue: "",
+    },
+    type: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: "normal",
+    },
+    content: {
+      type: DataTypes.JSONB,
+      defaultValue: [],
+      // Structure: [{ id: string, posterLink: string, title: string }]
+    },
+    likes: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+    },
+    isPublic: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+    },
+    ownerUsername: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
   },
-  posterLink: {
-    type: String,
-    required: true,
-  },
-  title: {
-    type: String,
-    required: true,
-  },
-});
+  {
+    tableName: "lists",
+    timestamps: true,
+    indexes: [
+      {
+        fields: ["ownerUsername"],
+      },
+    ],
+  }
+);
 
-const listSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true,
-  },
-  type: {
-    type: String,
-    required: true,
-    default: "normal",
-  },
-  content: [contentSchema],
-  likes: {
-    type: Number,
-    required: true,
-    default: 0,
-  },
-  isPublic: {
-    type: Boolean,
-    required: true,
-    default: false,
-  },
-  ownerUsername: {
-    type: String,
-    required: true,
-  },
-});
-
-const Lists = mongoose.model("Lists", listSchema);
-
-module.exports = Lists;
+module.exports = List;

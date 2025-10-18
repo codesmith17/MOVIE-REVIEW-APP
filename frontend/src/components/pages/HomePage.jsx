@@ -175,8 +175,11 @@ const HomePage = () => {
               movie: {
                 id: heroMovie.id,
                 title: heroMovie.title,
-                posterLink: heroMovie.poster_path,
+                posterLink: heroMovie.poster_path
+                  ? `https://image.tmdb.org/t/p/w500${heroMovie.poster_path}`
+                  : null,
                 imdbID: `movie-${heroMovie.id}`,
+                mediaType: heroMovie.media_type || "movie",
               },
             }),
             credentials: "include",

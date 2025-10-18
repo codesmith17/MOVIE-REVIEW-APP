@@ -1,0 +1,56 @@
+name: Fetch Trending Movies
+
+on:
+  schedule:
+    # Run three times daily: 2:00 AM, 10:00 AM, and 6:00 PM UTC
+    - cron: '0 2 * * *'   # 2:00 AM UTC
+    - cron: '0 10 * * *'  # 10:00 AM UTC
+    - cron: '0 18 * * *'  # 6:00 PM UTC
+  
+  # Allow manual trigger from GitHub Actions tab
+  workflow_dispatch:
+
+jobs:
+  fetch-trending:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+      
+      - name: Install backend dependencies
+        run: |
+          cd backend
+          npm ci
+      
+      - name: Fetch and store trending movies
+        env:
+          YUGABYTE_HOST: ${{ secrets.YUGABYTE_HOST }}
+          YUGABYTE_PORT: ${{ secrets.YUGABYTE_PORT }}
+          YUGABYTE_DB: ${{ secrets.YUGABYTE_DB }}
+          YUGABYTE_USER: ${{ secrets.YUGABYTE_USER }}
+          YUGABYTE_PASSWORD: ${{ secrets.YUGABYTE_PASSWORD }}
+          YUGABYTE_CA_CERT: ${{ secrets.YUGABYTE_CA_CERT }}
+          TMDB_BEARER_TOKEN: ${{ secrets.TMDB_BEARER_TOKEN }}
+        run: |
+          cd backend
+          node scripts/fetch-trending.js
+      
+      - name: Job completion notification
+        if: success()
+        run: |
+          echo "Trending movies fetched successfully at $(date)"
+      
+      - name: Job failure notification
+        if: failure()
+        run: |
+          echo "ERROR: Trending movies fetch failed at $(date)"
+          exit 1
+

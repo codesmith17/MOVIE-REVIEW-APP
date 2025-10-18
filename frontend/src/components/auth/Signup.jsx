@@ -3,12 +3,14 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
-
-const API_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
+import { useDispatch } from "react-redux";
+import { setUser } from "../features/user/userSlice";
+import axiosInstance from "../../utils/axiosConfig"; // Use axios with interceptor
 
 const Signup = () => {
   const [formData, setFormData] = useState({});
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [termsChecked, setTermsChecked] = useState(false);
   const termsCheckboxRef = useRef(null);
 
@@ -17,7 +19,7 @@ const Signup = () => {
     setFormData({ ...formData, [e.target.id]: e.target.value.trim() });
   };
 
-  const submitHandler = (e) => {
+  const submitHandler = async (e) => {
     e.preventDefault();
     if (!termsChecked) {
       toast.error("YOU HAVE TO AGREE OUR TERMS AND CONDITIONS");
@@ -25,24 +27,32 @@ const Signup = () => {
       termsCheckboxRef.current.focus();
       return;
     }
-    fetch(`${API_BASE_URL}/api/auth/signup`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ form: formData, checked: termsChecked }),
-    })
-      .then((res) => res.json())
-      .then((res) => {
-        if (res.message === "User registered.") {
-          toast.success("USER HAS BEEN REGISTERED SIGN-IN USING YOUR CREDENTIALS");
-          navigate("/");
-        } else {
-          toast.error(res.message);
-        }
-      })
-      .catch((err) => {
-        console.log(err);
-        toast.error("An error occurred. Please try again later.");
+
+    try {
+      const response = await axiosInstance.post("/api/auth/signup", {
+        form: formData,
+        checked: termsChecked,
       });
+
+      if (
+        response.data.message === "User registered and logged in successfully." ||
+        response.data.message === "User registered."
+      ) {
+        // Both tokens are now in httpOnly cookies (secure)
+        // Store user data in Redux
+        dispatch(setUser({ data: response.data.user }));
+
+        toast.success("ACCOUNT CREATED! WELCOME!");
+        navigate("/upcoming"); // Auto-login, go to home
+      } else {
+        // Generic error - don't reveal which field is the issue
+        toast.error("Unable to create account. Please try different credentials.");
+      }
+    } catch (err) {
+      console.log(err);
+      // Generic error message for security
+      toast.error("Unable to create account. Please try different credentials.");
+    }
   };
 
   return (

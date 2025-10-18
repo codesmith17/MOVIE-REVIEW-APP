@@ -1,4 +1,4 @@
-// Modern Design System for Movie Review App
+// Modern Design System for CineSphere
 
 const theme = {
   // Color Palette - Modern Dark Theme with Vibrant Accents

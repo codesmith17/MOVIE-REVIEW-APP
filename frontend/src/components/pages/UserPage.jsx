@@ -1,5 +1,7 @@
-import { useState, useEffect } from "react";
-import { SearchModal } from "../modals";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { SearchModal, CreateListModal } from "../modals";
+import { MovieLoader } from "../common";
+import { Link as RouterLink } from "react-router-dom";
 import {
   FaSpinner,
   FaUpload,
@@ -19,6 +21,10 @@ import {
   FaTimes,
   FaEye,
   FaInfoCircle,
+  FaGripVertical,
+  FaEllipsisV,
+  FaTrash,
+  FaEdit,
 } from "react-icons/fa";
 import { Link, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -63,14 +69,14 @@ const UserPage = () => {
       const data = await response.json();
       console.log("[Watchlist Fetch] Data:", data);
       if (data.message === "NO SUCH LIST AVAILABLE") {
-        toast.info("No watchlist available");
+        // Silent - no toast for empty state on initial load
         return;
       }
       if (data && data.data[0]) setWatchlist(data.data[0]);
       console.log(data.data[0]);
     } catch (error) {
       console.error("Error fetching watchlist:", error);
-      toast.error("Failed to fetch watchlist");
+      // Silent - no toast for fetch errors on initial load
     }
   };
 
@@ -110,22 +116,28 @@ const UserPage = () => {
       setLoading(false);
     } catch (error) {
       console.error("Error searching movies:", error);
-      toast.error("Failed to search movies");
+      // Silent - no toast for search errors
       setLoading(false);
     }
   };
 
   const handleAddToWatchlist = async (movie) => {
     try {
+      // Format movie data properly for backend
+      const movieData = {
+        id: movie.id,
+        title: movie.title || movie.name,
+        posterLink: movie.poster_path
+          ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
+          : null,
+        imdbID: movie.imdb_id || `${movie.media_type || "movie"}-${movie.id}`,
+        listName: "watchlist",
+      };
+
       const response = await fetch(`${API_BASE_URL}/api/list/addToList/watchlist`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          movie: {
-            ...movie,
-            listName: "watchlist",
-          },
-        }),
+        body: JSON.stringify({ movie: movieData }),
         credentials: "include",
       });
       if (!response.ok) throw new Error("Failed to add movie to watchlist");
@@ -159,7 +171,7 @@ const UserPage = () => {
       const data = await response.json();
       setIsFollowing(data.isFollowing);
       setFollowersCount(data.followersCount);
-      toast.success(data.message);
+      // Silent success - the UI update is enough feedback
     } catch (error) {
       console.error("Error toggling follow:", error);
       toast.error("Failed to update follow status");
@@ -277,14 +289,7 @@ const UserPage = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-950 via-slate-900 to-gray-950 p-3 sm:p-4 md:p-6">
       <div className="w-full max-w-6xl mx-auto">
         {isLoading ? (
-          <div className="flex justify-center items-center h-screen">
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-            >
-              <FaSpinner className="text-cyan-500 text-4xl sm:text-5xl" />
-            </motion.div>
-          </div>
+          <MovieLoader fullScreen />
         ) : fetchedUserData ? (
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -611,7 +616,7 @@ const ModernStatBox = ({ icon: Icon, label, value, color, link }) => {
         <Icon className="text-white text-base sm:text-lg md:text-xl lg:text-2xl" />
       </div>
       <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-0.5 sm:mb-1">
-        {value === null ? <FaSpinner className="animate-spin text-gray-400 text-2xl" /> : value}
+        {value === null ? <span className="text-gray-500 animate-pulse">•••</span> : value}
       </div>
       <div className="text-xs sm:text-sm text-gray-400 font-medium">{label}</div>
 
@@ -694,11 +699,12 @@ const ReviewsTab = ({ username }) => {
           // Fetch movie details for these reviews
           await fetchMovieDetailsForReviews(data.reviews);
         } else {
-          toast.error("Failed to fetch reviews");
+          // Silent - no toast for fetch errors on initial load
+          console.error("Failed to fetch reviews");
         }
       } catch (error) {
         console.error("Error fetching reviews:", error);
-        toast.error("Error fetching reviews");
+        // Silent - no toast for fetch errors on initial load
       } finally {
         setLoadingReviews(false);
       }
@@ -1123,12 +1129,20 @@ const AddMovieButton = ({ setIsModalOpen }) => (
 const ListsTab = ({ username }) => {
   const [lists, setLists] = useState([]);
   const [newListName, setNewListName] = useState("");
+  const [newListDescription, setNewListDescription] = useState("");
   const [isCreatingList, setIsCreatingList] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCreateListModalOpen, setIsCreateListModalOpen] = useState(false);
+  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [listSearchLoading, setListSearchLoading] = useState(false);
+  const [searchPage, setSearchPage] = useState(1);
+  const [hasMoreResults, setHasMoreResults] = useState(false);
+
+  // Refs for debouncing and cancellation
+  const searchTimeoutRef = useRef(null);
+  const abortControllerRef = useRef(null);
 
   const fetchLists = async () => {
     setListSearchLoading(true);
@@ -1147,12 +1161,12 @@ const ListsTab = ({ username }) => {
         }
       } else {
         console.error("Failed to fetch lists:", response.status, response.statusText);
-        toast.error("Failed to fetch lists");
+        // Silent - no toast for fetch errors on initial load
         setLists([]); // Set to empty array on error
       }
     } catch (error) {
       console.error("Error fetching lists:", error);
-      toast.error("Error fetching lists");
+      // Silent - no toast for fetch errors on initial load
       setLists([]); // Set to empty array on error
     } finally {
       setListSearchLoading(false);
@@ -1163,34 +1177,35 @@ const ListsTab = ({ username }) => {
     fetchLists();
   }, [username]);
 
-  const handleCreateList = async (movie) => {
-    if (!newListName.trim()) {
+  const handleCreateEmptyList = async (listName, listDescription) => {
+    if (!listName.trim()) {
       toast.error("Please enter a list name");
       return;
     }
-    if (newListName.trim().toLowerCase() === "watchlist") {
+    if (listName.trim().toLowerCase() === "watchlist") {
       toast.error("Cannot create a list named 'watchlist'. This name is reserved.");
       return;
     }
 
+    setLoading(true);
     try {
       const response = await fetch(`${API_BASE_URL}/api/list/addToList/normal`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           movie: {
-            ...(movie || {}),
-            listName: newListName,
+            listName: listName.trim(),
+            listDescription: listDescription.trim(),
           },
         }),
         credentials: "include",
       });
 
       if (response.ok) {
-        toast.success(
-          movie ? "List created with selected movie" : "Empty list created successfully"
-        );
+        toast.success("Empty list created successfully! 🎉");
         setNewListName("");
+        setNewListDescription("");
+        setIsCreateListModalOpen(false);
         fetchLists();
       } else {
         throw new Error("Failed to create list");
@@ -1198,29 +1213,157 @@ const ListsTab = ({ username }) => {
     } catch (error) {
       console.error("Error creating list:", error);
       toast.error(error.message || "Error creating list");
-    }
-  };
-
-  const handleSearchMovie = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/api/tmdb/search/multi?query=${searchQuery}`);
-
-      if (!response.ok) throw new Error("Failed to search movies and shows");
-      const data = await response.json();
-      setSearchResults(data.results);
-    } catch (error) {
-      console.error("Error searching movies and shows:", error);
-      toast.error("Failed to search movies and shows");
     } finally {
       setLoading(false);
     }
   };
 
+  const handleCreateListWithMovie = async (movie) => {
+    if (!newListName.trim()) {
+      toast.error("Please enter a list name");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Format movie data properly for backend
+      const movieData = {
+        id: movie.id,
+        title: movie.title || movie.name, // TV shows use 'name' instead of 'title'
+        posterLink: movie.poster_path
+          ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
+          : null,
+        imdbID: movie.imdb_id || `${movie.media_type}-${movie.id}`, // Fallback ID format
+        mediaType: movie.media_type || "movie", // Store media type for proper routing
+        listName: newListName.trim(),
+        listDescription: newListDescription.trim(),
+      };
+
+      const response = await fetch(`${API_BASE_URL}/api/list/addToList/normal`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ movie: movieData }),
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        toast.success("List created with selected movie! 🎬");
+        setNewListName("");
+        setNewListDescription("");
+        setIsSearchModalOpen(false);
+        setIsCreatingList(false);
+        fetchLists();
+      } else {
+        throw new Error("Failed to create list");
+      }
+    } catch (error) {
+      console.error("Error creating list:", error);
+      toast.error(error.message || "Error creating list");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Debounced search function
+  const handleSearchMovie = useCallback(
+    async (query = searchQuery, page = 1) => {
+      // Clear previous timeout
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+
+      // Cancel previous request
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+
+      if (!query || query.trim().length === 0) {
+        setSearchResults([]);
+        setHasMoreResults(false);
+        return;
+      }
+
+      // Create new abort controller
+      abortControllerRef.current = new AbortController();
+
+      try {
+        setLoading(true);
+        const response = await fetch(
+          `${API_BASE_URL}/api/tmdb/search/multi?query=${encodeURIComponent(query)}&page=${page}`,
+          { signal: abortControllerRef.current.signal }
+        );
+
+        if (!response.ok) throw new Error("Failed to search movies and shows");
+        const data = await response.json();
+
+        // Filter to only movies and TV shows
+        const filteredResults = data.results.filter(
+          (item) => item.media_type === "movie" || item.media_type === "tv"
+        );
+
+        if (page === 1) {
+          setSearchResults(filteredResults);
+        } else {
+          setSearchResults((prev) => [...prev, ...filteredResults]);
+        }
+
+        setSearchPage(page);
+        setHasMoreResults(data.page < data.total_pages);
+      } catch (error) {
+        if (error.name === "AbortError") {
+          console.log("Search request cancelled");
+          return;
+        }
+        console.error("Error searching movies and shows:", error);
+        // Silent - no toast for search errors
+      } finally {
+        setLoading(false);
+      }
+    },
+    [searchQuery]
+  );
+
+  // Auto-search with debounce when query changes
+  useEffect(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    if (searchQuery && searchQuery.trim().length > 0) {
+      searchTimeoutRef.current = setTimeout(() => {
+        handleSearchMovie(searchQuery, 1);
+      }, 500); // 500ms debounce
+    } else {
+      setSearchResults([]);
+      setHasMoreResults(false);
+    }
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchQuery]);
+
+  // Load more results
+  const loadMoreResults = () => {
+    if (!loading && hasMoreResults) {
+      handleSearchMovie(searchQuery, searchPage + 1);
+    }
+  };
+
   const onSelectMovie = (movie) => {
-    handleCreateList(movie);
-    setIsModalOpen(false);
-    setIsCreatingList(false);
+    handleCreateListWithMovie(movie);
+  };
+
+  const onSelectMovieClick = (listName, listDescription) => {
+    setNewListName(listName);
+    setNewListDescription(listDescription);
+    setIsCreateListModalOpen(false);
+    setIsCreatingList(true);
+    setIsSearchModalOpen(true);
+    setSearchQuery("");
+    setSearchResults([]);
   };
 
   // Commented out unused function with undefined variable
@@ -1251,70 +1394,128 @@ const ListsTab = ({ username }) => {
 
   return (
     <TabContent title="Lists">
-      <div className="mb-8">
-        <div className="flex flex-col sm:flex-row gap-3">
-          <input
-            type="text"
-            value={newListName}
-            onChange={(e) => setNewListName(e.target.value)}
-            placeholder="Enter new list name..."
-            className="flex-1 px-5 py-3 bg-gray-700/50 border border-gray-600/50 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
-          />
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => {
-              setIsCreatingList(true);
-              setIsModalOpen(true);
-            }}
-            className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white font-semibold px-8 py-3 rounded-xl shadow-lg transition-all duration-300 flex items-center justify-center gap-2"
-          >
-            <FaPlus /> Create List
-          </motion.button>
-        </div>
+      <div className="mb-8 flex justify-center">
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => {
+            setNewListName("");
+            setNewListDescription("");
+            setIsCreateListModalOpen(true);
+          }}
+          className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white font-bold px-10 py-4 rounded-2xl shadow-2xl transition-all duration-300 flex items-center justify-center gap-3 text-lg"
+        >
+          <FaPlus className="text-xl" />
+          Create New List
+        </motion.button>
       </div>
       {listSearchLoading ? (
-        <div className="flex justify-center py-12">
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-          >
-            <FaSpinner className="text-cyan-500 text-4xl" />
-          </motion.div>
-        </div>
+        <MovieLoader />
       ) : lists.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {lists.map((list) => (
-            <Link key={list._id} to={`/list/${list._id}`} state={{ list }}>
+            <RouterLink key={list.id} to={`/list/${list.id}`}>
               <motion.div
-                whileHover={{ scale: 1.05, y: -5 }}
-                whileTap={{ scale: 0.95 }}
-                className="group bg-gradient-to-br from-gray-700/50 to-gray-800/50 backdrop-blur-sm p-6 rounded-2xl cursor-pointer hover:shadow-2xl transition-all duration-300 border border-gray-600/30 relative overflow-hidden"
+                whileHover={{ scale: 1.02, y: -3 }}
+                whileTap={{ scale: 0.98 }}
+                className="group bg-gradient-to-br from-gray-800/60 to-gray-900/60 backdrop-blur-sm rounded-2xl cursor-pointer hover:shadow-2xl transition-all duration-300 border border-gray-700/50 relative overflow-hidden"
               >
-                {/* Background gradient effect */}
-                <div className="absolute inset-0 bg-gradient-to-br from-cyan-600/10 to-blue-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                {/* Background gradient glow */}
+                <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
-                <div className="relative z-10">
-                  <div className="flex items-start justify-between mb-4">
-                    <FaList className="text-3xl text-cyan-400" />
-                    <div className="bg-cyan-600/20 px-3 py-1 rounded-lg">
-                      <span className="text-sm text-cyan-300 font-medium">
-                        {list.content.length}
-                      </span>
+                {/* Movie Poster Preview Grid (top 4 items) */}
+                {list.content && list.content.length > 0 ? (
+                  <div className="relative h-48 overflow-hidden rounded-t-2xl bg-gray-900/50">
+                    <div className="grid grid-cols-2 gap-1 h-full p-1">
+                      {list.content.slice(0, 4).map((movie, idx) => (
+                        <div
+                          key={idx}
+                          className="relative overflow-hidden rounded-lg bg-gray-800/50 group-hover:scale-105 transition-transform duration-500"
+                          style={{ transitionDelay: `${idx * 50}ms` }}
+                        >
+                          {movie.posterLink ? (
+                            <img
+                              src={movie.posterLink}
+                              alt={movie.title || "Movie"}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                // Prevent infinite loop - only set placeholder once
+                                if (
+                                  e.target.src !== `${window.location.origin}/assets/no-image.svg`
+                                ) {
+                                  e.target.onerror = null; // Remove error handler
+                                  e.target.src = "/assets/no-image.svg";
+                                }
+                              }}
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-gray-800/50">
+                              <FaFilm className="text-gray-600 text-3xl" />
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                      {/* Filler if less than 4 items */}
+                      {[...Array(Math.max(0, 4 - list.content.length))].map((_, idx) => (
+                        <div
+                          key={`empty-${idx}`}
+                          className="relative overflow-hidden rounded-lg bg-gray-800/30 flex items-center justify-center"
+                        >
+                          <FaPlus className="text-gray-600 text-2xl opacity-30" />
+                        </div>
+                      ))}
+                    </div>
+                    {list.content.length > 4 && (
+                      <div className="absolute bottom-2 right-2 bg-black/70 backdrop-blur-sm px-3 py-1 rounded-full">
+                        <span className="text-xs text-gray-300 font-medium">
+                          +{list.content.length - 4} more
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="relative h-48 flex items-center justify-center bg-gray-900/30 rounded-t-2xl">
+                    <div className="text-center">
+                      <FaFilm className="text-gray-600 text-5xl mb-2 mx-auto" />
+                      <p className="text-gray-500 text-sm">Empty list</p>
                     </div>
                   </div>
-                  <h3 className="text-xl font-bold text-white mb-2 group-hover:text-cyan-300 transition-colors line-clamp-1">
-                    {list.name}
-                  </h3>
-                  <p className="text-gray-400 text-sm mb-1">
-                    {list.type === "normal" ? "Custom List" : list.type}
-                  </p>
-                  <p className="text-gray-500 text-sm">
-                    {list.content.length} {list.content.length === 1 ? "item" : "items"}
-                  </p>
+                )}
+
+                {/* List Info */}
+                <div className="relative z-10 p-5">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-xl font-bold text-white mb-1 group-hover:text-cyan-300 transition-colors truncate">
+                        {list.name}
+                      </h3>
+                      {list.description && (
+                        <p className="text-gray-400 text-sm line-clamp-2 mb-2">
+                          {list.description}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Stats */}
+                  <div className="flex items-center gap-4 text-sm">
+                    <div className="flex items-center gap-1.5 text-cyan-400">
+                      <FaFilm className="text-xs" />
+                      <span className="font-medium">{list.content.length}</span>
+                    </div>
+                    {list.isPublic && (
+                      <div className="flex items-center gap-1.5 text-green-400">
+                        <FaEye className="text-xs" />
+                        <span className="font-medium text-xs">Public</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
+
+                {/* Hover indicator */}
+                <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-500 to-purple-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
               </motion.div>
-            </Link>
+            </RouterLink>
           ))}
         </div>
       ) : (
@@ -1332,11 +1533,30 @@ const ListsTab = ({ username }) => {
           </motion.div>
         </div>
       )}
-      <SearchModal
-        isOpen={isModalOpen}
+
+      {/* Create List Modal */}
+      <CreateListModal
+        isOpen={isCreateListModalOpen}
         onClose={() => {
-          setIsModalOpen(false);
+          setIsCreateListModalOpen(false);
+          setNewListName("");
+          setNewListDescription("");
+        }}
+        onCreateList={handleCreateEmptyList}
+        onSelectMovieClick={onSelectMovieClick}
+        loading={loading}
+      />
+
+      {/* Search Modal for adding movies */}
+      <SearchModal
+        isOpen={isSearchModalOpen}
+        onClose={() => {
+          setIsSearchModalOpen(false);
           setIsCreatingList(false);
+          setNewListName("");
+          setNewListDescription("");
+          setSearchQuery("");
+          setSearchResults([]);
         }}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
@@ -1345,36 +1565,11 @@ const ListsTab = ({ username }) => {
         handleSearchMovie={handleSearchMovie}
         onSelectMovie={onSelectMovie}
         isCreatingList={isCreatingList}
+        listName={newListName}
+        hasMoreResults={hasMoreResults}
+        loadMoreResults={loadMoreResults}
       />
     </TabContent>
-  );
-};
-
-const ListDetails = ({ list, onClose }) => {
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-      <div className="bg-white p-6 rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
-        <h2 className="text-2xl font-bold mb-4">{list.name}</h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {list.content.map((movie) => (
-            <div key={movie.id} className="bg-gray-100 p-2 rounded">
-              <img
-                src={`https://image.tmdb.org/t/p/w200${movie.posterLink}`}
-                alt={movie.title}
-                className="w-full h-auto mb-2"
-              />
-              <p className="font-semibold text-sm">{movie.title}</p>
-            </div>
-          ))}
-        </div>
-        <button
-          onClick={onClose}
-          className="mt-4 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-        >
-          Close
-        </button>
-      </div>
-    </div>
   );
 };
 const LikesTab = () => (

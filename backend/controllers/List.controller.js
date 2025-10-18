@@ -46,13 +46,13 @@ const matchAndRemoveMovie = (content, imdbID, tmdbId) => {
 const getList = async (req, res, next) => {
   const { username, type } = req.params;
   try {
-    // Check if user exists (optimized query)
-    const userExists = await User.exists({ username });
-    if (!userExists) {
+    // Check if user exists
+    const userExists = await User.count({ where: { username } });
+    if (userExists === 0) {
       return res.status(404).json({ message: "No such user exists" });
     }
 
-    const list = await List.find({ ownerUsername: username, type }).lean();
+    const list = await List.findAll({ where: { ownerUsername: username, type }, raw: true });
 
     if (list.length === 0) {
       return res.status(200).json({ message: "NO SUCH LIST AVAILABLE" });
@@ -65,11 +65,34 @@ const getList = async (req, res, next) => {
   }
 };
 
+// Get list by ID
+const getListById = async (req, res) => {
+  try {
+    const { listId } = req.params;
+
+    // Find the list
+    const list = await List.findOne({ where: { id: listId }, raw: true });
+
+    if (!list) {
+      return res.status(404).json({ message: "List not found" });
+    }
+
+    return res.status(200).json({
+      message: "LIST FETCHED SUCCESSFULLY",
+      data: list,
+    });
+  } catch (error) {
+    console.error("Error fetching list by ID:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
 const addToList = async (req, res, next) => {
   const movieFetched = req.body.movie;
   const { username } = req.user;
   const { type } = req.params;
   const listName = type === "watchlist" ? "watchlist" : movieFetched?.listName;
+  const listDescription = movieFetched?.listDescription || "";
 
   // Validate type
   if (type !== "watchlist" && type !== "normal") {
@@ -87,12 +110,13 @@ const addToList = async (req, res, next) => {
   }
 
   try {
-    let list = await List.findOne({ name: listName, ownerUsername: username });
+    let list = await List.findOne({ where: { name: listName, ownerUsername: username } });
 
     // Create new list if it doesn't exist
     if (!list) {
-      list = new List({
+      list = await List.create({
         name: listName,
+        description: listDescription,
         type,
         ownerUsername: username,
         content: [],
@@ -105,15 +129,26 @@ const addToList = async (req, res, next) => {
         return res.status(200).json({ message: "Movie already in the list" });
       }
 
-      list.content.push({
-        id: movieFetched.id,
-        posterLink: movieFetched.posterLink || movieFetched.poster_path,
-        title: movieFetched.title,
-        imdbID: movieFetched.imdbID,
-      });
-    }
+      // Format poster link properly
+      let posterLink = movieFetched.posterLink || movieFetched.poster_path;
+      // If poster_path is just a path, prepend TMDB URL
+      if (posterLink && posterLink.startsWith("/")) {
+        posterLink = `https://image.tmdb.org/t/p/w500${posterLink}`;
+      }
 
-    await list.save();
+      const updatedContent = [
+        ...list.content,
+        {
+          id: movieFetched.id,
+          posterLink: posterLink,
+          title: movieFetched.title || movieFetched.name, // Support TV shows
+          imdbID: movieFetched.imdbID,
+          mediaType: movieFetched.media_type || movieFetched.mediaType || "movie", // Default to "movie"
+        },
+      ];
+
+      await List.update({ content: updatedContent }, { where: { id: list.id } });
+    }
 
     return res.status(200).json({
       message: movieFetched ? "Movie added to the list successfully" : "List created successfully",
@@ -135,16 +170,16 @@ const removeFromList = async (req, res, next) => {
   }
 
   try {
-    const list = await List.findOne({ name: type, ownerUsername: username });
+    const list = await List.findOne({ where: { name: type, ownerUsername: username } });
 
     if (!list) {
       return res.status(404).json({ message: "List not found" });
     }
 
     const initialLength = list.content.length;
-    list.content = matchAndRemoveMovie(list.content, imdbID, tmdbId);
+    const updatedContent = matchAndRemoveMovie(list.content, imdbID, tmdbId);
 
-    if (list.content.length === initialLength) {
+    if (updatedContent.length === initialLength) {
       console.log("Movie not found. Searched for:", { imdbID, tmdbId });
       console.log(
         "List content:",
@@ -153,8 +188,9 @@ const removeFromList = async (req, res, next) => {
       return res.status(404).json({ message: "Movie not found in the list" });
     }
 
-    console.log(`Successfully removed ${initialLength - list.content.length} item(s)`);
-    await list.save();
+    console.log(`Successfully removed ${initialLength - updatedContent.length} item(s)`);
+
+    await List.update({ content: updatedContent }, { where: { id: list.id } });
 
     return res.status(200).json({ message: "Movie removed from the list successfully" });
   } catch (error) {
@@ -163,4 +199,77 @@ const removeFromList = async (req, res, next) => {
   }
 };
 
-module.exports = { getList, addToList, removeFromList };
+// Remove movie from list by list ID and movie ID
+const removeMovieFromList = async (req, res) => {
+  try {
+    const { listId, movieId } = req.params;
+    const { username } = req.user;
+
+    // Find the list
+    const list = await List.findOne({ where: { id: listId, ownerUsername: username } });
+
+    if (!list) {
+      return res.status(404).json({ message: "List not found or you don't have permission" });
+    }
+
+    // Remove movie from content
+    const updatedContent = list.content.filter(
+      (movie) => movie.id?.toString() !== movieId.toString()
+    );
+
+    if (updatedContent.length === list.content.length) {
+      return res.status(404).json({ message: "Movie not found in the list" });
+    }
+
+    // Update list
+    await List.update({ content: updatedContent }, { where: { id: listId } });
+
+    return res.status(200).json({
+      message: "Movie removed from list successfully",
+      data: { listId, removedMovieId: movieId },
+    });
+  } catch (error) {
+    console.error("Error removing movie from list:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+// Delete entire list
+const deleteList = async (req, res) => {
+  try {
+    const { listId } = req.params;
+    const { username } = req.user;
+
+    // Find the list
+    const list = await List.findOne({ where: { id: listId, ownerUsername: username } });
+
+    if (!list) {
+      return res.status(404).json({ message: "List not found or you don't have permission" });
+    }
+
+    // Prevent deletion of watchlist
+    if (list.type === "watchlist") {
+      return res.status(400).json({ message: "Cannot delete watchlist" });
+    }
+
+    // Delete the list
+    await List.destroy({ where: { id: listId } });
+
+    return res.status(200).json({
+      message: "List deleted successfully",
+      data: { listId, listName: list.name },
+    });
+  } catch (error) {
+    console.error("Error deleting list:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+module.exports = {
+  getList,
+  getListById,
+  addToList,
+  removeFromList,
+  removeMovieFromList,
+  deleteList,
+};

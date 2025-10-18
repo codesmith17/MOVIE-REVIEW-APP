@@ -1,49 +1,65 @@
-const mongoose = require("mongoose");
-const likedSchema = new mongoose.Schema({
-  username: {
-    type: String,
-    required: true,
-  },
-  profilePicture: {
-    type: String,
-    required: false, // Made optional - not all users have profile pictures
-    default: "",
-  },
-});
-const reviewSchema = new mongoose.Schema({
-  email: {
-    type: String,
-    required: true,
-  },
-  imdbID: {
-    type: String,
-    required: true,
-  },
-  rating: {
-    type: Number,
-    required: false,
-  },
-  dateLogged: {
-    type: String,
-    required: true,
-  },
-  review: {
-    type: String,
-    required: false,
-    default: `MOVIE WATCHED ON ${new Date().toISOString()}`,
-  },
-  likes: {
-    type: Number,
-    required: true,
-    default: 0,
-  },
-  username: {
-    type: String,
-    required: true,
-  },
-  likedBy: [likedSchema],
-});
+const { DataTypes } = require("sequelize");
+const { sequelize } = require("../config/database");
 
-const Review = mongoose.model("Review", reviewSchema);
+const Review = sequelize.define(
+  "Review",
+  {
+    id: {
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
+      primaryKey: true,
+    },
+    email: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    imdbID: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    rating: {
+      type: DataTypes.FLOAT,
+      allowNull: true,
+    },
+    dateLogged: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    review: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      defaultValue: () => `MOVIE WATCHED ON ${new Date().toISOString()}`,
+    },
+    likes: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+    },
+    username: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    likedBy: {
+      type: DataTypes.JSONB,
+      defaultValue: [],
+      // Structure: [{ username: string, profilePicture: string }]
+    },
+  },
+  {
+    tableName: "reviews",
+    timestamps: true,
+    indexes: [
+      {
+        fields: ["username"],
+      },
+      {
+        fields: ["imdbID"],
+      },
+      {
+        fields: ["email"],
+      },
+    ],
+  }
+);
 
 module.exports = Review;

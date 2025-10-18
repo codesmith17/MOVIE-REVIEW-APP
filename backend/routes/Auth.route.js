@@ -15,9 +15,12 @@ const {
   getFriendsThatFollow,
   getFollowers,
   getFollowing,
+  refreshToken,
 } = require("../controllers/Auth.controller.js");
 
 router.post("/signin", signin);
+router.post("/signup", signup);
+router.post("/refresh-token", refreshToken); // No auth required - uses refresh token from cookie
 router.get("/verify/:source?", verifyUser, (req, res) => {
   // If verifyUser passes, send success response
   res.status(200).json({
@@ -25,7 +28,6 @@ router.get("/verify/:source?", verifyUser, (req, res) => {
     data: req.user,
   });
 });
-router.post("/signup", signup);
 router.get("/getOthersData/:username", getOthersData);
 router.get("/getUserData", verifyUser, getUserData);
 router.post("/forgotPassword", forgotPassword);

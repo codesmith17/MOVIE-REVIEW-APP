@@ -188,10 +188,13 @@ const MovieSpecificActivity = () => {
               <img
                 src={`https://image.tmdb.org/t/p/w300${movieData?.poster_path}`}
                 alt={movieData?.title}
-                className="w-32 h-48 object-cover rounded-lg hover:scale-105 transition-transform"
+                className="w-32 h-48 object-cover rounded-lg hover:scale-105 transition-transform bg-gray-800/50"
                 onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = "https://via.placeholder.com/300x450?text=No+Image";
+                  // Prevent infinite loop
+                  if (e.target.src !== `${window.location.origin}/assets/no-image.svg`) {
+                    e.target.onerror = null;
+                    e.target.src = "/assets/no-image.svg";
+                  }
                 }}
               />
             </Link>

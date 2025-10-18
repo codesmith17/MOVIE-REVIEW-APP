@@ -1,54 +1,66 @@
-const mongoose = require("mongoose");
+const { DataTypes } = require("sequelize");
+const { sequelize } = require("../config/database");
 
-const userSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true,
-  },
-  email: {
-    type: String,
-    required: true,
-    unique: true,
-  },
-  password: {
-    type: String,
-    required: true,
-  },
-  profilePicture: {
-    type: String,
-    default: "https://wallpapercave.com/wp/wp12696718.jpg",
-  },
-  username: {
-    type: String,
-    required: true,
-    unique: true,
-  },
-  followers: {
-    type: Number,
-    required: true,
-    default: 0,
-  },
-  following: {
-    type: Number,
-    required: true,
-    default: 0,
-  },
-  followersList: [
-    {
-      type: String,
+const User = sequelize.define(
+  "User",
+  {
+    id: {
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
+      primaryKey: true,
     },
-  ],
-  followingList: [
-    {
-      type: String,
+    name: {
+      type: DataTypes.STRING,
+      allowNull: false,
     },
-  ],
-  resetToken: {
-    type: String,
-    default: null,
+    email: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      unique: true,
+      validate: {
+        isEmail: true,
+      },
+    },
+    password: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    profilePicture: {
+      type: DataTypes.TEXT,
+      defaultValue: "https://wallpapercave.com/wp/wp12696718.jpg",
+    },
+    username: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      unique: true,
+    },
+    followers: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+    },
+    following: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+    },
+    followersList: {
+      type: DataTypes.ARRAY(DataTypes.STRING),
+      defaultValue: [],
+    },
+    followingList: {
+      type: DataTypes.ARRAY(DataTypes.STRING),
+      defaultValue: [],
+    },
+    resetToken: {
+      type: DataTypes.STRING,
+      defaultValue: null,
+    },
   },
-});
-
-const User = mongoose.model("User", userSchema);
+  {
+    tableName: "users",
+    timestamps: true, // Adds createdAt and updatedAt
+  }
+);
 
 module.exports = User;

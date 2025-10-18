@@ -1,52 +1,53 @@
 const Movie = require("../models/Movie.model");
 const { fetchRecommendations, trendingMovies } = require("../utils/GeminiApiReccomendations");
-const getLikes = (req, res, next) => {
+const { Op } = require("sequelize");
+
+const getLikes = async (req, res, next) => {
   const imdbID = req.params.imdbID;
   const email = req.user ? req.user.email : null;
-  // console.log("asdasd", email);
+
   if (!imdbID) {
     return res.status(400).json({ message: "imdbID is required." });
   }
-  Movie.findOne({ imdbID })
-    .then((movie) => {
-      if (movie) {
-        const likes = movie.likes;
-        const likedByCurrentUser = movie.emails.includes(email);
-        res.status(200).json({ liked: likedByCurrentUser, likes: likes });
-        return;
-      } else {
-        res.status(200).json({ liked: false, likes: 0 });
-        return;
-      }
-    })
-    .catch((err) => {
-      console.error("Error:", err);
-      res.status(500).json({ message: "An error occurred.", error: err });
-      return;
-    });
+
+  try {
+    const movie = await Movie.findOne({ where: { imdbID } });
+
+    if (movie) {
+      const likes = movie.likes;
+      const likedByCurrentUser = movie.emails.includes(email);
+      res.status(200).json({ liked: likedByCurrentUser, likes: likes });
+    } else {
+      res.status(200).json({ liked: false, likes: 0 });
+    }
+  } catch (err) {
+    console.error("Error:", err);
+    res.status(500).json({ message: "An error occurred.", error: err });
+  }
 };
+
 const getRecommendations = async (req, res, next) => {
   const { imdbID, title, year } = req.params;
   try {
     const recoMovies = await fetchRecommendations(imdbID, title, year);
     res.status(200).json({ message: "SUCCESSFULLY FETCHED RECOMMENDATIONS", recoMovies });
-    return;
-  } catch {
-    console.error("ERROR OCCURED WHILE FETCHING RECOMMENDATIONS");
+  } catch (error) {
+    console.error("ERROR OCCURED WHILE FETCHING RECOMMENDATIONS", error);
     res.status(404).json({ message: "UNABLE TO FETCH RECOMMENDATIONS" });
   }
 };
+
 const getTrending = async (req, res, next) => {
   try {
     const trendMovies = await trendingMovies();
     res.status(200).json({ message: "SUCCESSFULLY FETCHED TRENDING", trendMovies });
-    return;
-  } catch {
-    console.error("ERROR OCCURED WHILE FETCHING TRENDING");
-    res.status(404).json({ message: "UNABLE TO FETCH TREDNING" });
+  } catch (error) {
+    console.error("ERROR OCCURED WHILE FETCHING TRENDING", error);
+    res.status(404).json({ message: "UNABLE TO FETCH TRENDING" });
   }
 };
-const postLikes = (req, res, next) => {
+
+const postLikes = async (req, res, next) => {
   const imdbID = req.body.imdbID;
   const email = req.user.email;
 
@@ -54,76 +55,69 @@ const postLikes = (req, res, next) => {
     return res.status(400).json({ message: "imdbID and email are required." });
   }
 
-  Movie.findOne({ imdbID: imdbID })
-    .then((movie) => {
-      if (movie) {
-        if (movie.emails.includes(email)) {
-          // User has already liked the movie, remove like
-          movie.likes = Math.max(movie.likes - 1, 0);
-          movie.emails = movie.emails.filter((e) => e !== email);
+  try {
+    const movie = await Movie.findOne({ where: { imdbID } });
 
-          if (movie.likes === 0 || movie.emails.length === 0) {
-            Movie.findOneAndDelete({ imdbID: imdbID })
-              .then((deletedMovie) => {
-                console.log("Deleted successfully:", deletedMovie);
-                res.status(200).json({
-                  message: "Like removed successfully.",
-                  movie: deletedMovie,
-                });
-              })
-              .catch((err) => {
-                console.error("Error deleting movie:", err);
-                res.status(500).json({
-                  message: "An error occurred while deleting movie.",
-                  error: err,
-                });
-              });
-          } else {
-            // Save the updated movie with removed like
-            return movie.save().then((updatedMovie) => {
-              res.status(200).json({
-                message: "Like removed successfully.",
-                movie: updatedMovie,
-              });
-            });
-          }
+    if (movie) {
+      if (movie.emails.includes(email)) {
+        // User has already liked the movie, remove like
+        const updatedLikes = Math.max(movie.likes - 1, 0);
+        const updatedEmails = movie.emails.filter((e) => e !== email);
+
+        if (updatedLikes === 0 || updatedEmails.length === 0) {
+          // Delete the movie if no likes remain
+          await Movie.destroy({ where: { imdbID } });
+          res.status(200).json({
+            message: "Like removed successfully.",
+            movie: { imdbID, likes: 0, emails: [] },
+          });
         } else {
-          // User has not liked the movie, add like
-          movie.likes += 1;
-          movie.emails.push(email);
+          // Update with removed like
+          await Movie.update({ likes: updatedLikes, emails: updatedEmails }, { where: { imdbID } });
 
-          // Save the updated movie with added like
-          return movie.save().then((updatedMovie) => {
-            res.status(200).json({
-              message: "Movie liked successfully.",
-              movie: updatedMovie,
-            });
+          const updatedMovie = await Movie.findOne({ where: { imdbID } });
+
+          res.status(200).json({
+            message: "Like removed successfully.",
+            movie: updatedMovie,
           });
         }
       } else {
-        // Movie not found, create new movie and add like
-        const newMovie = new Movie({
-          imdbID: imdbID,
-          likes: 1,
-          emails: [email],
-        });
+        // User has not liked the movie, add like
+        const updatedLikes = movie.likes + 1;
+        const updatedEmails = [...movie.emails, email];
 
-        return newMovie.save().then((createdMovie) => {
-          res.status(201).json({
-            message: "Movie liked successfully.",
-            movie: createdMovie,
-          });
+        await Movie.update({ likes: updatedLikes, emails: updatedEmails }, { where: { imdbID } });
+
+        const updatedMovie = await Movie.findOne({ where: { imdbID } });
+
+        res.status(200).json({
+          message: "Movie liked successfully.",
+          movie: updatedMovie,
         });
       }
-    })
-    .catch((err) => {
-      console.error("Error:", err);
-      res.status(500).json({ message: "An error occurred.", error: err });
-    });
+    } else {
+      // Movie not found, create new movie and add like
+      const createdMovie = await Movie.create({
+        imdbID: imdbID,
+        likes: 1,
+        emails: [email],
+      });
+
+      res.status(201).json({
+        message: "Movie liked successfully.",
+        movie: createdMovie,
+      });
+    }
+  } catch (err) {
+    console.error("Error:", err);
+    res.status(500).json({ message: "An error occurred.", error: err });
+  }
 };
 
 const cheerio = require("cheerio");
 const https = require("https");
+
 const fetchHTML = (url) => {
   return new Promise((resolve, reject) => {
     https
@@ -244,27 +238,31 @@ const parseMovieShow = async (url) => {
       url: url,
     };
 
-    // console.log(movieShow);
     return movieShow;
   } catch (error) {
     console.error("Error fetching or parsing HTML:", error);
     throw error;
   }
 };
+
 const getLikedMoviesCount = async (req, res, next) => {
   try {
     const { username } = req.params;
     const User = require("../models/User.model");
 
     // Get user's email from username
-    const user = await User.findOne({ username });
+    const user = await User.findOne({ where: { username } });
     if (!user) {
       return res.status(404).json({ message: "User not found", count: 0 });
     }
 
     // Count movies where user's email is in the emails array
-    const count = await Movie.countDocuments({
-      emails: user.email,
+    const count = await Movie.count({
+      where: {
+        emails: {
+          [Op.contains]: [user.email],
+        },
+      },
     });
 
     res.status(200).json({ count });

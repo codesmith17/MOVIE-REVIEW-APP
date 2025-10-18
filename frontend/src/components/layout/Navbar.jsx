@@ -56,7 +56,7 @@ const Navbar = () => {
                 <FaFilm className="text-white text-sm" />
               </div>
               <span className="text-white text-lg font-bold tracking-tight hidden sm:block">
-                CineCritique
+                CineSphere
               </span>
             </Link>
 

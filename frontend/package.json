@@ -1,7 +1,7 @@
 {
-  "name": "movie-app",
+  "name": "cinesphere-frontend",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -16,6 +16,7 @@
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "@reduxjs/toolkit": "^2.9.0",
+    "axios": "^1.12.2",
     "buffer": "^6.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

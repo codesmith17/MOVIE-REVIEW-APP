@@ -5,7 +5,7 @@ const providerWebsites = {
   2053: "https://www.apple.com/apple-tv-plus/", // Lionsgate Play Apple TV Channel
   2074: "https://www.amazon.com/gp/video/storefront/", // Lionsgate Play Amazon Channel
   538: "https://www.plex.tv/", // Plex
-  122: "https://www.hotstar.com/", // Hotstar
+  122: "https://www.jiohotstar.com/", // JioHotstar
   // Add more provider IDs and their corresponding websites as needed
 };
 
