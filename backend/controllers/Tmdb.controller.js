@@ -1,9 +1,48 @@
 /**
  * TMDB Controller
- * Handles all TMDB proxy API requests
+ * Handles all TMDB proxy API requests with database caching
+ * Cache-first strategy: Check DB cache before hitting TMDB API
  */
 
 const tmdbService = require("../services/TmdbService");
+const { sequelize } = require("../config/database");
+
+// Cache expiration time in hours
+const CACHE_EXPIRATION_HOURS = 12;
+
+/**
+ * Check cache and return data if valid
+ * Returns null if cache doesn't exist or is expired
+ */
+async function getCachedData(cacheKey) {
+  try {
+    const result = await sequelize.query(
+      `
+      SELECT data, cached_at 
+      FROM tmdb_cache 
+      WHERE cache_key = :cacheKey
+      AND cached_at > NOW() - INTERVAL '${CACHE_EXPIRATION_HOURS} hours'
+    `,
+      {
+        replacements: {
+          cacheKey,
+        },
+        type: sequelize.QueryTypes.SELECT,
+      }
+    );
+
+    if (result && result.length > 0) {
+      console.log(`Cache HIT for key: ${cacheKey}`);
+      return result[0].data;
+    }
+
+    console.log(`Cache MISS for key: ${cacheKey}`);
+    return null;
+  } catch (error) {
+    console.error(`Cache read error for ${cacheKey}:`, error.message);
+    return null;
+  }
+}
 
 /**
  * Get movie or TV show details
@@ -132,6 +171,18 @@ const getTrending = async (req, res) => {
   try {
     const { mediaType, timeWindow } = req.params;
     const { page = 1 } = req.query;
+
+    // Only use cache for page 1 (homepage data)
+    if (page == 1) {
+      const cacheKey = `trending_${mediaType}_${timeWindow}`;
+      const cachedData = await getCachedData(cacheKey);
+
+      if (cachedData) {
+        return res.json({ results: cachedData, page: 1 });
+      }
+    }
+
+    // Cache miss or not page 1 - fetch from TMDB
     const data = await tmdbService.getTrending(mediaType, timeWindow, page);
     res.json(data);
   } catch (error) {
@@ -148,6 +199,18 @@ const getMovieList = async (req, res) => {
     // Extract category from path (e.g., /movie/now_playing -> now_playing)
     const category = req.path.split("/").pop();
     const { page = 1 } = req.query;
+
+    // Only use cache for page 1 (homepage data)
+    if (page == 1) {
+      const cacheKey = `${category}_movies`;
+      const cachedData = await getCachedData(cacheKey);
+
+      if (cachedData) {
+        return res.json({ results: cachedData, page: 1 });
+      }
+    }
+
+    // Cache miss or not page 1 - fetch from TMDB
     const data = await tmdbService.getMovieList(category, page);
     res.json(data);
   } catch (error) {
@@ -164,6 +227,18 @@ const getTVList = async (req, res) => {
     // Extract category from path (e.g., /tv/popular -> popular)
     const category = req.path.split("/").pop();
     const { page = 1 } = req.query;
+
+    // Only use cache for page 1 (homepage data)
+    if (page == 1) {
+      const cacheKey = `${category}_tv`;
+      const cachedData = await getCachedData(cacheKey);
+
+      if (cachedData) {
+        return res.json({ results: cachedData, page: 1 });
+      }
+    }
+
+    // Cache miss or not page 1 - fetch from TMDB
     const data = await tmdbService.getTVList(category, page);
     res.json(data);
   } catch (error) {

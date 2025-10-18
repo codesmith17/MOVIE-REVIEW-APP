@@ -807,16 +807,40 @@ CREATE TABLE comments (
 
 ## Automation & Cron Jobs
 
-### Trending Movies Fetcher
+### TMDB Data Cache System
 
-CineSphere includes an automated system to fetch and cache trending movies three times daily, ensuring fresh content throughout the day while reducing API calls and improving performance.
+CineSphere includes an intelligent caching system that fetches and stores all TMDB data (movies and TV shows) in the database three times daily. This dramatically reduces TMDB API calls, improves homepage load times, and ensures fresh content throughout the day.
+
+**How It Works**
+
+1. **Automated Fetching**: GitHub Actions runs a cron job 3x daily (2 AM, 10 AM, 6 PM UTC)
+2. **Database Caching**: All fetched data is stored in a public `tmdb_cache` table
+3. **Cache-First Strategy**: API endpoints check the database cache first (12-hour expiration)
+4. **Fallback to TMDB**: If cache misses or is stale, the system fetches from TMDB API
+5. **Token Savings**: Homepage loads from cached data, saving TMDB API tokens
+
+**Cached Content Categories**
+
+Movies:
+- Trending (daily and weekly)
+- Popular
+- Now Playing
+- Upcoming
+- Top Rated
+
+TV Shows:
+- Trending (daily and weekly)
+- Popular
+- On The Air
+- Top Rated
+- Airing Today
 
 **GitHub Actions Workflow**
 
-Create `.github/workflows/trending-movies.yml`:
+File: `.github/workflows/cache-tmdb-data.yml`
 
 ```yaml
-name: Fetch Trending Movies
+name: Cache TMDB Data
 
 on:
   schedule:
@@ -827,24 +851,26 @@ on:
   workflow_dispatch: # Allow manual trigger
 
 jobs:
-  fetch-trending:
+  cache-tmdb-data:
     runs-on: ubuntu-latest
     
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
       
-      - name: Install dependencies
+      - name: Install backend dependencies
         run: |
           cd backend
-          npm install
+          npm ci
       
-      - name: Fetch and store trending movies
+      - name: Fetch and cache TMDB data
         env:
           YUGABYTE_HOST: ${{ secrets.YUGABYTE_HOST }}
           YUGABYTE_PORT: ${{ secrets.YUGABYTE_PORT }}
@@ -855,106 +881,120 @@ jobs:
           TMDB_BEARER_TOKEN: ${{ secrets.TMDB_BEARER_TOKEN }}
         run: |
           cd backend
-          node scripts/fetch-trending.js
-      
-      - name: Commit and push if changes
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add -A
-          git diff-index --quiet HEAD || git commit -m "Update trending movies cache [automated]"
-          git push
+          node scripts/fetch-tmdb-data.js
 ```
 
-**Trending Fetcher Script**
+**Data Fetcher Script**
 
-Create `backend/scripts/fetch-trending.js`:
+File: `backend/scripts/fetch-tmdb-data.js`
+
+This script fetches all homepage data from TMDB and stores it in the database:
 
 ```javascript
 const { sequelize } = require('../config/database');
-const fetch = require('node-fetch');
 
-const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
-const TMDB_TOKEN = process.env.TMDB_BEARER_TOKEN;
-
-async function fetchAndCacheTrending() {
+async function fetchAndCacheAllData() {
   try {
-    console.log('Starting trending fetch job...');
+    console.log('Starting TMDB data cache job...');
     
-    // Fetch daily trending movies
-    const dailyMovies = await fetchFromTMDB('/trending/movie/day?language=en-US');
-    await storeTrendingData('trending_movies_day', dailyMovies.results);
+    // Create cache table if it doesn't exist
+    await sequelize.query(`
+      CREATE TABLE IF NOT EXISTS tmdb_cache (
+        cache_key VARCHAR(100) PRIMARY KEY,
+        data JSONB NOT NULL,
+        cached_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
     
-    // Fetch weekly trending movies
-    const weeklyMovies = await fetchFromTMDB('/trending/movie/week?language=en-US');
-    await storeTrendingData('trending_movies_week', weeklyMovies.results);
+    // Fetch Movies
+    await fetchAndStore('trending_movies_day', '/trending/movie/day');
+    await fetchAndStore('trending_movies_week', '/trending/movie/week');
+    await fetchAndStore('popular_movies', '/movie/popular');
+    await fetchAndStore('now_playing_movies', '/movie/now_playing');
+    await fetchAndStore('upcoming_movies', '/movie/upcoming');
+    await fetchAndStore('top_rated_movies', '/movie/top_rated');
     
-    // Fetch daily trending TV shows
-    const dailyTV = await fetchFromTMDB('/trending/tv/day?language=en-US');
-    await storeTrendingData('trending_tv_day', dailyTV.results);
+    // Fetch TV Shows
+    await fetchAndStore('trending_tv_day', '/trending/tv/day');
+    await fetchAndStore('trending_tv_week', '/trending/tv/week');
+    await fetchAndStore('popular_tv', '/tv/popular');
+    await fetchAndStore('on_the_air_tv', '/tv/on_the_air');
+    await fetchAndStore('top_rated_tv', '/tv/top_rated');
+    await fetchAndStore('airing_today_tv', '/tv/airing_today');
     
-    // Fetch popular and upcoming movies
-    const popularMovies = await fetchFromTMDB('/movie/popular?language=en-US&page=1');
-    await storeTrendingData('popular_movies', popularMovies.results);
-    
-    const nowPlaying = await fetchFromTMDB('/movie/now_playing?language=en-US&page=1');
-    await storeTrendingData('now_playing_movies', nowPlaying.results);
-    
-    const upcoming = await fetchFromTMDB('/movie/upcoming?language=en-US&page=1');
-    await storeTrendingData('upcoming_movies', upcoming.results);
-    
-    console.log('Trending content cached successfully');
+    console.log('TMDB data cached successfully');
     
   } catch (error) {
-    console.error('Error fetching trending content:', error);
+    console.error('Error caching TMDB data:', error);
     process.exit(1);
   } finally {
     await sequelize.close();
   }
 }
 
-fetchAndCacheTrending();
+fetchAndCacheAllData();
 ```
 
 **Cache Table Schema**
 
 ```sql
-CREATE TABLE IF NOT EXISTS trending_cache (
+CREATE TABLE IF NOT EXISTS tmdb_cache (
   cache_key VARCHAR(100) PRIMARY KEY,
   data JSONB NOT NULL,
   cached_at TIMESTAMP DEFAULT NOW()
 );
 ```
 
-**Using Cached Data**
+**Cache Keys**
+- `trending_movies_day`, `trending_movies_week`
+- `popular_movies`, `now_playing_movies`, `upcoming_movies`, `top_rated_movies`
+- `trending_tv_day`, `trending_tv_week`
+- `popular_tv`, `on_the_air_tv`, `top_rated_tv`, `airing_today_tv`
 
-Update your trending endpoint to use cached data:
+**Cache-First Controller Implementation**
+
+File: `backend/controllers/Tmdb.controller.js`
+
+The controller automatically checks cache before calling TMDB API:
 
 ```javascript
-// In backend/controllers/Movie.controller.js
+const CACHE_EXPIRATION_HOURS = 12;
+
+async function getCachedData(cacheKey) {
+  const result = await sequelize.query(`
+    SELECT data, cached_at 
+    FROM tmdb_cache 
+    WHERE cache_key = :cacheKey
+    AND cached_at > NOW() - INTERVAL '${CACHE_EXPIRATION_HOURS} hours'
+  `, {
+    replacements: { cacheKey },
+    type: sequelize.QueryTypes.SELECT,
+  });
+  
+  if (result && result.length > 0) {
+    console.log(`Cache HIT for key: ${cacheKey}`);
+    return result[0].data;
+  }
+  
+  return null; // Cache miss - will fetch from TMDB
+}
+
+// Example: getTrending controller
 const getTrending = async (req, res) => {
-  try {
-    // Check if we have fresh cached data (less than 8 hours old)
-    // Since we fetch 3x daily, cache should never be stale
-    const [cached] = await sequelize.query(`
-      SELECT data, cached_at
-      FROM trending_cache
-      WHERE cache_key = 'trending_movies_day'
-        AND cached_at > NOW() - INTERVAL '8 hours'
-    `);
+  const { mediaType, timeWindow } = req.params;
+  const { page = 1 } = req.query;
+  
+  // Check cache for page 1 (homepage data)
+  if (page == 1) {
+    const cacheKey = `trending_${mediaType}_${timeWindow}`;
+    const cachedData = await getCachedData(cacheKey);
     
-    if (cached.length > 0) {
-      // Use cached data
-      return res.status(200).json({
-        message: "Trending movies fetched from cache",
-        results: cached[0].data,
-        cached: true,
-        lastUpdated: cached[0].cached_at
-      });
+    if (cachedData) {
+      return res.json({ results: cachedData, page: 1 });
     }
-    
-    // Fallback to live API call if cache is stale
-    // This should rarely happen with 3x daily updates
+  }
+  
+  // Cache miss - fetch from TMDB API
     // ... existing logic
   } catch (error) {
     console.error('Error fetching trending:', error);

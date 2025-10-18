@@ -1,4 +1,4 @@
-name: Fetch Trending Movies
+name: Cache TMDB Data
 
 on:
   schedule:
@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  fetch-trending:
+  cache-tmdb-data:
     runs-on: ubuntu-latest
     
     steps:
@@ -30,7 +30,7 @@ jobs:
           cd backend
           npm ci
       
-      - name: Fetch and store trending movies
+      - name: Fetch and cache TMDB data
         env:
           YUGABYTE_HOST: ${{ secrets.YUGABYTE_HOST }}
           YUGABYTE_PORT: ${{ secrets.YUGABYTE_PORT }}
@@ -41,16 +41,16 @@ jobs:
           TMDB_BEARER_TOKEN: ${{ secrets.TMDB_BEARER_TOKEN }}
         run: |
           cd backend
-          node scripts/fetch-trending.js
+          node scripts/fetch-tmdb-data.js
       
       - name: Job completion notification
         if: success()
         run: |
-          echo "Trending movies fetched successfully at $(date)"
+          echo "TMDB data cached successfully at $(date)"
       
       - name: Job failure notification
         if: failure()
         run: |
-          echo "ERROR: Trending movies fetch failed at $(date)"
+          echo "ERROR: TMDB data cache failed at $(date)"
           exit 1
 

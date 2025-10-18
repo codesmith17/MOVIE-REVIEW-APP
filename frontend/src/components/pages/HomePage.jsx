@@ -1,12 +1,11 @@
 import { useState, useEffect } from "react";
 import { MovieSection } from "../movie";
 import { MovieLoader } from "../common";
-import { FaFire, FaStar, FaTv, FaFilm, FaPlus, FaCheck, FaTimes } from "react-icons/fa";
+import { FaStar, FaPlus, FaCheck } from "react-icons/fa";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-
-const BACKEND_URL = import.meta.env.VITE_BACKEND_BASE_URL || "";
+import axios from "../../utils/axiosConfig";
 
 const HomePage = () => {
   const [nowPlayingMovies, setNowPlayingMovies] = useState([]);
@@ -30,15 +29,21 @@ const HomePage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchMovies = async (url, setMovies, isTrending = false) => {
+    /**
+     * Fetch movies/TV shows from backend using axios
+     * Note: Backend uses cache-first strategy, so this will load from database cache
+     * when available (12-hour expiration), falling back to TMDB API only on cache miss.
+     * This dramatically improves load times and saves TMDB API tokens.
+     */
+    const fetchMovies = async (endpoint, setMovies, isTrending = false) => {
       try {
-        const response = await fetch(url);
+        const { data } = await axios.get(endpoint);
 
-        if (!response.ok) {
-          throw new Error(`Network response was not ok, status: ${response.status}`);
+        // Log cache usage for debugging
+        if (process.env.NODE_ENV === "development") {
+          console.log(`📦 Loaded data for: ${endpoint}`);
         }
 
-        const data = await response.json();
         setMovies(data.results.slice(0, 10));
 
         // Set hero movie from trending
@@ -47,25 +52,39 @@ const HomePage = () => {
         }
       } catch (error) {
         console.error("Fetch error:", error);
-        setError(error.message);
+        setError(error.response?.data?.message || error.message);
       }
     };
 
     const fetchAllMovies = async () => {
       setLoading(true);
-      await Promise.all([
-        fetchMovies(`${BACKEND_URL}/api/tmdb/trending/movie/day`, setTrendingMoviesByDay, true),
-        fetchMovies(`${BACKEND_URL}/api/tmdb/trending/movie/week`, setTrendingMoviesByWeek),
-        fetchMovies(`${BACKEND_URL}/api/tmdb/movie/now_playing`, setNowPlayingMovies),
-        fetchMovies(`${BACKEND_URL}/api/tmdb/movie/popular`, setPopularMovies),
-        fetchMovies(`${BACKEND_URL}/api/tmdb/movie/upcoming`, setUpcomingMovies),
-        fetchMovies(`${BACKEND_URL}/api/tmdb/movie/top_rated`, setTopRatedMovies),
-        fetchMovies(`${BACKEND_URL}/api/tmdb/tv/popular`, setLatestShows),
-        fetchMovies(`${BACKEND_URL}/api/tmdb/trending/tv/day`, setTrendingShows),
-        fetchMovies(`${BACKEND_URL}/api/tmdb/tv/on_the_air`, setOnTheAirShows),
-        fetchMovies(`${BACKEND_URL}/api/tmdb/tv/top_rated`, setTopRatedShows),
-      ]);
-      setLoading(false);
+      setError(null);
+
+      try {
+        // Fetch all homepage data in parallel
+        // These endpoints use cached data from the database (updated 3x daily via cron job)
+        await Promise.all([
+          fetchMovies("/api/tmdb/trending/movie/day", setTrendingMoviesByDay, true),
+          fetchMovies("/api/tmdb/trending/movie/week", setTrendingMoviesByWeek),
+          fetchMovies("/api/tmdb/movie/now_playing", setNowPlayingMovies),
+          fetchMovies("/api/tmdb/movie/popular", setPopularMovies),
+          fetchMovies("/api/tmdb/movie/upcoming", setUpcomingMovies),
+          fetchMovies("/api/tmdb/movie/top_rated", setTopRatedMovies),
+          fetchMovies("/api/tmdb/tv/popular", setLatestShows),
+          fetchMovies("/api/tmdb/trending/tv/day", setTrendingShows),
+          fetchMovies("/api/tmdb/tv/on_the_air", setOnTheAirShows),
+          fetchMovies("/api/tmdb/tv/top_rated", setTopRatedShows),
+        ]);
+
+        if (process.env.NODE_ENV === "development") {
+          console.log("✅ All homepage data loaded successfully (cache-first strategy)");
+        }
+      } catch (error) {
+        console.error("Error loading homepage data:", error);
+        setError("Failed to load content. Please try again later.");
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchAllMovies();
@@ -86,22 +105,10 @@ const HomePage = () => {
     if (!user?.data?.username) return;
 
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_BASE_URL}/api/list/getList/${user.data.username}/watchlist`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-        }
-      );
+      const response = await axios.get(`/api/list/getList/${user.data.username}/watchlist`);
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.data && data.data[0]) {
-          setWatchlist(data.data[0]);
-        }
+      if (response.data?.data && response.data.data[0]) {
+        setWatchlist(response.data.data[0]);
       }
     } catch (error) {
       console.error("Error fetching watchlist:", error);
@@ -140,64 +147,39 @@ const HomePage = () => {
     try {
       if (isInWatchlist) {
         // Remove from watchlist
-        const response = await fetch(
-          `${import.meta.env.VITE_BACKEND_BASE_URL}/api/list/removeFromList/watchlist`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              imdbID: `movie-${heroMovie.id}`,
-              tmdbId: heroMovie.id,
-            }),
-            credentials: "include",
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error("Failed to remove from watchlist");
-        }
+        await axios.post("/api/list/removeFromList/watchlist", {
+          imdbID: `movie-${heroMovie.id}`,
+          tmdbId: heroMovie.id,
+        });
 
         toast.success("Removed from watchlist!");
         setIsInWatchlist(false);
         await fetchWatchlist(); // Refresh watchlist
       } else {
         // Add to watchlist
-        const response = await fetch(
-          `${import.meta.env.VITE_BACKEND_BASE_URL}/api/list/addToList/watchlist`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              movie: {
-                id: heroMovie.id,
-                title: heroMovie.title,
-                posterLink: heroMovie.poster_path
-                  ? `https://image.tmdb.org/t/p/w500${heroMovie.poster_path}`
-                  : null,
-                imdbID: `movie-${heroMovie.id}`,
-                mediaType: heroMovie.media_type || "movie",
-              },
-            }),
-            credentials: "include",
-          }
-        );
+        const response = await axios.post("/api/list/addToList/watchlist", {
+          movie: {
+            id: heroMovie.id,
+            title: heroMovie.title,
+            posterLink: heroMovie.poster_path
+              ? `https://image.tmdb.org/t/p/w500${heroMovie.poster_path}`
+              : null,
+            imdbID: `movie-${heroMovie.id}`,
+            mediaType: heroMovie.media_type || "movie",
+          },
+        });
 
-        if (!response.ok) {
-          throw new Error("Failed to add to watchlist");
-        }
-
-        const data = await response.json();
-        toast.success(data.message || "Added to watchlist!");
+        toast.success(response.data.message || "Added to watchlist!");
         setIsInWatchlist(true);
         await fetchWatchlist(); // Refresh watchlist
       }
     } catch (error) {
       console.error("Error toggling watchlist:", error);
-      toast.error(error.message || "Failed to update watchlist. Please try again.");
+      toast.error(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to update watchlist. Please try again."
+      );
     } finally {
       setAddingToWatchlist(false);
     }
