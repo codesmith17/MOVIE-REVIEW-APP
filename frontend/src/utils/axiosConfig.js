@@ -40,7 +40,8 @@ axiosInstance.interceptors.response.use(
       originalRequest.url.includes("/api/auth/signin") ||
       originalRequest.url.includes("/api/auth/signup") ||
       originalRequest.url.includes("/api/auth/forgot") ||
-      originalRequest.url.includes("/api/auth/reset")
+      originalRequest.url.includes("/api/auth/reset") ||
+      originalRequest.url.includes("/api/auth/getUserData")
     ) {
       // These are authentication errors - let component handle them
       console.log(`🚫 Not intercepting auth route: ${originalRequest.url}`);
@@ -102,11 +103,28 @@ axiosInstance.interceptors.response.use(
         processQueue(refreshError, null);
         isRefreshing = false;
 
-        console.error("Token refresh failed. Redirecting to login...");
+        // Clear cookies on refresh failure
+        document.cookie = "access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        document.cookie = "refresh_token=; path=/api/auth; expires=Thu, 01 Jan 1970 00:00:00 GMT";
 
-        // Redirect to login
-        if (window.location.pathname !== "/signin") {
-          window.location.href = "/signin";
+        // Only redirect if user is on a protected page
+        // Don't redirect if on public pages or already on auth pages
+        const publicPages = ["/", "/login", "/signup", "/forgot-password", "/upcoming"];
+        const currentPath = window.location.pathname;
+        const isPublicPage =
+          publicPages.includes(currentPath) ||
+          currentPath.startsWith("/reset-password") ||
+          currentPath.startsWith("/movie/") ||
+          currentPath.startsWith("/tv/") ||
+          currentPath.startsWith("/celebrity/") ||
+          currentPath.startsWith("/user/") ||
+          currentPath.startsWith("/list/");
+
+        if (!isPublicPage) {
+          console.log("Token refresh failed. Redirecting to login...");
+          window.location.href = "/login";
+        } else {
+          console.log("Token refresh failed on public page. No redirect needed.");
         }
 
         return Promise.reject(refreshError);

@@ -46,6 +46,17 @@ const App = () => {
 
   useEffect(() => {
     const fetchUserData = async () => {
+      // Check if cookies exist before making the request
+      const hasAccessToken = document.cookie.includes("access_token=");
+      const hasRefreshToken = document.cookie.includes("refresh_token=");
+
+      // If no tokens at all, skip the request
+      if (!hasAccessToken && !hasRefreshToken) {
+        console.log("No auth tokens found. Skipping user data fetch.");
+        dispatch(setAuthLoading(false));
+        return;
+      }
+
       try {
         // Use axiosInstance which has token refresh interceptor
         const response = await axiosInstance.get("/api/auth/getUserData");
@@ -57,7 +68,7 @@ const App = () => {
           dispatch(setAuthLoading(false));
         }
       } catch (error) {
-        // If 401, user is not authenticated - fail silently
+        // If 401 or other error, user is not authenticated - fail silently
         console.log("User not authenticated on page load");
         dispatch(setAuthLoading(false));
       }
