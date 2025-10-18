@@ -997,7 +997,17 @@ Aggregate usage statistics for insights.
 
 CineSphere is optimized for deployment on Vercel with a monolithic structure where the backend serves the frontend.
 
-**Configuration** (`vercel.json` in backend):
+**Important: Vercel Project Settings**
+
+Before deploying, configure these settings in your Vercel project dashboard:
+
+1. **Root Directory**: Set to `backend` (critical for proper dependency installation)
+2. **Framework Preset**: Other
+3. **Build Command**: Leave as default or use `npm run vercel-build`
+4. **Install Command**: `npm install`
+5. **Output Directory**: Leave empty (backend serves static files)
+
+**Configuration** (`backend/vercel.json`):
 
 ```json
 {
@@ -1005,7 +1015,10 @@ CineSphere is optimized for deployment on Vercel with a monolithic structure whe
   "builds": [
     {
       "src": "index.js",
-      "use": "@vercel/node"
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": ["**"]
+      }
     }
   ],
   "routes": [
@@ -1020,28 +1033,41 @@ CineSphere is optimized for deployment on Vercel with a monolithic structure whe
   ],
   "env": {
     "NODE_ENV": "production"
-  }
+  },
+  "buildCommand": "cd ../frontend && npm install && npm run build"
 }
 ```
 
 **Deployment Steps**
 
-1. **Build the frontend**
+1. **Push your code to GitHub**
    ```bash
-   cd frontend
-   npm run build
+   git add .
+   git commit -m "Deploy to Vercel"
+   git push origin main
    ```
 
-2. **Move build files**
-   The backend automatically serves files from `frontend/dist`.
+2. **Connect to Vercel**
+   - Go to [vercel.com](https://vercel.com)
+   - Import your GitHub repository
+   - **Important:** In project settings, set Root Directory to `backend`
 
 3. **Configure environment variables**
-   Add all required environment variables in Vercel dashboard.
+   Add all required environment variables in Vercel dashboard (see below).
 
 4. **Deploy**
-   ```bash
-   vercel --prod
-   ```
+   - Click "Deploy" or push to your repository
+   - Vercel will automatically:
+     - Install backend dependencies (including `pg` and `sequelize`)
+     - Build the frontend
+     - Deploy the backend to serve everything
+
+**Troubleshooting**
+
+If you get "Please install pg package manually" error:
+1. Verify Root Directory is set to `backend` in Vercel settings
+2. Check that `pg` is in `backend/package.json` dependencies (not devDependencies)
+3. Redeploy after fixing settings
 
 ### Environment Variables for Production
 
