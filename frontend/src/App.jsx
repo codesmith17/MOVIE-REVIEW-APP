@@ -22,6 +22,7 @@ import {
   ReviewsListPage,
   FollowersListPage,
   FollowingListPage,
+  ViewAllPage,
 } from "./components/pages";
 
 // Movie
@@ -106,6 +107,7 @@ const App = () => {
             <Route path="/activity/:username" element={<ActivityPage />} />
             <Route path="/movie-activity/:movieId/:username" element={<MovieSpecificActivity />} />
             <Route path="/list/:listId" element={<ListDetailPage />} />
+            <Route path="/view-all/:category/:mediaType?/:timeWindow?" element={<ViewAllPage />} />
             {/* <Route path="/video-call" element={<LobbyScreen />} />
             <Route path="/room/:roomId" element={<RoomPage />} /> */}
             <Route path="*" element={<NotFound />} />

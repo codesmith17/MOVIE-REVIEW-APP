@@ -7,3 +7,4 @@ export { default as UserPage } from "./UserPage";
 export { default as ReviewsListPage } from "./ReviewsListPage";
 export { default as FollowersListPage } from "./FollowersListPage";
 export { default as FollowingListPage } from "./FollowingListPage";
+export { default as ViewAllPage } from "./ViewAllPage";
