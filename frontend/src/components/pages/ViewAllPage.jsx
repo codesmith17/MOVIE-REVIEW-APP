@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { MovieCard } from "../movie";
 import axios from "../../utils/axiosConfig";
@@ -15,6 +15,8 @@ const ViewAllPage = () => {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const observerRef = useRef(null);
+  const loadMoreRef = useRef(null);
 
   // Category display names
   const categoryTitles = {
@@ -80,15 +82,53 @@ const ViewAllPage = () => {
 
   // Initial load
   useEffect(() => {
+    setItems([]);
+    setPage(1);
+    setHasMore(true);
     fetchItems(1, false);
   }, [category, mediaType, timeWindow]);
 
   // Load more handler
-  const handleLoadMore = () => {
-    if (!loadingMore && hasMore) {
+  const handleLoadMore = useCallback(() => {
+    if (!loadingMore && hasMore && !loading) {
       fetchItems(page + 1, true);
     }
-  };
+  }, [loadingMore, hasMore, page, loading]);
+
+  // Infinite scroll with Intersection Observer
+  useEffect(() => {
+    // Clean up previous observer
+    if (observerRef.current) {
+      observerRef.current.disconnect();
+    }
+
+    // Create new observer
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        const target = entries[0];
+        if (target.isIntersecting) {
+          handleLoadMore();
+        }
+      },
+      {
+        root: null,
+        rootMargin: "200px", // Trigger 200px before reaching the element
+        threshold: 0.1,
+      }
+    );
+
+    // Observe the load more element
+    if (loadMoreRef.current) {
+      observerRef.current.observe(loadMoreRef.current);
+    }
+
+    // Cleanup
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
+    };
+  }, [handleLoadMore]);
 
   const title =
     categoryTitles[category] ||
@@ -145,23 +185,26 @@ const ViewAllPage = () => {
               ))}
             </div>
 
-            {/* Load More Button */}
+            {/* Infinite Scroll Trigger & Loading Indicator */}
             {hasMore && (
-              <div className="flex justify-center mt-12">
-                <button
-                  onClick={handleLoadMore}
-                  disabled={loadingMore}
-                  className="btn-primary px-8 py-3 rounded-lg font-semibold transition-all"
-                >
-                  {loadingMore ? (
-                    <span className="flex items-center gap-2">
-                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-                      Loading...
-                    </span>
-                  ) : (
-                    "Load More"
-                  )}
-                </button>
+              <div ref={loadMoreRef} className="flex justify-center mt-12 py-8">
+                {loadingMore ? (
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="animate-spin rounded-full h-10 w-10 border-4 border-gray-700 border-t-blue-500"></div>
+                    <p className="text-gray-400 text-sm">
+                      Loading more {mediaType === "tv" ? "shows" : "movies"}...
+                    </p>
+                  </div>
+                ) : (
+                  <div className="h-20" />
+                )}
+              </div>
+            )}
+
+            {/* End of Results */}
+            {!hasMore && items.length > 0 && (
+              <div className="text-center mt-12 py-8">
+                <p className="text-gray-500 text-sm">You've reached the end! 🎬</p>
               </div>
             )}
           </>
