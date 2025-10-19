@@ -56,6 +56,12 @@ const HomePage = () => {
     popularShows: false,
   });
 
+  // Sequential loading control
+  const [isLoadingNext, setIsLoadingNext] = useState(false);
+  const [loadTrigger, setLoadTrigger] = useState(0); // Counter to trigger loading checks
+  const lastScrollY = useRef(0);
+  const scrollTimeout = useRef(null);
+
   // Refs for Intersection Observer
   const popularRef = useRef(null);
   const topRatedRef = useRef(null);
@@ -74,6 +80,21 @@ const HomePage = () => {
 
   const user = useSelector((state) => state.user.data);
   const navigate = useNavigate();
+
+  // Detect user's country from browser
+  useEffect(() => {
+    fetch("https://ipapi.co/json/")
+      .then((res) => res.json())
+      .then((data) => {
+        const country = data.country_code; // e.g., "US", "IN", "GB", "CA"
+        setUserRegion(country);
+        console.log(`🌍 Detected user location: ${country}`);
+      })
+      .catch((err) => {
+        console.log("Could not detect location, defaulting to US");
+        setUserRegion("US");
+      });
+  }, []);
 
   // Fetch function with error handling and loading state
   const fetchWithState = async (endpoint, setState, loadingKey, options = {}) => {
@@ -94,7 +115,7 @@ const HomePage = () => {
 
       // Log cache status with timing
       const cacheStatus = data.cache_status;
-      if (cacheStatus?.is_cached) {
+      if (cacheStatus?.is_cached === true) {
         console.log(
           `🟢 [CACHED] ${endpoint} - Age: ${cacheStatus.cache_age_hours}h (${duration}s)`
         );
@@ -124,112 +145,160 @@ const HomePage = () => {
     }
   };
 
-  // Initial load - only hero + top 3 sections
-  useEffect(() => {
-    /**
-     * Smart Lazy Loading Strategy:
-     * 1. Load hero/trending immediately (above fold)
-     * 2. Load first 3 visible sections
-     * 3. Use Intersection Observer to load sections as user scrolls
-     * This reduces initial API calls from 15+ to just 4!
-     */
-
-    const loadInitialContent = async () => {
-      // Load hero first (highest priority)
-      await fetchWithState("/api/tmdb/trending/movie/day", setTrendingMoviesByDay, "trendingDay", {
-        isHero: true,
-      });
-
-      // Load first 2 sections immediately (above the fold)
-      await Promise.allSettled([
+  // Define the loading order for all sections
+  const sectionLoadOrder = [
+    {
+      key: "trendingDay",
+      fetch: () =>
+        fetchWithState("/api/tmdb/trending/movie/day", setTrendingMoviesByDay, "trendingDay", {
+          isHero: true,
+        }),
+      ref: null, // Always load (hero)
+    },
+    {
+      key: "trendingWeek",
+      fetch: () =>
         fetchWithState("/api/tmdb/trending/movie/week", setTrendingMoviesByWeek, "trendingWeek"),
-        fetchWithState("/api/tmdb/movie/now_playing", setNowPlayingMovies, "nowPlaying"),
-      ]);
+      ref: null, // Always load after hero
+    },
+    {
+      key: "nowPlaying",
+      fetch: () => fetchWithState("/api/tmdb/movie/now_playing", setNowPlayingMovies, "nowPlaying"),
+      ref: null, // Always load after trending
+    },
+    {
+      key: "regionalMovies",
+      fetch: () =>
+        fetchWithState(
+          `/api/tmdb/region/movies${userRegion ? `?region=${userRegion}` : ""}`,
+          setRegionalMovies,
+          "regionalMovies",
+          { setRegion: true }
+        ),
+      ref: regionalMoviesRef,
+    },
+    {
+      key: "popular",
+      fetch: () => fetchWithState("/api/tmdb/movie/popular", setPopularMovies, "popular"),
+      ref: popularRef,
+    },
+    {
+      key: "topRated",
+      fetch: () => fetchWithState("/api/tmdb/movie/top_rated", setTopRatedMovies, "topRated"),
+      ref: topRatedRef,
+    },
+    {
+      key: "upcoming",
+      fetch: () => fetchWithState("/api/tmdb/movie/upcoming", setUpcomingMovies, "upcoming"),
+      ref: upcomingRef,
+    },
+    {
+      key: "regionalTV",
+      fetch: () =>
+        fetchWithState(
+          `/api/tmdb/region/tv${userRegion ? `?region=${userRegion}` : ""}`,
+          setRegionalTV,
+          "regionalTV"
+        ),
+      ref: regionalTVRef,
+    },
+    {
+      key: "trendingShows",
+      fetch: () => fetchWithState("/api/tmdb/trending/tv/day", setTrendingShows, "trendingShows"),
+      ref: trendingShowsRef,
+    },
+    {
+      key: "onTheAir",
+      fetch: () => fetchWithState("/api/tmdb/tv/on_the_air", setOnTheAirShows, "onTheAir"),
+      ref: onTheAirRef,
+    },
+    {
+      key: "topRatedShows",
+      fetch: () => fetchWithState("/api/tmdb/tv/top_rated", setTopRatedShows, "topRatedShows"),
+      ref: topRatedShowsRef,
+    },
+    {
+      key: "popularShows",
+      fetch: () => fetchWithState("/api/tmdb/tv/popular", setLatestShows, "popularShows"),
+      ref: popularShowsRef,
+    },
+  ];
+
+  // Check if a section is near the viewport
+  const isNearViewport = (ref, threshold = 800) => {
+    if (!ref?.current) return true; // If no ref, consider it ready to load
+    const rect = ref.current.getBoundingClientRect();
+    const windowHeight = window.innerHeight || document.documentElement.clientHeight;
+    return rect.top <= windowHeight + threshold;
+  };
+
+  // Sequential loader - loads one section at a time
+  useEffect(() => {
+    if (isLoadingNext) return; // Don't start new load if already loading
+
+    const loadNextSection = async () => {
+      // Find the next section to load
+      const nextSection = sectionLoadOrder.find(
+        (section) => !fetchedSections[section.key] && isNearViewport(section.ref)
+      );
+
+      if (!nextSection) return; // No more sections to load
+
+      setIsLoadingNext(true);
+      console.log(`📦 Loading section: ${nextSection.key}`);
+
+      try {
+        await nextSection.fetch();
+        // After successful load, trigger another check
+        setTimeout(() => setLoadTrigger((prev) => prev + 1), 100);
+      } catch (error) {
+        console.error(`Error loading ${nextSection.key}:`, error);
+      } finally {
+        setIsLoadingNext(false);
+      }
     };
 
-    loadInitialContent();
+    loadNextSection();
+  }, [fetchedSections, loadTrigger, isLoadingNext]);
+
+  // Initial load - start the sequential loading
+  useEffect(() => {
+    // Trigger the first load after mount
+    setTimeout(() => setLoadTrigger(1), 100);
   }, []);
 
-  // Intersection Observer for lazy loading sections
+  // Scroll listener to trigger sequential loading
   useEffect(() => {
-    const observerOptions = {
-      root: null,
-      rootMargin: "400px", // Start loading 400px before section is visible
-      threshold: 0.1,
-    };
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
 
-    const handleIntersection = (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          const sectionName = entry.target.getAttribute("data-section");
-
-          // Fetch section data based on which section came into view
-          switch (sectionName) {
-            case "popular":
-              fetchWithState("/api/tmdb/movie/popular", setPopularMovies, "popular");
-              break;
-            case "topRated":
-              fetchWithState("/api/tmdb/movie/top_rated", setTopRatedMovies, "topRated");
-              break;
-            case "upcoming":
-              fetchWithState("/api/tmdb/movie/upcoming", setUpcomingMovies, "upcoming");
-              break;
-            case "regionalMovies":
-              fetchWithState("/api/tmdb/region/movies", setRegionalMovies, "regionalMovies", {
-                setRegion: true,
-              });
-              break;
-            case "regionalTV":
-              fetchWithState("/api/tmdb/region/tv", setRegionalTV, "regionalTV");
-              break;
-            case "trendingShows":
-              fetchWithState("/api/tmdb/trending/tv/day", setTrendingShows, "trendingShows");
-              break;
-            case "onTheAir":
-              fetchWithState("/api/tmdb/tv/on_the_air", setOnTheAirShows, "onTheAir");
-              break;
-            case "topRatedShows":
-              fetchWithState("/api/tmdb/tv/top_rated", setTopRatedShows, "topRatedShows");
-              break;
-            case "popularShows":
-              fetchWithState("/api/tmdb/tv/popular", setLatestShows, "popularShows");
-              break;
-            default:
-              break;
-          }
-        }
-      });
-    };
-
-    const observer = new IntersectionObserver(handleIntersection, observerOptions);
-
-    // Observe all section refs
-    const refs = [
-      popularRef,
-      topRatedRef,
-      upcomingRef,
-      regionalMoviesRef,
-      regionalTVRef,
-      trendingShowsRef,
-      onTheAirRef,
-      topRatedShowsRef,
-      popularShowsRef,
-    ];
-
-    refs.forEach((ref) => {
-      if (ref.current) {
-        observer.observe(ref.current);
+      // User is scrolling - check if we should load next section
+      if (currentScrollY > lastScrollY.current) {
+        // Scrolling down - trigger check for next section
+        setLoadTrigger((prev) => prev + 1);
       }
-    });
 
-    return () => {
-      refs.forEach((ref) => {
-        if (ref.current) {
-          observer.unobserve(ref.current);
-        }
-      });
+      lastScrollY.current = currentScrollY;
+
+      // Clear existing timeout
+      if (scrollTimeout.current) {
+        clearTimeout(scrollTimeout.current);
+      }
+
+      // Set new timeout to trigger load after scroll stops
+      scrollTimeout.current = setTimeout(() => {
+        setLoadTrigger((prev) => prev + 1); // Trigger check again after scroll stops
+      }, 300);
     };
-  }, [fetchedSections]);
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      if (scrollTimeout.current) {
+        clearTimeout(scrollTimeout.current);
+      }
+    };
+  }, []);
 
   // Helper to map TV show fields
   const mapShows = (shows) =>
