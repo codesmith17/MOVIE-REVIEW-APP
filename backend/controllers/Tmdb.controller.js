@@ -49,6 +49,32 @@ async function getCachedData(cacheKey) {
 }
 
 /**
+ * Save data to cache
+ * Updates existing cache or creates new entry
+ */
+async function saveCachedData(cacheKey, data) {
+  try {
+    await sequelize.query(
+      `
+      INSERT INTO tmdb_cache (cache_key, data, cached_at)
+      VALUES (:cacheKey, :data, NOW())
+      ON CONFLICT (cache_key)
+      DO UPDATE SET data = :data, cached_at = NOW()
+    `,
+      {
+        replacements: {
+          cacheKey,
+          data: JSON.stringify(data),
+        },
+      }
+    );
+    console.log(`Cache SAVED for key: ${cacheKey}`);
+  } catch (error) {
+    console.error(`Cache write error for ${cacheKey}:`, error.message);
+  }
+}
+
+/**
  * Get movie or TV show details
  * GET /api/tmdb/:mediaType/:id
  */
@@ -199,6 +225,13 @@ const getTrending = async (req, res) => {
 
     // Cache miss or not page 1 - fetch from TMDB
     const data = await tmdbService.getTrending(mediaType, timeWindow, page);
+
+    // Save to cache for page 1
+    if (page == 1 && data.results) {
+      const cacheKey = `trending_${mediaType}_${timeWindow}`;
+      await saveCachedData(cacheKey, data.results);
+    }
+
     res.json({
       ...data,
       cache_status: {
@@ -245,6 +278,13 @@ const getMovieList = async (req, res) => {
 
     // Cache miss or not page 1 - fetch from TMDB
     const data = await tmdbService.getMovieList(category, page);
+
+    // Save to cache for page 1
+    if (page == 1 && data.results) {
+      const cacheKey = `${category}_movies`;
+      await saveCachedData(cacheKey, data.results);
+    }
+
     res.json({
       ...data,
       cache_status: {
@@ -291,6 +331,13 @@ const getTVList = async (req, res) => {
 
     // Cache miss or not page 1 - fetch from TMDB
     const data = await tmdbService.getTVList(category, page);
+
+    // Save to cache for page 1
+    if (page == 1 && data.results) {
+      const cacheKey = `${category}_tv`;
+      await saveCachedData(cacheKey, data.results);
+    }
+
     res.json({
       ...data,
       cache_status: {
@@ -319,7 +366,7 @@ const getPersonDetails = async (req, res) => {
 };
 
 /**
- * Get user's region from IP address
+ * Get user's region from IP address with timeout
  * Uses ipapi.co free tier (up to 1000 requests/day)
  */
 const getUserRegion = async (ip) => {
@@ -329,16 +376,32 @@ const getUserRegion = async (ip) => {
       return "US"; // Default to US for local development
     }
 
-    const response = await fetch(`https://ipapi.co/${ip}/country/`, {
-      headers: { "User-Agent": "MovieReviewApp/1.0" },
-    });
+    // Add timeout to prevent hanging (1 second max)
+    // eslint-disable-next-line no-undef
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 1000);
 
-    if (response.ok) {
-      const countryCode = await response.text();
-      return countryCode.trim() || "US";
+    try {
+      const response = await fetch(`https://ipapi.co/${ip}/country/`, {
+        headers: { "User-Agent": "MovieReviewApp/1.0" },
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (response.ok) {
+        const countryCode = await response.text();
+        return countryCode.trim() || "US";
+      }
+
+      return "US"; // Fallback
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      if (fetchError.name === "AbortError") {
+        console.log("IP geolocation timeout - using default US");
+      }
+      return "US"; // Fallback on timeout or error
     }
-
-    return "US"; // Fallback
   } catch (error) {
     console.error("IP geolocation error:", error.message);
     return "US"; // Fallback to US
@@ -385,6 +448,13 @@ const getRegionalMovies = async (req, res) => {
     }
 
     const data = await tmdbService.discoverMoviesByRegion(region, page);
+
+    // Save to cache for page 1
+    if (page == 1 && data.results) {
+      const cacheKey = `regional_movies_${region.toUpperCase()}`;
+      await saveCachedData(cacheKey, data.results);
+    }
+
     res.json({
       ...data,
       region: region.toUpperCase(),
@@ -439,6 +509,13 @@ const getRegionalTV = async (req, res) => {
     }
 
     const data = await tmdbService.discoverTVByRegion(region, page);
+
+    // Save to cache for page 1
+    if (page == 1 && data.results) {
+      const cacheKey = `regional_tv_${region.toUpperCase()}`;
+      await saveCachedData(cacheKey, data.results);
+    }
+
     res.json({
       ...data,
       region: region.toUpperCase(),

@@ -5,7 +5,8 @@
       "src": "index.js",
       "use": "@vercel/node",
       "config": {
-        "includeFiles": ["**"]
+        "includeFiles": ["**"],
+        "maxDuration": 10
       }
     }
   ],
@@ -22,7 +23,12 @@
   "env": {
     "NODE_ENV": "production"
   },
+  "functions": {
+    "index.js": {
+      "maxDuration": 10,
+      "memory": 1024
+    }
+  },
   "installCommand": "npm install",
   "buildCommand": "cd ../frontend && npm install && npm run build"
 }
-

@@ -5,7 +5,25 @@ import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 const defaultImage = "https://www.reelviews.net/resources/img/default_poster.jpg";
 
 const MovieCardSkeleton = () => (
-  <div className="skeleton w-full max-w-[140px] sm:max-w-[160px] md:max-w-[180px] lg:max-w-[200px] mx-auto h-[240px] sm:h-[280px] md:h-[320px] lg:h-[360px] rounded-xl"></div>
+  <div className="relative w-full max-w-[140px] sm:max-w-[160px] md:max-w-[180px] lg:max-w-[200px] mx-auto h-[240px] sm:h-[280px] md:h-[320px] lg:h-[360px] rounded-xl overflow-hidden bg-gray-800/50">
+    {/* Shimmer effect */}
+    <div
+      className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-700/50 to-transparent animate-shimmer"
+      style={{
+        backgroundSize: "200% 100%",
+        animation: "shimmer 2s infinite",
+      }}
+    />
+    {/* Poster placeholder */}
+    <div className="absolute inset-0 bg-gray-800 rounded-xl" />
+    {/* Rating badge placeholder */}
+    <div className="absolute top-2 right-2 w-10 h-6 bg-gray-700 rounded-full animate-pulse" />
+    {/* Title placeholder */}
+    <div className="absolute bottom-4 left-3 right-3 space-y-2">
+      <div className="h-4 bg-gray-700 rounded animate-pulse" />
+      <div className="h-3 w-2/3 bg-gray-700 rounded animate-pulse" />
+    </div>
+  </div>
 );
 
 const MovieSection = ({ title, movies, loading, error, hideTitle = false }) => {
