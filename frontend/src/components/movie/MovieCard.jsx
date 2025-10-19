@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { FaStar } from "react-icons/fa";
-import { LazyImage } from "../common";
+import { AdaptiveImage } from "../common";
 
 const MovieCard = ({ id, title, year, type, image, rating, mediaType, priority = false }) => {
   const [dominantColor, setDominantColor] = useState(null);
@@ -118,12 +118,11 @@ const MovieCard = ({ id, title, year, type, image, rating, mediaType, priority =
       <div className="movie-card-hover relative overflow-hidden w-full max-w-[140px] sm:max-w-[160px] md:max-w-[180px] lg:max-w-[200px] mx-auto h-[240px] sm:h-[280px] md:h-[320px] lg:h-[360px] flex flex-col rounded-xl bg-gray-900/40 backdrop-blur-sm transition-all duration-500 ease-out group-hover:bg-gray-800/60 group-hover:shadow-2xl">
         {/* Image Container */}
         <div className="relative w-full h-[190px] sm:h-[220px] md:h-[245px] lg:h-[270px] flex-shrink-0 overflow-hidden rounded-t-xl z-10">
-          <LazyImage
-            src={image}
+          <AdaptiveImage
+            path={image}
             alt={title}
-            className="w-full h-full transition-all duration-500"
-            objectFit="cover"
-            priority={priority}
+            type="poster"
+            className="w-full h-full object-cover transition-all duration-500"
           />
 
           {/* Subtle Gradient Overlay with shine */}
