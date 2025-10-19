@@ -9,9 +9,10 @@
   "functions": {
     "index.js": {
       "maxDuration": 30,
-      "memory": 1024
+      "memory": 1024,
+      "includeFiles": "node_modules/**"
     }
   },
-  "installCommand": "npm install",
+  "installCommand": "npm install --production=false",
   "buildCommand": "cd ../frontend && npm install && npm run build"
 }
