@@ -6,3 +6,4 @@ export { default as ReadOnlyStarRating } from "./ReadOnlyStarRating";
 export { default as LazyImage } from "./LazyImage";
 export { default as MovieLoader } from "./MovieLoader";
 export { default as AdaptiveImage } from "./AdaptiveImage";
+export { default as MoviePageSkeleton } from "./MoviePageSkeleton";

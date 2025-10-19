@@ -13,7 +13,14 @@ import {
 } from "react-icons/fa";
 import { useSelector } from "react-redux";
 import { OtherReviews } from "../reviews";
-import { StarRating, ReadOnlyStarRating, ActorCard, NotFound, MovieLoader } from "../common";
+import {
+  StarRating,
+  ReadOnlyStarRating,
+  ActorCard,
+  NotFound,
+  MoviePageSkeleton,
+  AdaptiveImage,
+} from "../common";
 import MovieVideos from "./MovieVideos";
 import WatchProviders from "./WatchProviders";
 import MovieCard from "./MovieCard";
@@ -27,33 +34,7 @@ const MoviePage = () => {
     "https://w7.pngwing.com/pngs/869/174/png-transparent-icon-user-female-avatar-business-person-profile-thumbnail.png";
   const navigate = useNavigate();
   const location = useLocation();
-  const LoadingSkeleton = () => (
-    <div className="animate-pulse">
-      <div className="h-8 bg-gray-700 rounded w-3/4 mx-auto mb-8"></div>
-      <div className="flex flex-col md:flex-row items-center md:items-start space-y-8 md:space-y-0 md:space-x-12">
-        <div className="w-full max-w-xs md:w-1/4 h-96 bg-gray-700 rounded-lg"></div>
-        <div className="flex-1 space-y-6">
-          <div className="h-4 bg-gray-700 rounded w-3/4"></div>
-          <div className="h-4 bg-gray-700 rounded w-1/2"></div>
-          <div className="h-20 bg-gray-700 rounded"></div>
-          <div className="h-4 bg-gray-700 rounded w-1/4"></div>
-          <div className="h-10 bg-gray-700 rounded w-1/3"></div>
-        </div>
-      </div>
-      <div className="mt-16">
-        <div className="h-8 bg-gray-700 rounded w-1/2 mx-auto mb-8"></div>
-        <div className="flex flex-wrap justify-center gap-4">
-          {[...Array(5)].map((_, index) => (
-            <div key={index} className="w-32">
-              <div className="w-32 h-32 bg-gray-700 rounded-lg mb-2"></div>
-              <div className="h-4 bg-gray-700 rounded w-3/4 mx-auto"></div>
-              <div className="h-3 bg-gray-700 rounded w-1/2 mx-auto mt-1"></div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
+
   const [videos, setVideos] = useState([]);
   const [watchProviders, setWatchProviders] = useState(null);
   const { mediaType, id } = useParams();
@@ -661,31 +642,31 @@ const MoviePage = () => {
       {/* Backdrop Image with Enhanced Overlay */}
       {singleMovieData.backdrop_path && (
         <div className="fixed top-0 left-0 w-full h-[60vh] -z-10">
-          <div
-            className="absolute inset-0 bg-cover bg-center opacity-15"
-            style={{
-              backgroundImage: `url(https://image.tmdb.org/t/p/original${singleMovieData.backdrop_path})`,
-            }}
+          <AdaptiveImage
+            path={singleMovieData.backdrop_path}
+            alt={`${singleMovieData.title || singleMovieData.name} backdrop`}
+            type="backdrop"
+            className="absolute inset-0 w-full h-full object-cover opacity-15"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-[#0a0e27]/70 via-[#0a0e27]/90 to-[#0a0e27]" />
         </div>
       )}
 
-      {/* Main Content */}
-      <div className="pt-24 pb-20">
-        <div className="max-w-7xl mx-auto px-6">
-          {loading ? (
-            <MovieLoader />
-          ) : (
-            <>
+      {loading ? (
+        <MoviePageSkeleton />
+      ) : (
+        <>
+          {/* Main Content */}
+          <div className="pt-24 pb-20">
+            <div className="max-w-7xl mx-auto px-6">
               {/* Movie Info Card */}
               <div className="flex flex-col lg:flex-row gap-10 mb-16 fade-in">
                 {/* Poster */}
                 <div className="flex-shrink-0 mx-auto lg:mx-0">
-                  <img
-                    src={`https://image.tmdb.org/t/p/w500${singleMovieData?.poster_path}`}
+                  <AdaptiveImage
+                    path={singleMovieData?.poster_path}
                     alt={singleMovieData.title || singleMovieData.name}
-                    loading="eager"
+                    type="poster"
                     className="w-64 lg:w-72 rounded-xl shadow-2xl object-cover"
                   />
                 </div>
@@ -1072,10 +1053,11 @@ const MoviePage = () => {
                   </div>
                 )}
               </div>
-            </>
-          )}
-        </div>
-      </div>
+            </div>
+          </div>
+        </>
+      )}
+
       <WriteReviewModal
         isOpen={showModal}
         onClose={toggleModal}
