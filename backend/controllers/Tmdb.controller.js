@@ -366,46 +366,13 @@ const getPersonDetails = async (req, res) => {
 };
 
 /**
- * Get user's region from IP address with timeout
- * Uses ipapi.co free tier (up to 1000 requests/day)
+ * Get user's region from query parameter or default to US
+ * Note: Region should be detected on frontend using browser geolocation
+ * Backend just uses the region passed in the query string
  */
-const getUserRegion = async (ip) => {
-  try {
-    // Skip localhost/private IPs
-    if (ip === "::1" || ip === "127.0.0.1" || ip.startsWith("192.168.") || ip.startsWith("10.")) {
-      return "US"; // Default to US for local development
-    }
-
-    // Add timeout to prevent hanging (1 second max)
-    // eslint-disable-next-line no-undef
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 1000);
-
-    try {
-      const response = await fetch(`https://ipapi.co/${ip}/country/`, {
-        headers: { "User-Agent": "MovieReviewApp/1.0" },
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-
-      if (response.ok) {
-        const countryCode = await response.text();
-        return countryCode.trim() || "US";
-      }
-
-      return "US"; // Fallback
-    } catch (fetchError) {
-      clearTimeout(timeoutId);
-      if (fetchError.name === "AbortError") {
-        console.log("IP geolocation timeout - using default US");
-      }
-      return "US"; // Fallback on timeout or error
-    }
-  } catch (error) {
-    console.error("IP geolocation error:", error.message);
-    return "US"; // Fallback to US
-  }
+const getUserRegion = (region) => {
+  // Return the provided region or default to US
+  return region?.toUpperCase() || "US";
 };
 
 /**
@@ -416,25 +383,19 @@ const getRegionalMovies = async (req, res) => {
   try {
     let { region, page = 1 } = req.query;
 
-    // Auto-detect region from IP if not provided
-    if (!region) {
-      const clientIp =
-        req.headers["x-forwarded-for"]?.split(",")[0] ||
-        req.headers["x-real-ip"] ||
-        req.socket.remoteAddress;
-      region = await getUserRegion(clientIp);
-    }
+    // Use provided region or default to US
+    region = getUserRegion(region);
 
     // Cache key based on region
     if (page == 1) {
-      const cacheKey = `regional_movies_${region.toUpperCase()}`;
+      const cacheKey = `regional_movies_${region}`;
       const cachedResult = await getCachedData(cacheKey);
 
       if (cachedResult) {
         return res.json({
           results: cachedResult.data,
           page: 1,
-          region: region.toUpperCase(),
+          region: region,
           cache_status: {
             is_cached: true,
             cached_at: cachedResult.cached_at,
@@ -451,13 +412,13 @@ const getRegionalMovies = async (req, res) => {
 
     // Save to cache for page 1
     if (page == 1 && data.results) {
-      const cacheKey = `regional_movies_${region.toUpperCase()}`;
+      const cacheKey = `regional_movies_${region}`;
       await saveCachedData(cacheKey, data.results);
     }
 
     res.json({
       ...data,
-      region: region.toUpperCase(),
+      region: region,
       cache_status: {
         is_cached: false,
         cached_at: null,
@@ -477,25 +438,19 @@ const getRegionalTV = async (req, res) => {
   try {
     let { region, page = 1 } = req.query;
 
-    // Auto-detect region from IP if not provided
-    if (!region) {
-      const clientIp =
-        req.headers["x-forwarded-for"]?.split(",")[0] ||
-        req.headers["x-real-ip"] ||
-        req.socket.remoteAddress;
-      region = await getUserRegion(clientIp);
-    }
+    // Use provided region or default to US
+    region = getUserRegion(region);
 
     // Cache key based on region
     if (page == 1) {
-      const cacheKey = `regional_tv_${region.toUpperCase()}`;
+      const cacheKey = `regional_tv_${region}`;
       const cachedResult = await getCachedData(cacheKey);
 
       if (cachedResult) {
         return res.json({
           results: cachedResult.data,
           page: 1,
-          region: region.toUpperCase(),
+          region: region,
           cache_status: {
             is_cached: true,
             cached_at: cachedResult.cached_at,
@@ -512,13 +467,13 @@ const getRegionalTV = async (req, res) => {
 
     // Save to cache for page 1
     if (page == 1 && data.results) {
-      const cacheKey = `regional_tv_${region.toUpperCase()}`;
+      const cacheKey = `regional_tv_${region}`;
       await saveCachedData(cacheKey, data.results);
     }
 
     res.json({
       ...data,
-      region: region.toUpperCase(),
+      region: region,
       cache_status: {
         is_cached: false,
         cached_at: null,
@@ -538,27 +493,21 @@ const getNowPlayingRegional = async (req, res) => {
   try {
     let { region, page = 1 } = req.query;
 
-    // Auto-detect region from IP if not provided
-    if (!region) {
-      const clientIp =
-        req.headers["x-forwarded-for"]?.split(",")[0] ||
-        req.headers["x-real-ip"] ||
-        req.socket.remoteAddress;
-      region = await getUserRegion(clientIp);
-    }
+    // Use provided region or default to US
+    region = getUserRegion(region);
 
     // Cache key based on region
     if (page == 1) {
-      const cacheKey = `now_playing_${region.toUpperCase()}`;
+      const cacheKey = `now_playing_${region}`;
       const cachedData = await getCachedData(cacheKey);
 
       if (cachedData) {
-        return res.json({ results: cachedData, page: 1, region: region.toUpperCase() });
+        return res.json({ results: cachedData, page: 1, region: region });
       }
     }
 
     const data = await tmdbService.getNowPlayingByRegion(region, page);
-    res.json({ ...data, region: region.toUpperCase() });
+    res.json({ ...data, region: region });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
