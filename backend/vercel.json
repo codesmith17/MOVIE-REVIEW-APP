@@ -6,7 +6,7 @@
       "use": "@vercel/node",
       "config": {
         "maxLambdaSize": "50mb",
-        "includeFiles": ["node_modules/**", "dist/**"]
+        "includeFiles": ["node_modules/**", "../frontend/dist/**"]
       }
     }
   ],
@@ -20,5 +20,5 @@
     "NODE_ENV": "production"
   },
   "installCommand": "npm install",
-  "buildCommand": "cd ../frontend && npm install && npm run build && cd ../backend && npm install && cp -r ../frontend/dist ./dist"
+  "buildCommand": "cd ../frontend && npm install && npm run build && cd ../backend && npm install"
 }

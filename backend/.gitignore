@@ -27,6 +27,3 @@ yarn-error.log*
 # Optional REPL history
 .node_repl_history
 .vercel
-
-# Frontend build (copied during Vercel deployment)
-dist/
