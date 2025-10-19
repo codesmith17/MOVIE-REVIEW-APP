@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
+import { Link } from "react-router-dom";
 import MovieCard from "./MovieCard";
-import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import { FaChevronLeft, FaChevronRight, FaArrowRight } from "react-icons/fa";
 
 const defaultImage = "https://www.reelviews.net/resources/img/default_poster.jpg";
 
@@ -26,7 +27,7 @@ const MovieCardSkeleton = () => (
   </div>
 );
 
-const MovieSection = ({ title, movies, loading, error, hideTitle = false }) => {
+const MovieSection = ({ title, movies, loading, error, hideTitle = false, viewAllLink = null }) => {
   const scrollContainerRef = useRef(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
@@ -69,33 +70,46 @@ const MovieSection = ({ title, movies, loading, error, hideTitle = false }) => {
         <div className="flex items-center justify-between mb-8">
           <h2 className="text-2xl font-bold gradient-text">{title}</h2>
 
-          {/* Desktop Scroll Buttons */}
-          {!loading && movies?.length > 4 && (
-            <div className="hidden md:flex gap-2">
-              <button
-                onClick={() => scroll("left")}
-                disabled={!canScrollLeft}
-                className={`glass p-2 rounded-lg transition-all ${
-                  canScrollLeft
-                    ? "hover:bg-white/20 text-white"
-                    : "opacity-30 cursor-not-allowed text-gray-500"
-                }`}
+          <div className="flex items-center gap-3">
+            {/* View All Button */}
+            {viewAllLink && !loading && (
+              <Link
+                to={viewAllLink}
+                className="text-sm font-medium text-gray-400 hover:text-white transition-colors flex items-center gap-2 group"
               >
-                <FaChevronLeft className="text-lg" />
-              </button>
-              <button
-                onClick={() => scroll("right")}
-                disabled={!canScrollRight}
-                className={`glass p-2 rounded-lg transition-all ${
-                  canScrollRight
-                    ? "hover:bg-white/20 text-white"
-                    : "opacity-30 cursor-not-allowed text-gray-500"
-                }`}
-              >
-                <FaChevronRight className="text-lg" />
-              </button>
-            </div>
-          )}
+                View All
+                <FaArrowRight className="text-xs group-hover:translate-x-1 transition-transform" />
+              </Link>
+            )}
+
+            {/* Desktop Scroll Buttons */}
+            {!loading && movies?.length > 4 && (
+              <div className="hidden md:flex gap-2">
+                <button
+                  onClick={() => scroll("left")}
+                  disabled={!canScrollLeft}
+                  className={`glass p-2 rounded-lg transition-all ${
+                    canScrollLeft
+                      ? "hover:bg-white/20 text-white"
+                      : "opacity-30 cursor-not-allowed text-gray-500"
+                  }`}
+                >
+                  <FaChevronLeft className="text-lg" />
+                </button>
+                <button
+                  onClick={() => scroll("right")}
+                  disabled={!canScrollRight}
+                  className={`glass p-2 rounded-lg transition-all ${
+                    canScrollRight
+                      ? "hover:bg-white/20 text-white"
+                      : "opacity-30 cursor-not-allowed text-gray-500"
+                  }`}
+                >
+                  <FaChevronRight className="text-lg" />
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       )}
 

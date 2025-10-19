@@ -564,18 +564,21 @@ const HomePage = () => {
               title="Trending Movies Today"
               movies={trendingMoviesByDay}
               loading={loadingStates.trendingDay}
+              viewAllLink="/view-all/trending/movie/day"
             />
 
             <MovieSection
               title="Trending This Week"
               movies={trendingMoviesByWeek}
               loading={loadingStates.trendingWeek}
+              viewAllLink="/view-all/trending/movie/week"
             />
 
             <MovieSection
               title="Now Playing"
               movies={nowPlayingMovies}
               loading={loadingStates.nowPlaying}
+              viewAllLink="/view-all/now_playing/movie"
             />
 
             <div ref={popularRef} data-section="popular">
@@ -583,6 +586,7 @@ const HomePage = () => {
                 title="Popular Movies"
                 movies={popularMovies}
                 loading={loadingStates.popular}
+                viewAllLink="/view-all/popular/movie"
               />
             </div>
 
@@ -591,6 +595,7 @@ const HomePage = () => {
                 title="Top Rated Movies"
                 movies={topRatedMovies}
                 loading={loadingStates.topRated}
+                viewAllLink="/view-all/top_rated/movie"
               />
             </div>
 
@@ -599,6 +604,7 @@ const HomePage = () => {
                 title="Coming Soon"
                 movies={upcomingMovies}
                 loading={loadingStates.upcoming}
+                viewAllLink="/view-all/upcoming/movie"
               />
             </div>
 
@@ -639,6 +645,7 @@ const HomePage = () => {
                     title="Trending Shows"
                     movies={mapShows(trendingShows)}
                     loading={loadingStates.trendingShows}
+                    viewAllLink="/view-all/trending/tv/day"
                   />
                 </div>
 
@@ -647,6 +654,7 @@ const HomePage = () => {
                     title="On The Air"
                     movies={mapShows(onTheAirShows)}
                     loading={loadingStates.onTheAir}
+                    viewAllLink="/view-all/on_the_air/tv"
                   />
                 </div>
 
@@ -655,6 +663,7 @@ const HomePage = () => {
                     title="Top Rated Shows"
                     movies={mapShows(topRatedShows)}
                     loading={loadingStates.topRatedShows}
+                    viewAllLink="/view-all/top_rated/tv"
                   />
                 </div>
 
@@ -663,6 +672,7 @@ const HomePage = () => {
                     title="Popular Shows"
                     movies={mapShows(latestShows)}
                     loading={loadingStates.popularShows}
+                    viewAllLink="/view-all/popular/tv"
                   />
                 </div>
               </div>
