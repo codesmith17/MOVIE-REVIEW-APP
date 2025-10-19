@@ -18,6 +18,9 @@ const HomePage = () => {
   const [trendingShows, setTrendingShows] = useState([]);
   const [onTheAirShows, setOnTheAirShows] = useState([]);
   const [topRatedShows, setTopRatedShows] = useState([]);
+  const [regionalMovies, setRegionalMovies] = useState([]);
+  const [regionalTV, setRegionalTV] = useState([]);
+  const [userRegion, setUserRegion] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [heroMovie, setHeroMovie] = useState(null);
@@ -39,9 +42,14 @@ const HomePage = () => {
       try {
         const { data } = await axios.get(endpoint);
 
-        // Log cache usage for debugging
-        if (process.env.NODE_ENV === "development") {
-          console.log(`📦 Loaded data for: ${endpoint}`);
+        // Log cache usage with detailed status
+        const cacheStatus = data.cache_status;
+        if (cacheStatus?.is_cached) {
+          console.log(
+            `🟢 [CACHED] ${endpoint} - Age: ${cacheStatus.cache_age_hours}h (cached at: ${new Date(cacheStatus.cached_at).toLocaleString()})`
+          );
+        } else {
+          console.log(`🔴 [TMDB API] ${endpoint} - Fresh data from TMDB`);
         }
 
         setMovies(data.results.slice(0, 10));
@@ -74,6 +82,46 @@ const HomePage = () => {
           fetchMovies("/api/tmdb/trending/tv/day", setTrendingShows),
           fetchMovies("/api/tmdb/tv/on_the_air", setOnTheAirShows),
           fetchMovies("/api/tmdb/tv/top_rated", setTopRatedShows),
+          // Fetch regional content (auto-detects user's location)
+          (async () => {
+            try {
+              const { data } = await axios.get("/api/tmdb/region/movies");
+
+              // Log cache status for regional movies
+              const cacheStatus = data.cache_status;
+              if (cacheStatus?.is_cached) {
+                console.log(
+                  `🟢 [CACHED] /api/tmdb/region/movies - Age: ${cacheStatus.cache_age_hours}h (cached at: ${new Date(cacheStatus.cached_at).toLocaleString()})`
+                );
+              } else {
+                console.log(`🔴 [TMDB API] /api/tmdb/region/movies - Fresh data from TMDB`);
+              }
+
+              setRegionalMovies(data.results.slice(0, 10));
+              if (data.region) setUserRegion(data.region);
+            } catch (error) {
+              console.error("Error fetching regional movies:", error);
+            }
+          })(),
+          (async () => {
+            try {
+              const { data } = await axios.get("/api/tmdb/region/tv");
+
+              // Log cache status for regional TV
+              const cacheStatus = data.cache_status;
+              if (cacheStatus?.is_cached) {
+                console.log(
+                  `🟢 [CACHED] /api/tmdb/region/tv - Age: ${cacheStatus.cache_age_hours}h (cached at: ${new Date(cacheStatus.cached_at).toLocaleString()})`
+                );
+              } else {
+                console.log(`🔴 [TMDB API] /api/tmdb/region/tv - Fresh data from TMDB`);
+              }
+
+              setRegionalTV(data.results.slice(0, 10));
+            } catch (error) {
+              console.error("Error fetching regional TV:", error);
+            }
+          })(),
         ]);
 
         if (process.env.NODE_ENV === "development") {
@@ -295,6 +343,32 @@ const HomePage = () => {
 
           {/* Movie Sections */}
           <div className="space-y-16">
+            {/* Regional Section - Show first if available */}
+            {regionalMovies && regionalMovies.length > 0 && (
+              <div className="relative">
+                <div className="absolute -inset-1 bg-gradient-to-r from-yellow-500/20 via-red-500/20 to-yellow-500/20 rounded-2xl blur-xl opacity-50" />
+                <div className="relative bg-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-yellow-500/30">
+                  <div className="flex items-center gap-3 mb-6">
+                    <span className="text-2xl">📍</span>
+                    <h2 className="text-2xl md:text-3xl font-bold">
+                      <span className="gradient-text">Trending Near You</span>
+                      {userRegion && (
+                        <span className="ml-3 text-sm font-normal text-yellow-400 bg-yellow-500/10 px-3 py-1 rounded-full border border-yellow-500/30">
+                          {userRegion}
+                        </span>
+                      )}
+                    </h2>
+                  </div>
+                  <MovieSection
+                    movies={regionalMovies}
+                    loading={loading}
+                    error={error}
+                    hideTitle={true}
+                  />
+                </div>
+              </div>
+            )}
+
             <MovieSection
               title="Trending Movies Today"
               movies={trendingMoviesByDay}
@@ -342,6 +416,32 @@ const HomePage = () => {
               <h2 className="text-3xl font-bold gradient-text mb-12">TV Shows</h2>
 
               <div className="space-y-16">
+                {/* Regional TV Shows */}
+                {regionalTV && regionalTV.length > 0 && (
+                  <div className="relative">
+                    <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-blue-500/20 rounded-2xl blur-xl opacity-50" />
+                    <div className="relative bg-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-blue-500/30">
+                      <div className="flex items-center gap-3 mb-6">
+                        <span className="text-2xl">📺</span>
+                        <h2 className="text-2xl md:text-3xl font-bold">
+                          <span className="gradient-text">Popular Shows Near You</span>
+                          {userRegion && (
+                            <span className="ml-3 text-sm font-normal text-blue-400 bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/30">
+                              {userRegion}
+                            </span>
+                          )}
+                        </h2>
+                      </div>
+                      <MovieSection
+                        movies={mapShows(regionalTV)}
+                        loading={loading}
+                        error={error}
+                        hideTitle={true}
+                      />
+                    </div>
+                  </div>
+                )}
+
                 <MovieSection
                   title="Trending Shows"
                   movies={mapShows(trendingShows)}

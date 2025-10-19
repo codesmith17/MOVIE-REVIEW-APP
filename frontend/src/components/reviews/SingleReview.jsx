@@ -15,6 +15,7 @@ import { useSelector } from "react-redux";
 import { MdDelete } from "react-icons/md";
 import { Modal } from "../modals";
 import { motion, AnimatePresence } from "framer-motion";
+import axios from "axios";
 
 const API_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL || "";
 
@@ -53,17 +54,9 @@ const SingleReview = () => {
     setIsUpdatingRating(true);
 
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/review/updateRating/${personalReview._id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-          body: JSON.stringify({ rating: newRating }),
-        }
-      );
+      const response = await axios.put(`/api/review/updateRating/${personalReview._id}`, {
+        rating: newRating,
+      });
       if (response.status === 400) {
         toast.error("Failed to update rating. Please login to rate");
         navigate("/login");

@@ -8,7 +8,7 @@ const MovieCardSkeleton = () => (
   <div className="skeleton w-full max-w-[140px] sm:max-w-[160px] md:max-w-[180px] lg:max-w-[200px] mx-auto h-[240px] sm:h-[280px] md:h-[320px] lg:h-[360px] rounded-xl"></div>
 );
 
-const MovieSection = ({ title, movies, loading, error }) => {
+const MovieSection = ({ title, movies, loading, error, hideTitle = false }) => {
   const scrollContainerRef = useRef(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
@@ -47,37 +47,39 @@ const MovieSection = ({ title, movies, loading, error }) => {
   return (
     <section className="fade-in">
       {/* Section Header */}
-      <div className="flex items-center justify-between mb-8">
-        <h2 className="text-2xl font-bold gradient-text">{title}</h2>
+      {!hideTitle && (
+        <div className="flex items-center justify-between mb-8">
+          <h2 className="text-2xl font-bold gradient-text">{title}</h2>
 
-        {/* Desktop Scroll Buttons */}
-        {!loading && movies?.length > 4 && (
-          <div className="hidden md:flex gap-2">
-            <button
-              onClick={() => scroll("left")}
-              disabled={!canScrollLeft}
-              className={`glass p-2 rounded-lg transition-all ${
-                canScrollLeft
-                  ? "hover:bg-white/20 text-white"
-                  : "opacity-30 cursor-not-allowed text-gray-500"
-              }`}
-            >
-              <FaChevronLeft className="text-lg" />
-            </button>
-            <button
-              onClick={() => scroll("right")}
-              disabled={!canScrollRight}
-              className={`glass p-2 rounded-lg transition-all ${
-                canScrollRight
-                  ? "hover:bg-white/20 text-white"
-                  : "opacity-30 cursor-not-allowed text-gray-500"
-              }`}
-            >
-              <FaChevronRight className="text-lg" />
-            </button>
-          </div>
-        )}
-      </div>
+          {/* Desktop Scroll Buttons */}
+          {!loading && movies?.length > 4 && (
+            <div className="hidden md:flex gap-2">
+              <button
+                onClick={() => scroll("left")}
+                disabled={!canScrollLeft}
+                className={`glass p-2 rounded-lg transition-all ${
+                  canScrollLeft
+                    ? "hover:bg-white/20 text-white"
+                    : "opacity-30 cursor-not-allowed text-gray-500"
+                }`}
+              >
+                <FaChevronLeft className="text-lg" />
+              </button>
+              <button
+                onClick={() => scroll("right")}
+                disabled={!canScrollRight}
+                className={`glass p-2 rounded-lg transition-all ${
+                  canScrollRight
+                    ? "hover:bg-white/20 text-white"
+                    : "opacity-30 cursor-not-allowed text-gray-500"
+                }`}
+              >
+                <FaChevronRight className="text-lg" />
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Movies Container */}
       <div className="relative">

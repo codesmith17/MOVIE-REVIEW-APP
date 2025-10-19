@@ -152,6 +152,41 @@ class TmdbService {
       language: "en-US",
     });
   }
+
+  /**
+   * Discover movies by region (region-specific popular content)
+   */
+  async discoverMoviesByRegion(region, page = 1) {
+    return this.get("/discover/movie", {
+      language: "en-US",
+      region: region.toUpperCase(),
+      sort_by: "popularity.desc",
+      page,
+    });
+  }
+
+  /**
+   * Discover TV shows by region
+   */
+  async discoverTVByRegion(region, page = 1) {
+    return this.get("/discover/tv", {
+      language: "en-US",
+      watch_region: region.toUpperCase(),
+      sort_by: "popularity.desc",
+      page,
+    });
+  }
+
+  /**
+   * Get now playing movies in a specific region
+   */
+  async getNowPlayingByRegion(region, page = 1) {
+    return this.get("/movie/now_playing", {
+      language: "en-US",
+      region: region.toUpperCase(),
+      page,
+    });
+  }
 }
 
 // Export singleton instance

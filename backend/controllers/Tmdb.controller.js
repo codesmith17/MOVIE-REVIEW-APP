@@ -33,7 +33,11 @@ async function getCachedData(cacheKey) {
 
     if (result && result.length > 0) {
       console.log(`Cache HIT for key: ${cacheKey}`);
-      return result[0].data;
+      return {
+        data: result[0].data,
+        cached_at: result[0].cached_at,
+        is_cached: true,
+      };
     }
 
     console.log(`Cache MISS for key: ${cacheKey}`);
@@ -175,16 +179,34 @@ const getTrending = async (req, res) => {
     // Only use cache for page 1 (homepage data)
     if (page == 1) {
       const cacheKey = `trending_${mediaType}_${timeWindow}`;
-      const cachedData = await getCachedData(cacheKey);
+      const cachedResult = await getCachedData(cacheKey);
 
-      if (cachedData) {
-        return res.json({ results: cachedData, page: 1 });
+      if (cachedResult) {
+        return res.json({
+          results: cachedResult.data,
+          page: 1,
+          cache_status: {
+            is_cached: true,
+            cached_at: cachedResult.cached_at,
+            cache_age_hours:
+              Math.round(
+                ((new Date() - new Date(cachedResult.cached_at)) / (1000 * 60 * 60)) * 10
+              ) / 10,
+          },
+        });
       }
     }
 
     // Cache miss or not page 1 - fetch from TMDB
     const data = await tmdbService.getTrending(mediaType, timeWindow, page);
-    res.json(data);
+    res.json({
+      ...data,
+      cache_status: {
+        is_cached: false,
+        cached_at: null,
+        cache_age_hours: null,
+      },
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -203,16 +225,34 @@ const getMovieList = async (req, res) => {
     // Only use cache for page 1 (homepage data)
     if (page == 1) {
       const cacheKey = `${category}_movies`;
-      const cachedData = await getCachedData(cacheKey);
+      const cachedResult = await getCachedData(cacheKey);
 
-      if (cachedData) {
-        return res.json({ results: cachedData, page: 1 });
+      if (cachedResult) {
+        return res.json({
+          results: cachedResult.data,
+          page: 1,
+          cache_status: {
+            is_cached: true,
+            cached_at: cachedResult.cached_at,
+            cache_age_hours:
+              Math.round(
+                ((new Date() - new Date(cachedResult.cached_at)) / (1000 * 60 * 60)) * 10
+              ) / 10,
+          },
+        });
       }
     }
 
     // Cache miss or not page 1 - fetch from TMDB
     const data = await tmdbService.getMovieList(category, page);
-    res.json(data);
+    res.json({
+      ...data,
+      cache_status: {
+        is_cached: false,
+        cached_at: null,
+        cache_age_hours: null,
+      },
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -231,16 +271,34 @@ const getTVList = async (req, res) => {
     // Only use cache for page 1 (homepage data)
     if (page == 1) {
       const cacheKey = `${category}_tv`;
-      const cachedData = await getCachedData(cacheKey);
+      const cachedResult = await getCachedData(cacheKey);
 
-      if (cachedData) {
-        return res.json({ results: cachedData, page: 1 });
+      if (cachedResult) {
+        return res.json({
+          results: cachedResult.data,
+          page: 1,
+          cache_status: {
+            is_cached: true,
+            cached_at: cachedResult.cached_at,
+            cache_age_hours:
+              Math.round(
+                ((new Date() - new Date(cachedResult.cached_at)) / (1000 * 60 * 60)) * 10
+              ) / 10,
+          },
+        });
       }
     }
 
     // Cache miss or not page 1 - fetch from TMDB
     const data = await tmdbService.getTVList(category, page);
-    res.json(data);
+    res.json({
+      ...data,
+      cache_status: {
+        is_cached: false,
+        cached_at: null,
+        cache_age_hours: null,
+      },
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -260,6 +318,175 @@ const getPersonDetails = async (req, res) => {
   }
 };
 
+/**
+ * Get user's region from IP address
+ * Uses ipapi.co free tier (up to 1000 requests/day)
+ */
+const getUserRegion = async (ip) => {
+  try {
+    // Skip localhost/private IPs
+    if (ip === "::1" || ip === "127.0.0.1" || ip.startsWith("192.168.") || ip.startsWith("10.")) {
+      return "US"; // Default to US for local development
+    }
+
+    const response = await fetch(`https://ipapi.co/${ip}/country/`, {
+      headers: { "User-Agent": "MovieReviewApp/1.0" },
+    });
+
+    if (response.ok) {
+      const countryCode = await response.text();
+      return countryCode.trim() || "US";
+    }
+
+    return "US"; // Fallback
+  } catch (error) {
+    console.error("IP geolocation error:", error.message);
+    return "US"; // Fallback to US
+  }
+};
+
+/**
+ * Get region-based popular movies (Trending Near You)
+ * GET /api/tmdb/region/movies?region=US
+ */
+const getRegionalMovies = async (req, res) => {
+  try {
+    let { region, page = 1 } = req.query;
+
+    // Auto-detect region from IP if not provided
+    if (!region) {
+      const clientIp =
+        req.headers["x-forwarded-for"]?.split(",")[0] ||
+        req.headers["x-real-ip"] ||
+        req.socket.remoteAddress;
+      region = await getUserRegion(clientIp);
+    }
+
+    // Cache key based on region
+    if (page == 1) {
+      const cacheKey = `regional_movies_${region.toUpperCase()}`;
+      const cachedResult = await getCachedData(cacheKey);
+
+      if (cachedResult) {
+        return res.json({
+          results: cachedResult.data,
+          page: 1,
+          region: region.toUpperCase(),
+          cache_status: {
+            is_cached: true,
+            cached_at: cachedResult.cached_at,
+            cache_age_hours:
+              Math.round(
+                ((new Date() - new Date(cachedResult.cached_at)) / (1000 * 60 * 60)) * 10
+              ) / 10,
+          },
+        });
+      }
+    }
+
+    const data = await tmdbService.discoverMoviesByRegion(region, page);
+    res.json({
+      ...data,
+      region: region.toUpperCase(),
+      cache_status: {
+        is_cached: false,
+        cached_at: null,
+        cache_age_hours: null,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+/**
+ * Get region-based popular TV shows
+ * GET /api/tmdb/region/tv?region=US
+ */
+const getRegionalTV = async (req, res) => {
+  try {
+    let { region, page = 1 } = req.query;
+
+    // Auto-detect region from IP if not provided
+    if (!region) {
+      const clientIp =
+        req.headers["x-forwarded-for"]?.split(",")[0] ||
+        req.headers["x-real-ip"] ||
+        req.socket.remoteAddress;
+      region = await getUserRegion(clientIp);
+    }
+
+    // Cache key based on region
+    if (page == 1) {
+      const cacheKey = `regional_tv_${region.toUpperCase()}`;
+      const cachedResult = await getCachedData(cacheKey);
+
+      if (cachedResult) {
+        return res.json({
+          results: cachedResult.data,
+          page: 1,
+          region: region.toUpperCase(),
+          cache_status: {
+            is_cached: true,
+            cached_at: cachedResult.cached_at,
+            cache_age_hours:
+              Math.round(
+                ((new Date() - new Date(cachedResult.cached_at)) / (1000 * 60 * 60)) * 10
+              ) / 10,
+          },
+        });
+      }
+    }
+
+    const data = await tmdbService.discoverTVByRegion(region, page);
+    res.json({
+      ...data,
+      region: region.toUpperCase(),
+      cache_status: {
+        is_cached: false,
+        cached_at: null,
+        cache_age_hours: null,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+/**
+ * Get now playing movies in user's region
+ * GET /api/tmdb/region/now-playing?region=US
+ */
+const getNowPlayingRegional = async (req, res) => {
+  try {
+    let { region, page = 1 } = req.query;
+
+    // Auto-detect region from IP if not provided
+    if (!region) {
+      const clientIp =
+        req.headers["x-forwarded-for"]?.split(",")[0] ||
+        req.headers["x-real-ip"] ||
+        req.socket.remoteAddress;
+      region = await getUserRegion(clientIp);
+    }
+
+    // Cache key based on region
+    if (page == 1) {
+      const cacheKey = `now_playing_${region.toUpperCase()}`;
+      const cachedData = await getCachedData(cacheKey);
+
+      if (cachedData) {
+        return res.json({ results: cachedData, page: 1, region: region.toUpperCase() });
+      }
+    }
+
+    const data = await tmdbService.getNowPlayingByRegion(region, page);
+    res.json({ ...data, region: region.toUpperCase() });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   getDetails,
   getCredits,
@@ -273,4 +500,7 @@ module.exports = {
   getMovieList,
   getTVList,
   getPersonDetails,
+  getRegionalMovies,
+  getRegionalTV,
+  getNowPlayingRegional,
 };

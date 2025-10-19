@@ -14,6 +14,11 @@ router.get("/search/multi", tmdbController.searchMulti);
 // Find by IMDB ID
 router.get("/find/:imdbId", tmdbController.findByImdbId);
 
+// Region-based content (Trending Near You)
+router.get("/region/movies", tmdbController.getRegionalMovies);
+router.get("/region/tv", tmdbController.getRegionalTV);
+router.get("/region/now-playing", tmdbController.getNowPlayingRegional);
+
 // Trending
 router.get("/trending/:mediaType/:timeWindow", tmdbController.getTrending);
 
