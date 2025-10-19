@@ -6,23 +6,11 @@
       "use": "@vercel/node",
       "config": {
         "maxLambdaSize": "50mb",
-        "includeFiles": ["node_modules/**", "../frontend/dist/**"]
+        "includeFiles": ["node_modules/**", "dist/**"]
       }
     }
   ],
   "routes": [
-    {
-      "src": "/assets/(.*)",
-      "dest": "/assets/$1"
-    },
-    {
-      "src": "/(.*\\.(?:js|css|svg|png|jpg|jpeg|gif|ico|woff|woff2|ttf|eot))",
-      "dest": "/$1"
-    },
-    {
-      "src": "/api/(.*)",
-      "dest": "/index.js"
-    },
     {
       "src": "/(.*)",
       "dest": "/index.js"
@@ -32,5 +20,5 @@
     "NODE_ENV": "production"
   },
   "installCommand": "npm install",
-  "buildCommand": "cd ../frontend && npm install && npm run build && cd ../backend && npm install"
+  "buildCommand": "cd ../frontend && npm install && npm run build && cd ../backend && npm install && cp -r ../frontend/dist ./dist"
 }

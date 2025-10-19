@@ -126,7 +126,11 @@ app.use("/api/list", listRoutes);
 app.use("/api/tmdb", tmdbRoutes);
 
 // Serve static files from frontend build (AFTER API routes)
-const frontendPath = path.join(__dirname, "../frontend/dist");
+// In production (Vercel), use local dist; in development, use ../frontend/dist
+const frontendPath =
+  process.env.NODE_ENV === "production"
+    ? path.join(__dirname, "dist")
+    : path.join(__dirname, "../frontend/dist");
 
 // Serve static assets with proper fallback
 app.use(
