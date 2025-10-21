@@ -1,4 +1,5 @@
 import axios from "axios";
+import { getCsrfToken } from "./csrf";
 
 const API_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL || "";
 
@@ -15,6 +16,27 @@ const axiosInstance = axios.create({
 let isRefreshing = false;
 let failedQueue = [];
 
+// Request interceptor - Add CSRF token to non-GET requests
+axiosInstance.interceptors.request.use(
+  async (config) => {
+    // Only add CSRF token for state-changing methods
+    if (["POST", "PUT", "PATCH", "DELETE"].includes(config.method?.toUpperCase())) {
+      try {
+        const csrfToken = await getCsrfToken();
+        config.headers["x-csrf-token"] = csrfToken;
+      } catch (error) {
+        console.error("Failed to get CSRF token:", error);
+        // Continue with request even if CSRF token fetch fails
+        // Server will reject it if token is required
+      }
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 const processQueue = (error, success = false) => {
   failedQueue.forEach((prom) => {
     if (error) {
@@ -27,13 +49,27 @@ const processQueue = (error, success = false) => {
   failedQueue = [];
 };
 
-// Response interceptor - Handle token refresh on 401
+// Response interceptor - Handle token refresh on 401 and CSRF errors on 403
 axiosInstance.interceptors.response.use(
   (response) => {
     return response;
   },
   async (error) => {
     const originalRequest = error.config;
+
+    // Handle CSRF token errors (403 Forbidden)
+    if (error.response?.status === 403 && error.response?.data?.message?.includes("CSRF")) {
+      console.log("🔄 CSRF token invalid, fetching new token...");
+      try {
+        // Fetch new CSRF token
+        await getCsrfToken();
+        // Retry the request with new token
+        return axiosInstance(originalRequest);
+      } catch (csrfError) {
+        console.error("Failed to refresh CSRF token:", csrfError);
+        return Promise.reject(error);
+      }
+    }
 
     // Don't intercept errors from auth routes (let components handle them)
     if (

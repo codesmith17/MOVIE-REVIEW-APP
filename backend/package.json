@@ -25,6 +25,7 @@
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "crypto-js": "^4.2.0",
+    "csrf-csrf": "^4.0.3",
     "dotenv": "^16.6.1",
     "express": "^4.21.2",
     "firebase-admin": "^12.7.0",

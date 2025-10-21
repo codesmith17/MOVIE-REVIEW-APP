@@ -2,6 +2,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
+const { doubleCsrf } = require("csrf-csrf");
 const app = express();
 const process = require("process");
 const path = require("path");
@@ -68,6 +69,31 @@ async function connectToDatabase() {
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser()); // Parse cookies from Cookie header
 
+// CSRF Protection Configuration
+const {
+  generateToken, // Used to create a CSRF token
+  validateRequest, // Validates CSRF token
+  doubleCsrfProtection, // Middleware for CSRF protection
+} = doubleCsrf({
+  getSecret: () => process.env.CSRF_SECRET || "your-secret-key-change-in-production",
+  cookieName: "x-csrf-token",
+  cookieOptions: {
+    sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
+    path: "/",
+    secure: process.env.NODE_ENV === "production", // HTTPS only in production
+    httpOnly: true,
+  },
+  size: 64, // Token size
+  ignoredMethods: ["GET", "HEAD", "OPTIONS"], // Don't protect safe methods
+  getTokenFromRequest: (req) => req.headers["x-csrf-token"], // Read from custom header
+});
+
+// CSRF token generation endpoint - must be called before any state-changing requests
+app.get("/api/csrf-token", (req, res) => {
+  const csrfToken = generateToken(req, res);
+  res.json({ csrfToken });
+});
+
 // Health check route (no DB required) - MUST be first
 app.get("/health", (req, res) => {
   res.json({
@@ -116,6 +142,9 @@ app.use("/api", async (req, res, next) => {
     });
   }
 });
+
+// Apply CSRF protection to all API routes (except GET requests which are ignored by config)
+app.use("/api", doubleCsrfProtection);
 
 // API routes
 app.use("/api/auth", authRoutes);
