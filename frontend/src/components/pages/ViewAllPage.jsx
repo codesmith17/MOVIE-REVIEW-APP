@@ -18,6 +18,21 @@ const ViewAllPage = () => {
   const observerRef = useRef(null);
   const loadMoreRef = useRef(null);
 
+  // Allowed categories for validation
+  const ALLOWED_CATEGORIES = [
+    "trending",
+    "popular",
+    "top_rated",
+    "upcoming",
+    "now_playing",
+    "regional",
+    "on_the_air",
+    "airing_today",
+  ];
+
+  // Validate category parameter
+  const validCategory = ALLOWED_CATEGORIES.includes(category) ? category : "unknown";
+
   // Category display names
   const categoryTitles = {
     trending: `Trending ${mediaType === "tv" ? "TV Shows" : "Movies"} ${timeWindow === "week" ? "This Week" : "Today"}`,
@@ -73,7 +88,8 @@ const ViewAllPage = () => {
       setHasMore(data.page < data.total_pages && results.length > 0);
       setPage(pageNum);
     } catch (error) {
-      console.error(`Error fetching ${category}:`, error);
+      // Use validated category to prevent format string injection
+      console.error(`Error fetching ${validCategory}:`, error);
     } finally {
       setLoading(false);
       setLoadingMore(false);
