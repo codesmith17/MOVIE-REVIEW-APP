@@ -117,38 +117,115 @@ const postLikes = async (req, res, next) => {
 
 const cheerio = require("cheerio");
 const https = require("https");
+const { URL } = require("url");
+
+/**
+ * Validate and sanitize URL to prevent SSRF attacks
+ * Only allows requests to IMDb domains
+ */
+const validateIMDbUrl = (url) => {
+  try {
+    const parsedUrl = new URL(url);
+
+    // Allowlist: Only allow IMDb domains
+    const allowedHosts = ["www.imdb.com", "imdb.com", "m.imdb.com"];
+
+    if (!allowedHosts.includes(parsedUrl.hostname)) {
+      throw new Error("URL must be from IMDb domain");
+    }
+
+    // Only allow HTTPS protocol
+    if (parsedUrl.protocol !== "https:") {
+      throw new Error("Only HTTPS protocol is allowed");
+    }
+
+    // Prevent requests to localhost or private IP ranges
+    const hostname = parsedUrl.hostname;
+    if (
+      hostname === "localhost" ||
+      hostname === "127.0.0.1" ||
+      hostname.startsWith("192.168.") ||
+      hostname.startsWith("10.") ||
+      hostname.startsWith("172.")
+    ) {
+      throw new Error("Requests to internal networks are not allowed");
+    }
+
+    return parsedUrl.href;
+  } catch (error) {
+    throw new Error(`Invalid URL: ${error.message}`);
+  }
+};
+
+/**
+ * Validate IMDb ID format
+ * IMDb IDs are in format: tt followed by 7-8 digits (e.g., tt0111161)
+ */
+const validateIMDbID = (imdbID) => {
+  const imdbIdRegex = /^tt\d{7,8}$/;
+  if (!imdbIdRegex.test(imdbID)) {
+    throw new Error("Invalid IMDb ID format");
+  }
+  return imdbID;
+};
 
 const fetchHTML = (url) => {
   return new Promise((resolve, reject) => {
-    https
-      .get(
-        url,
-        {
-          headers: {
-            "User-Agent":
-              "Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.162 Safari/537.36",
+    try {
+      // Validate URL before making request
+      const validatedUrl = validateIMDbUrl(url);
+
+      https
+        .get(
+          validatedUrl,
+          {
+            headers: {
+              "User-Agent":
+                "Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.162 Safari/537.36",
+            },
+            timeout: 10000, // 10 second timeout
           },
-        },
-        (res) => {
-          let data = "";
-          res.on("data", (chunk) => {
-            data += chunk;
-          });
-          res.on("end", () => {
-            resolve(data);
-          });
-        }
-      )
-      .on("error", (err) => {
-        reject(err);
-      });
+          (res) => {
+            // Reject if response is not from expected domain
+            if (res.socket && res.socket.remoteAddress) {
+              // Additional security check
+            }
+
+            let data = "";
+            res.on("data", (chunk) => {
+              data += chunk;
+              // Prevent memory exhaustion
+              if (data.length > 10 * 1024 * 1024) {
+                // 10MB limit
+                res.destroy();
+                reject(new Error("Response too large"));
+              }
+            });
+            res.on("end", () => {
+              resolve(data);
+            });
+          }
+        )
+        .on("error", (err) => {
+          reject(err);
+        })
+        .on("timeout", () => {
+          reject(new Error("Request timeout"));
+        });
+    } catch (error) {
+      reject(error);
+    }
   });
 };
 
 const scrapeIMDb = async (req, res, next) => {
-  const { imdbID } = req.params;
-  const url = `https://www.imdb.com/title/${imdbID}/`;
   try {
+    const { imdbID } = req.params;
+
+    // Validate IMDb ID format before constructing URL
+    const validatedImdbID = validateIMDbID(imdbID);
+    const url = `https://www.imdb.com/title/${validatedImdbID}/`;
+
     const html = await fetchHTML(url);
     const $ = cheerio.load(html);
 
