@@ -130,6 +130,7 @@ const AdaptiveImage = ({
       <img
         src={imageUrl || fallbackSrc}
         alt={alt}
+        crossOrigin="anonymous"
         className={`${className} transition-opacity duration-300 ${
           isLoading ? "opacity-0" : "opacity-100"
         }`}
