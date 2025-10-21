@@ -10,6 +10,7 @@ import "react-quill/dist/quill.snow.css";
 import "../../styles/quill-dark.css";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { createSanitizedHtml } from "../../utils/sanitizeHtml";
 
 const API_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL || "";
 
@@ -205,12 +206,11 @@ const ActivityPage = () => {
           {activity.review && (
             <div
               className="text-gray-300 text-sm line-clamp-3"
-              dangerouslySetInnerHTML={{
-                __html:
-                  activity.review.length > 200
-                    ? activity.review.substring(0, 200) + "..."
-                    : activity.review,
-              }}
+              dangerouslySetInnerHTML={createSanitizedHtml(
+                activity.review.length > 200
+                  ? activity.review.substring(0, 200) + "..."
+                  : activity.review
+              )}
             />
           )}
 

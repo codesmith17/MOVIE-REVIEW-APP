@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { createSanitizedHtml } from "../../utils/sanitizeHtml";
 
 const OtherReviews = ({ reviews }) => {
   console.log(reviews);
@@ -22,9 +23,7 @@ const OtherReviews = ({ reviews }) => {
             </p>
             <div
               className="ql-editor"
-              dangerouslySetInnerHTML={{
-                __html: `${review.review.substring(0, 200)}...`,
-              }}
+              dangerouslySetInnerHTML={createSanitizedHtml(`${review.review.substring(0, 200)}...`)}
             />
             <Link
               to={`/movie-page/${review.imdbID}/${review._id.toString()}`}

@@ -12,6 +12,7 @@ import {
   FaSortAmountDown,
 } from "react-icons/fa";
 import { toast } from "react-toastify";
+import { createSanitizedHtml } from "../../utils/sanitizeHtml";
 
 const API_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL || "";
 const ITEMS_PER_PAGE = 12;
@@ -304,9 +305,9 @@ const ReviewsListPage = () => {
                           <div className="px-5 pb-5">
                             <p
                               className="text-sm text-gray-300 line-clamp-3"
-                              dangerouslySetInnerHTML={{
-                                __html: review.review.substring(0, 200) + "...",
-                              }}
+                              dangerouslySetInnerHTML={createSanitizedHtml(
+                                review.review.substring(0, 200) + "..."
+                              )}
                             />
                             <div className="flex items-center mt-3 text-xs text-gray-500">
                               <FaCalendarAlt className="mr-2" />

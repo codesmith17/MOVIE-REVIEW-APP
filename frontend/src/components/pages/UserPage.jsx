@@ -32,6 +32,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-toastify";
 import FollowedByList from "../user/FollowedByList";
 import UserActivitySummary from "../user/UserActivitySummary";
+import { createSanitizedHtml } from "../../utils/sanitizeHtml";
 const API_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL || "";
 
 const UserPage = () => {
@@ -870,9 +871,9 @@ const ReviewsTab = ({ username }) => {
                     <div className="px-3 sm:px-4 md:px-5 pb-3 sm:pb-4 md:pb-5">
                       <p
                         className="text-xs sm:text-sm text-gray-300 line-clamp-2 sm:line-clamp-3"
-                        dangerouslySetInnerHTML={{
-                          __html: review.review.substring(0, 200) + "...",
-                        }}
+                        dangerouslySetInnerHTML={createSanitizedHtml(
+                          review.review.substring(0, 200) + "..."
+                        )}
                       />
                       <div className="flex items-center mt-2 sm:mt-3 text-xs text-gray-500">
                         <FaCalendarAlt className="mr-1.5 sm:mr-2" />

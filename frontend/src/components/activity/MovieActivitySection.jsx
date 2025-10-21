@@ -3,6 +3,7 @@ import { FaEye, FaEdit, FaStar, FaCalendarAlt } from "react-icons/fa";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
+import { createSanitizedHtml } from "../../utils/sanitizeHtml";
 
 const API_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
 
@@ -244,9 +245,9 @@ const MovieActivitySection = ({
               userActivity.review?.review && (
                 <div
                   className="text-gray-300 text-xs md:text-sm line-clamp-3"
-                  dangerouslySetInnerHTML={{
-                    __html: userActivity.review.review.substring(0, 150) + "...",
-                  }}
+                  dangerouslySetInnerHTML={createSanitizedHtml(
+                    userActivity.review.review.substring(0, 150) + "..."
+                  )}
                 />
               )
             ) : (

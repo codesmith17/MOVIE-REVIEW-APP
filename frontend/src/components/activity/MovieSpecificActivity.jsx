@@ -10,6 +10,7 @@ import "react-quill/dist/quill.snow.css";
 import "../../styles/quill-dark.css";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { createSanitizedHtml } from "../../utils/sanitizeHtml";
 
 const API_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL || "";
 
@@ -293,7 +294,7 @@ const MovieSpecificActivity = () => {
                 <h4 className="text-lg font-semibold text-white mb-2">Review</h4>
                 <div
                   className="text-gray-300 bg-gray-900 rounded-lg p-4"
-                  dangerouslySetInnerHTML={{ __html: userActivity.review }}
+                  dangerouslySetInnerHTML={createSanitizedHtml(userActivity.review)}
                 />
               </div>
             )}

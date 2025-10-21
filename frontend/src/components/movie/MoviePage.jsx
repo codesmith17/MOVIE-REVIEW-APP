@@ -25,6 +25,7 @@ import MovieVideos from "./MovieVideos";
 import WatchProviders from "./WatchProviders";
 import MovieCard from "./MovieCard";
 import { WriteReviewModal } from "../modals";
+import { createSanitizedHtml } from "../../utils/sanitizeHtml";
 const API_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL || "";
 
 const MoviePage = () => {
@@ -983,9 +984,7 @@ const MoviePage = () => {
                       </div>
                       <div
                         className="prose prose-invert max-w-none text-gray-300 line-clamp-3 ql-editor"
-                        dangerouslySetInnerHTML={{
-                          __html: personalReview.review,
-                        }}
+                        dangerouslySetInnerHTML={createSanitizedHtml(personalReview.review)}
                       />
                     </div>
                   </div>

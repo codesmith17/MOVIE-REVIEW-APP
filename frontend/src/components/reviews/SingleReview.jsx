@@ -16,6 +16,7 @@ import { MdDelete } from "react-icons/md";
 import { Modal } from "../modals";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
+import { createSanitizedHtml } from "../../utils/sanitizeHtml";
 
 const API_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL || "";
 
@@ -708,7 +709,7 @@ const SingleReview = () => {
   const getTimeAgo = (dateString) => {
     let utcDateString;
     if (dateString) utcDateString = dateString.split(",")[0].trim();
-    // console.log(utcDateString);
+
     const time = new Date(utcDateString);
     const now = new Date();
 
@@ -738,7 +739,7 @@ const SingleReview = () => {
   };
 
   const displayHtmlReview = () => {
-    return { __html: personalReview.review };
+    return createSanitizedHtml(personalReview.review);
   };
 
   if (!personalReview) {
